@@ -40,21 +40,30 @@ type Summary = {
 
 export default function MiniAppClient() {
   const client = useMemo(() => apiClient(), []);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [status, setStatus] = useState<'loading' | 'ready' | 'not-telegram' | 'error'>('loading');
   const [error, setError] = useState('');
+  const [debugInfo, setDebugInfo] = useState<{ hasTelegram: boolean; hasWebApp: boolean; initDataLength: number; platform: string } | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [checkinMessage, setCheckinMessage] = useState('');
   const [pulse, setPulse] = useState(false);
+  const debugEnabled = process.env.NEXT_PUBLIC_DEBUG_WEBAPP === 'true';
 
   useEffect(() => {
     const initTelegram = async () => {
       try {
-        const tg = (window as any).Telegram?.WebApp;
+        const telegram = (window as any).Telegram;
+        const tg = telegram?.WebApp;
+        setDebugInfo({
+          hasTelegram: Boolean(telegram),
+          hasWebApp: Boolean(tg),
+          initDataLength: tg?.initData?.length ?? 0,
+          platform: tg?.platform ?? 'unknown',
+        });
         const initData = tg?.initData ?? '';
         if (!initData) {
-          setError('Mở trong Telegram để đăng nhập.');
-          setStatus('error');
+          setError('Mini app chỉ hoạt động khi mở từ Telegram.');
+          setStatus('not-telegram');
           return;
         }
 
@@ -137,25 +146,144 @@ export default function MiniAppClient() {
     );
   }
 
+  if (status === 'not-telegram') {
+    return (
+      <Container maxWidth="sm" sx={{ py: 6 }}>
+        <Card
+          sx={{
+            borderRadius: 5,
+            boxShadow: '0 18px 50px rgba(15, 23, 42, 0.12)',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,247,250,0.96))',
+          }}
+        >
+          <CardContent>
+            <Stack spacing={2}>
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '50%',
+                  display: 'grid',
+                  placeItems: 'center',
+                  background: 'linear-gradient(135deg, rgba(20,184,166,0.18), rgba(15,118,110,0.1))',
+                  color: 'primary.main',
+                  fontSize: 28,
+                }}
+              >
+                ↗
+              </Box>
+              <Typography variant="h5" fontWeight={800}>
+                Mở trong Telegram để tiếp tục
+              </Typography>
+              <Typography color="text.secondary">
+                Mini app này cần được khởi chạy từ nút <strong>Open App</strong> trong bot để Telegram gửi `initData`.
+              </Typography>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    setError('');
+                    setStatus('loading');
+                    window.location.reload();
+                  }}
+                  sx={{
+                    background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
+                  }}
+                >
+                  Thử lại
+                </Button>
+                <Button variant="outlined" onClick={() => navigator.clipboard?.writeText(window.location.href)}>
+                  Copy link
+                </Button>
+              </Stack>
+              <Card variant="outlined" sx={{ bgcolor: 'rgba(15,118,110,0.04)' }}>
+                <CardContent>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                    Cách mở đúng
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    1. Quay lại bot Telegram
+                    <br />
+                    2. Gõ /start
+                    <br />
+                    3. Bấm Open App
+                  </Typography>
+                </CardContent>
+              </Card>
+              {debugEnabled ? (
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                      Debug
+                    </Typography>
+                    <Stack spacing={0.5}>
+                      <Typography variant="body2">hasTelegram: {String(debugInfo?.hasTelegram ?? false)}</Typography>
+                      <Typography variant="body2">hasWebApp: {String(debugInfo?.hasWebApp ?? false)}</Typography>
+                      <Typography variant="body2">initDataLength: {debugInfo?.initDataLength ?? 0}</Typography>
+                      <Typography variant="body2">platform: {debugInfo?.platform ?? 'unknown'}</Typography>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ) : null}
+            </Stack>
+          </CardContent>
+        </Card>
+      </Container>
+    );
+  }
+
   if (status === 'error') {
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
-        <Card sx={{ borderRadius: 4 }}>
+        <Card
+          sx={{
+            borderRadius: 5,
+            boxShadow: '0 18px 50px rgba(15, 23, 42, 0.12)',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,244,244,0.96))',
+          }}
+        >
           <CardContent>
-            <Stack spacing={2} alignItems="flex-start">
-              <Alert severity="error" sx={{ width: '100%' }}>
-                {error}
-              </Alert>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  setError('');
-                  setStatus('loading');
-                  window.location.reload();
-                }}
-              >
-                Thử lại
-              </Button>
+            <Stack spacing={2}>
+              <Typography variant="h5" fontWeight={800}>
+                Có lỗi xảy ra
+              </Typography>
+              <Typography color="text.secondary">
+                Mình không thể xác thực Telegram WebApp ngay lúc này. Bạn có thể thử lại hoặc mở lại từ bot.
+              </Typography>
+              <Alert severity="error">{error}</Alert>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    setError('');
+                    setStatus('loading');
+                    window.location.reload();
+                  }}
+                  sx={{
+                    background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
+                  }}
+                >
+                  Thử lại
+                </Button>
+                <Button variant="outlined" onClick={() => navigator.clipboard?.writeText(window.location.href)}>
+                  Copy link
+                </Button>
+              </Stack>
+              {debugEnabled ? (
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                      Debug
+                    </Typography>
+                    <Stack spacing={0.5}>
+                      <Typography variant="body2">hasTelegram: {String(debugInfo?.hasTelegram ?? false)}</Typography>
+                      <Typography variant="body2">hasWebApp: {String(debugInfo?.hasWebApp ?? false)}</Typography>
+                      <Typography variant="body2">initDataLength: {debugInfo?.initDataLength ?? 0}</Typography>
+                      <Typography variant="body2">platform: {debugInfo?.platform ?? 'unknown'}</Typography>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ) : null}
             </Stack>
           </CardContent>
         </Card>
