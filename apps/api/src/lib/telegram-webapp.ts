@@ -14,14 +14,14 @@ export function validateTelegramWebAppInitData(initData: string, botToken: strin
     return { ok: false as const, reason: 'missing_hash' as const };
   }
 
-  params.delete('hash');
-  const pairs = Array.from(params.entries())
-    .map(([key, value]) => `${key}=${value}`)
+  const dataCheckString = initData
+    .split('&')
+    .filter((part) => part && !part.startsWith('hash='))
     .sort()
     .join('\n');
 
-  const secretKey = crypto.createHash('sha256').update(botToken).digest();
-  const calculatedHash = crypto.createHmac('sha256', secretKey).update(pairs).digest('hex');
+  const secretKey = crypto.createHmac('sha256', 'WebAppData').update(botToken).digest();
+  const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
 
   if (!safeCompare(calculatedHash, hash)) {
     return {
@@ -30,7 +30,7 @@ export function validateTelegramWebAppInitData(initData: string, botToken: strin
       details: {
         calculatedHash,
         receivedHash: hash,
-        pairCount: params.size,
+        pairCount: params.size - 1,
         hasUser: params.has('user'),
         hasAuthDate: params.has('auth_date'),
       },
