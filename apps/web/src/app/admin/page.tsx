@@ -14,10 +14,18 @@ import {
   CssBaseline,
   Divider,
   Drawer,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
   Tab,
   Tabs,
@@ -35,6 +43,7 @@ import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
 import AddCardRoundedIcon from '@mui/icons-material/AddCardRounded';
 import { apiClient } from '../../lib/api';
+import { AuditTable, TransactionsTable, UsersTable } from './components/admin-tables';
 
 type AdminUser = {
   id: string;
@@ -158,6 +167,15 @@ export default function AdminPage() {
   const [prizeName, setPrizeName] = useState('');
   const [prizeType, setPrizeType] = useState('POINT');
   const [prizeWeight, setPrizeWeight] = useState(1);
+  const [editingReward, setEditingReward] = useState<any>(null);
+  const [editingCampaign, setEditingCampaign] = useState<any>(null);
+  const [editRewardName, setEditRewardName] = useState('');
+  const [editRewardType, setEditRewardType] = useState('VOUCHER');
+  const [editRewardPointCost, setEditRewardPointCost] = useState(0);
+  const [editRewardStock, setEditRewardStock] = useState<string>('');
+  const [editCampaignName, setEditCampaignName] = useState('');
+  const [editCampaignDescription, setEditCampaignDescription] = useState('');
+  const [editCampaignActive, setEditCampaignActive] = useState(false);
   const pageSize = 20;
   const client = useMemo(() => apiClient(token), [token]);
 
@@ -286,6 +304,41 @@ export default function AdminPage() {
       setError('');
     } catch {
       setError('Tạo prize thất bại');
+    }
+  }
+
+  async function handleUpdateReward() {
+    if (!editingReward) return;
+    try {
+      await client.adminUpdateReward(editingReward.id, {
+        name: editRewardName,
+        type: editRewardType,
+        pointCost: editRewardPointCost,
+        stock: editRewardStock === '' ? null : Number(editRewardStock),
+      });
+      const data = await client.adminGetRewards();
+      setRewards(data.rewards ?? []);
+      setEditingReward(null);
+      setError('');
+    } catch {
+      setError('Cập nhật reward thất bại');
+    }
+  }
+
+  async function handleUpdateCampaign() {
+    if (!editingCampaign) return;
+    try {
+      await client.adminUpdateWheelCampaign(editingCampaign.id, {
+        name: editCampaignName,
+        description: editCampaignDescription,
+        isActive: editCampaignActive,
+      });
+      const data = await client.adminGetWheelCampaigns();
+      setCampaigns(data.campaigns ?? []);
+      setEditingCampaign(null);
+      setError('');
+    } catch {
+      setError('Cập nhật campaign thất bại');
     }
   }
 
@@ -465,124 +518,32 @@ export default function AdminPage() {
             ) : null}
 
             {activeSection === 'users' ? (
-              <Card sx={{ borderRadius: 5 }}>
-                <CardContent>
-                  <SectionHeader
-                    title="Users"
-                    description="Tra cứu user, balance và last check-in."
-                    action={
-                      <Stack direction="row" spacing={1}>
-                        <TextField size="small" label="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
-                        <Button variant="outlined" onClick={() => setPage((value) => Math.max(0, value - 1))}>
-                          Prev
-                        </Button>
-                        <Button variant="outlined" onClick={() => setPage((value) => value + 1)}>
-                          Next
-                        </Button>
-                      </Stack>
-                    }
-                  />
-                  <Divider sx={{ my: 2 }} />
-                  <Stack spacing={1.25}>
-                    {users.map((user) => (
-                      <Box
-                        key={user.id}
-                        sx={{
-                          p: 1.75,
-                          borderRadius: 3,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          bgcolor: '#fff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: 2,
-                          flexWrap: 'wrap',
-                        }}
-                      >
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography fontWeight={800} noWrap>
-                            {user.firstName ?? ''} {user.lastName ?? ''}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            @{user.username ?? '-'} | {user.telegramId}
-                          </Typography>
-                        </Box>
-                        <Stack direction="row" spacing={1} flexWrap="wrap">
-                          <Chip label={`Balance ${user.balance}`} />
-                          <Chip label={user.lastCheckinDate ?? 'No check-in'} variant="outlined" />
-                        </Stack>
-                      </Box>
-                    ))}
-                  </Stack>
-                </CardContent>
-              </Card>
+              <UsersTable
+                users={users}
+                search={search}
+                onSearchChange={setSearch}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onRowClick={(user) => {
+                  setTelegramId(user.telegramId);
+                  setActiveSection('settings');
+                }}
+              />
             ) : null}
 
             {activeSection === 'transactions' ? (
-              <Card sx={{ borderRadius: 5 }}>
-                <CardContent>
-                  <SectionHeader title="Transactions" description="Point ledger gần nhất." />
-                  <Divider sx={{ my: 2 }} />
-                  <Stack spacing={1.25}>
-                    {transactions.map((tx) => (
-                      <Box
-                        key={tx.id}
-                        sx={{
-                          p: 1.75,
-                          borderRadius: 3,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          bgcolor: '#fff',
-                        }}
-                      >
-                        <Stack direction="row" justifyContent="space-between" spacing={2}>
-                          <Box>
-                            <Typography fontWeight={800}>
-                              {tx.type.toUpperCase()} {tx.amount}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {tx.reason}
-                            </Typography>
-                          </Box>
-                          <Typography variant="caption" color="text.secondary">
-                            {tx.createdAt}
-                          </Typography>
-                        </Stack>
-                      </Box>
-                    ))}
-                  </Stack>
-                </CardContent>
-              </Card>
+              <TransactionsTable
+                transactions={transactions}
+                search={search}
+                onSearchChange={setSearch}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+              />
             ) : null}
 
-            {activeSection === 'audit' ? (
-              <Card sx={{ borderRadius: 5 }}>
-                <CardContent>
-                  <SectionHeader title="Audit Logs" description="Ghi nhận các hành động admin." />
-                  <Divider sx={{ my: 2 }} />
-                  <Stack spacing={1.25}>
-                    {auditLogs.map((log) => (
-                      <Box
-                        key={log.id}
-                        sx={{
-                          p: 1.75,
-                          borderRadius: 3,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          bgcolor: '#fff',
-                        }}
-                      >
-                        <Typography fontWeight={800}>{log.action}</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {log.actorEmail} | {log.targetTelegramId ?? '-'} | {log.createdAt}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Stack>
-                </CardContent>
-              </Card>
-            ) : null}
+            {activeSection === 'audit' ? <AuditTable logs={auditLogs} onRefresh={handleDebugEnv} /> : null}
 
             {activeSection === 'rewards' ? (
               <Stack spacing={2}>
@@ -613,6 +574,21 @@ export default function AdminPage() {
                             <Typography variant="body2" color="text.secondary">
                               {reward.type} | cost {reward.point_cost} | stock {reward.stock ?? '∞'} | {reward.is_active ? 'Active' : 'Inactive'}
                             </Typography>
+                            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => {
+                                  setEditingReward(reward);
+                                  setEditRewardName(reward.name);
+                                  setEditRewardType(reward.type);
+                                  setEditRewardPointCost(reward.point_cost);
+                                  setEditRewardStock(reward.stock === null ? '' : String(reward.stock));
+                                }}
+                              >
+                                Edit
+                              </Button>
+                            </Stack>
                           </Box>
                         ))}
                       </Stack>
@@ -667,6 +643,20 @@ export default function AdminPage() {
                             <Typography variant="body2" color="text.secondary">
                               {campaign.is_active ? 'Active' : 'Inactive'}
                             </Typography>
+                            <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => {
+                                  setEditingCampaign(campaign);
+                                  setEditCampaignName(campaign.name);
+                                  setEditCampaignDescription(campaign.description ?? '');
+                                  setEditCampaignActive(Boolean(campaign.is_active));
+                                }}
+                              >
+                                Edit
+                              </Button>
+                            </Stack>
                           </Box>
                         ))}
                       </Stack>
@@ -744,6 +734,47 @@ export default function AdminPage() {
           </Stack>
         </Container>
       </Box>
+
+      <Dialog open={Boolean(editingReward)} onClose={() => setEditingReward(null)} fullWidth maxWidth="sm">
+        <DialogTitle>Edit Reward</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField label="Name" value={editRewardName} onChange={(e) => setEditRewardName(e.target.value)} />
+            <TextField label="Type" value={editRewardType} onChange={(e) => setEditRewardType(e.target.value)} />
+            <TextField label="Point cost" type="number" value={editRewardPointCost} onChange={(e) => setEditRewardPointCost(Number(e.target.value))} />
+            <TextField label="Stock" value={editRewardStock} onChange={(e) => setEditRewardStock(e.target.value)} />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditingReward(null)}>Cancel</Button>
+          <Button variant="contained" onClick={handleUpdateReward}>Save</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(editingCampaign)} onClose={() => setEditingCampaign(null)} fullWidth maxWidth="sm">
+        <DialogTitle>Edit Wheel Campaign</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField label="Name" value={editCampaignName} onChange={(e) => setEditCampaignName(e.target.value)} />
+            <TextField label="Description" value={editCampaignDescription} onChange={(e) => setEditCampaignDescription(e.target.value)} />
+            <FormControl fullWidth>
+              <InputLabel>Active</InputLabel>
+              <Select
+                label="Active"
+                value={editCampaignActive ? 'true' : 'false'}
+                onChange={(e) => setEditCampaignActive(e.target.value === 'true')}
+              >
+                <MenuItem value="true">Active</MenuItem>
+                <MenuItem value="false">Inactive</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditingCampaign(null)}>Cancel</Button>
+          <Button variant="contained" onClick={handleUpdateCampaign}>Save</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
