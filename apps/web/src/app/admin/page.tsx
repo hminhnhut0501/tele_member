@@ -53,6 +53,8 @@ export default function AdminPage() {
   const [reason, setReason] = useState('manual_adjustment');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
+  const [debugEnv, setDebugEnv] = useState<any>(null);
+  const [debugLoading, setDebugLoading] = useState(false);
   const pageSize = 20;
   const client = apiClient(token);
 
@@ -103,6 +105,20 @@ export default function AdminPage() {
     }
   }
 
+  async function handleDebugEnv() {
+    if (!token) return;
+    try {
+      setDebugLoading(true);
+      setError('');
+      const data = await client.getDebugEnv();
+      setDebugEnv(data);
+    } catch {
+      setError('Không thể tải debug env');
+    } finally {
+      setDebugLoading(false);
+    }
+  }
+
   if (!token) {
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
@@ -144,6 +160,9 @@ export default function AdminPage() {
           </Button>
           <Button variant="outlined" onClick={() => setPage((value) => value + 1)}>
             Next
+          </Button>
+          <Button variant="contained" color="secondary" onClick={handleDebugEnv} disabled={debugLoading}>
+            {debugLoading ? 'Loading...' : 'Debug Env'}
           </Button>
         </Stack>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
@@ -225,6 +244,32 @@ export default function AdminPage() {
                 </Box>
               ))}
             </Stack>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <Typography variant="h6">Debug Env</Typography>
+            <Divider sx={{ my: 2 }} />
+            {debugEnv ? (
+              <Box
+                component="pre"
+                sx={{
+                  m: 0,
+                  p: 2,
+                  borderRadius: 2,
+                  bgcolor: 'rgba(2,6,23,0.04)',
+                  overflow: 'auto',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {JSON.stringify(debugEnv, null, 2)}
+              </Box>
+            ) : (
+              <Typography color="text.secondary">
+                Bấm <strong>Debug Env</strong> để xem fingerprint môi trường đang chạy trên Render.
+              </Typography>
+            )}
           </CardContent>
         </Card>
       </Stack>

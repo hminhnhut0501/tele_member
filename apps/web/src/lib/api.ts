@@ -48,5 +48,6 @@ export function apiClient(token?: string | null) {
         method: 'POST',
         body: JSON.stringify(payload),
       }, token),
+    getDebugEnv: () => request('/admin/debug/env', {}, token),
   };
 }
