@@ -170,3 +170,54 @@ export function HeroChip({ label, color = 'primary' }: { label: string; color?: 
 export function SectionButton(props: React.ComponentProps<typeof Button>) {
   return <Button {...props} sx={{ borderRadius: 999, boxShadow: '0 10px 22px rgba(37, 99, 235, 0.16)', ...(props.sx ?? {}) }} />;
 }
+
+export function GameSection({
+  title,
+  subtitle,
+  action,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <Card
+      variant="outlined"
+      sx={{
+        overflow: 'hidden',
+        borderRadius: 4,
+        borderColor: 'rgba(255, 219, 143, 0.14)',
+        background:
+          'linear-gradient(180deg, rgba(12, 30, 21, 0.98) 0%, rgba(8, 19, 13, 1) 100%)',
+        boxShadow: '0 24px 48px rgba(3, 8, 20, 0.38), inset 0 1px 0 rgba(255,255,255,0.06)',
+        color: '#f7f5eb',
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          height: 4,
+          background: 'linear-gradient(90deg, #d4af37, #f6e08a, #d4af37)',
+        },
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, px: 2.25, py: 1.75, borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(180deg, rgba(255,220,127,0.08) 0%, rgba(255,255,255,0) 100%)' }}>
+        <Box sx={{ position: 'relative', pl: 1.75 }}>
+          <Box sx={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 4, borderRadius: 999, bgcolor: '#d4af37' }} />
+          <Typography variant="h6" sx={{ fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.15, color: '#fff8df' }}>
+            {title}
+          </Typography>
+          {subtitle ? (
+            <Typography variant="body2" sx={{ mt: 0.25, lineHeight: 1.45, color: 'rgba(247,245,235,0.72)' }}>
+              {subtitle}
+            </Typography>
+          ) : null}
+        </Box>
+        {action}
+      </Box>
+      <Box sx={{ p: 2 }}>{children}</Box>
+    </Card>
+  );
+}
