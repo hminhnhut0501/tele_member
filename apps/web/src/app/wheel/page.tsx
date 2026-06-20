@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { apiClient } from '../../lib/api';
-import { AppSection, HeroChip, PageShell, SectionButton } from '../shared-ui';
+import { GameSection, HeroChip, PageShell, SectionButton } from '../shared-ui';
 import { LuckyWheelShowcase } from './lucky-wheel-showcase';
 
 export default function WheelPage() {
@@ -78,48 +78,71 @@ export default function WheelPage() {
 
   return (
     <PageShell>
-      <Container maxWidth="sm" sx={{ py: 3, position: 'relative' }}>
+      <Container maxWidth="md" sx={{ py: { xs: 2, sm: 3 }, position: 'relative' }}>
         <Stack spacing={2}>
-          <AppSection
+          <GameSection
             title="Vòng quay may mắn"
             subtitle="Dùng lượt quay để nhận điểm, code, spin ticket hoặc phần thưởng đặc biệt."
-            accent="amber"
             action={<HeroChip label="Lucky Wheel" color="info" />}
           >
             <Stack direction="row" spacing={1} flexWrap="wrap">
               <Chip
                 label={`${spins} lượt quay`}
                 sx={{
-                  bgcolor: 'rgba(245, 158, 11, 0.12)',
-                  color: '#92400e',
+                  bgcolor: 'rgba(59,130,246,0.14)',
+                  color: '#dbeafe',
                   fontWeight: 800,
-                  border: '1px solid rgba(245, 158, 11, 0.18)',
+                  border: '1px solid rgba(59,130,246,0.18)',
                 }}
               />
               <Chip
                 label={campaign?.is_active ? 'Campaign đang chạy' : 'Chưa có campaign active'}
                 sx={{
                   bgcolor: campaign?.is_active ? 'rgba(16, 185, 129, 0.12)' : 'rgba(148, 163, 184, 0.12)',
-                  color: campaign?.is_active ? '#065f46' : '#334155',
+                  color: campaign?.is_active ? '#bbf7d0' : '#e2e8f0',
                   fontWeight: 800,
                   border: '1px solid rgba(0,0,0,0.06)',
                 }}
               />
             </Stack>
-          </AppSection>
+          </GameSection>
 
-          {error ? <Alert severity="error">{error}</Alert> : null}
-          {result ? <Alert severity="success">Trúng: {result.prize?.name ?? 'Không trúng'}</Alert> : null}
+          {error ? (
+            <Alert
+              severity="error"
+              sx={{
+                bgcolor: 'rgba(127,29,29,0.68)',
+                color: '#fee2e2',
+                border: '1px solid rgba(248,113,113,0.24)',
+                '& .MuiAlert-icon': { color: '#fca5a5' },
+              }}
+            >
+              {error}
+            </Alert>
+          ) : null}
+          {result ? (
+            <Alert
+              severity="success"
+              sx={{
+                bgcolor: 'rgba(6,78,59,0.72)',
+                color: '#d1fae5',
+                border: '1px solid rgba(52,211,153,0.22)',
+                '& .MuiAlert-icon': { color: '#6ee7b7' },
+              }}
+            >
+              Trúng: {result.prize?.name ?? 'Không trúng'}
+            </Alert>
+          ) : null}
 
           {loading ? (
-            <AppSection title="Đang tải wheel..." subtitle="Dữ liệu campaign và prize đang được đồng bộ." accent="cyan" compact>
+            <GameSection title="Đang tải wheel..." subtitle="Dữ liệu campaign và prize đang được đồng bộ.">
               <Stack spacing={1.5}>
                 <Skeleton width="60%" height={30} />
                 <Skeleton width="40%" />
                 <Skeleton height={220} sx={{ borderRadius: 4 }} />
                 <Skeleton height={44} />
               </Stack>
-            </AppSection>
+            </GameSection>
           ) : (
             <>
               <LuckyWheelShowcase
@@ -134,7 +157,7 @@ export default function WheelPage() {
                 disabled={!campaign}
               />
 
-              <AppSection title="Danh sách giải" subtitle="Toàn bộ giải thưởng trong campaign hiện tại." accent="violet">
+              <GameSection title="Danh sách giải" subtitle="Toàn bộ giải thưởng trong campaign hiện tại.">
                 <Stack spacing={1}>
                   {prizes.length ? (
                     prizes.map((prize) => (
@@ -143,27 +166,26 @@ export default function WheelPage() {
                         sx={{
                           p: 1.5,
                           borderRadius: 2,
-                          border: '1px solid',
-                          borderColor: 'divider',
-                          bgcolor: 'rgba(37,99,235,0.03)',
+                          border: '1px solid rgba(96,165,250,0.14)',
+                          bgcolor: 'rgba(59,130,246,0.06)',
                         }}
                       >
                         <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
                           <Box>
-                            <Typography fontWeight={800}>{prize.name}</Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography fontWeight={900} sx={{ color: '#f5f9ff' }}>{prize.name}</Typography>
+                            <Typography variant="body2" sx={{ color: 'rgba(229,239,255,0.68)' }}>
                               {prize.type}
                             </Typography>
                           </Box>
-                          <Chip label={`x${prize.weight}`} size="small" />
+                          <Chip label={`x${prize.weight}`} size="small" sx={{ bgcolor: 'rgba(59,130,246,0.16)', color: '#dbeafe', border: '1px solid rgba(59,130,246,0.2)' }} />
                         </Stack>
                       </Box>
                     ))
                   ) : (
-                    <Typography color="text.secondary">Chưa có prize nào cho campaign này.</Typography>
+                    <Typography sx={{ color: 'rgba(229,239,255,0.68)' }}>Chưa có prize nào cho campaign này.</Typography>
                   )}
                 </Stack>
-              </AppSection>
+              </GameSection>
             </>
           )}
         </Stack>

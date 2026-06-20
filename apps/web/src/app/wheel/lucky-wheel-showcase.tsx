@@ -14,10 +14,10 @@ type WheelPrize = {
 
 function prizeAccent(prize: WheelPrize, index: number) {
   const type = prize.type?.toUpperCase?.() ?? prize.type;
-  if (type === 'POINT') return index % 2 === 0 ? '#ffe08a' : '#d4a433';
-  if (type === 'SPIN_TICKET') return index % 2 === 0 ? '#8fd0ff' : '#2563eb';
-  if (type === 'VOUCHER' || type === 'VIP_CODE') return index % 2 === 0 ? '#f59e0b' : '#b45309';
-  return index % 2 === 0 ? '#1e3a8a' : '#111827';
+  if (type === 'POINT') return index % 2 === 0 ? '#6ea8ff' : '#2563eb';
+  if (type === 'SPIN_TICKET') return index % 2 === 0 ? '#9fd7ff' : '#0ea5e9';
+  if (type === 'VOUCHER' || type === 'VIP_CODE') return index % 2 === 0 ? '#1d4ed8' : '#0f172a';
+  return index % 2 === 0 ? '#1e40af' : '#0b1220';
 }
 
 function prizeShortLabel(prize: WheelPrize) {
@@ -93,11 +93,11 @@ export function LuckyWheelShowcase({
         position: 'relative',
         overflow: 'hidden',
         borderRadius: { xs: 5, md: 6 },
-        border: '1px solid rgba(255, 219, 143, 0.18)',
-        bgcolor: '#07160f',
+        border: '1px solid rgba(103, 170, 255, 0.14)',
+        bgcolor: '#0a1224',
         boxShadow: '0 34px 90px rgba(3, 8, 20, 0.55)',
         backgroundImage:
-          'radial-gradient(circle at 20% 15%, rgba(244, 208, 111, 0.18), transparent 20%), radial-gradient(circle at 80% 0%, rgba(49, 196, 141, 0.14), transparent 18%), linear-gradient(180deg, rgba(9, 30, 20, 0.98) 0%, rgba(6, 18, 12, 1) 100%)',
+          'radial-gradient(circle at 20% 15%, rgba(59,130,246,0.22), transparent 20%), radial-gradient(circle at 80% 0%, rgba(14,165,233,0.14), transparent 18%), linear-gradient(180deg, rgba(10,18,36,0.98) 0%, rgba(6,10,20,1) 100%)',
       }}
     >
       <Box
@@ -106,7 +106,7 @@ export function LuckyWheelShowcase({
           inset: 0,
           opacity: 0.23,
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px)',
+            'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
           backgroundSize: '48px 48px',
           maskImage: 'radial-gradient(circle at center, black 0%, black 58%, transparent 100%)',
         }}
@@ -115,19 +115,19 @@ export function LuckyWheelShowcase({
       <Box sx={{ position: 'relative', p: { xs: 2, sm: 3 } }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2} sx={{ mb: 2 }}>
           <Box>
-            <Typography sx={{ color: 'rgba(255,255,255,0.98)', fontWeight: 900, letterSpacing: '-0.05em', fontSize: { xs: '1.65rem', sm: '2rem' } }}>
+            <Typography sx={{ color: 'rgba(255,255,255,0.98)', fontWeight: 900, letterSpacing: '-0.04em', fontSize: { xs: '1.5rem', sm: '1.9rem' } }}>
               {campaignName ?? 'Lucky Wheel'}
             </Typography>
-            <Typography sx={{ color: 'rgba(245, 231, 194, 0.75)', maxWidth: 560, mt: 0.5, lineHeight: 1.5 }}>
+            <Typography sx={{ color: 'rgba(231, 239, 255, 0.72)', maxWidth: 560, mt: 0.5, lineHeight: 1.45 }}>
               {campaignDescription ?? 'Vòng quay phần thưởng theo phong cách game, lấy cảm hứng branding Hang Cú.'}
             </Typography>
           </Box>
           <Chip
             label={`${spins} spins`}
             sx={{
-              bgcolor: 'rgba(255, 214, 102, 0.18)',
-              color: '#ffe7a3',
-              border: '1px solid rgba(255, 214, 102, 0.35)',
+              bgcolor: 'rgba(37, 99, 235, 0.18)',
+              color: '#dbeafe',
+              border: '1px solid rgba(96, 165, 250, 0.28)',
               fontWeight: 800,
             }}
           />
@@ -152,7 +152,7 @@ export function LuckyWheelShowcase({
               height: 0,
               borderLeft: '44px solid transparent',
               borderRight: '44px solid transparent',
-              borderTop: '118px solid rgba(255, 213, 109, 0.96)',
+              borderTop: '118px solid rgba(96, 165, 250, 0.96)',
               filter: 'drop-shadow(0 12px 18px rgba(0,0,0,0.4))',
               zIndex: 4,
               '&::before': {
@@ -162,7 +162,7 @@ export function LuckyWheelShowcase({
                 top: '-112px',
                 width: 68,
                 height: 68,
-                background: 'linear-gradient(180deg, #fffbe6 0%, #ffd55e 55%, #be862a 100%)',
+                background: 'linear-gradient(180deg, #eef6ff 0%, #7fb4ff 55%, #1d4ed8 100%)',
                 clipPath: 'polygon(50% 100%, 0 0, 100% 0)',
                 opacity: 0.95,
               },
@@ -177,9 +177,9 @@ export function LuckyWheelShowcase({
               aspectRatio: '1 / 1',
               borderRadius: '50%',
               p: { xs: 1.5, sm: 2 },
-              background: 'linear-gradient(180deg, #ffe97d 0%, #c69a31 50%, #6e4e11 100%)',
+              background: 'linear-gradient(180deg, #6ea8ff 0%, #1d4ed8 46%, #081223 100%)',
               boxShadow:
-                'inset 0 0 0 4px rgba(255,255,255,0.26), inset 0 0 0 18px rgba(8, 22, 14, 0.86), 0 0 0 1px rgba(255,255,255,0.12), 0 34px 68px rgba(0,0,0,0.48)',
+                'inset 0 0 0 4px rgba(255,255,255,0.20), inset 0 0 0 18px rgba(8, 17, 33, 0.92), 0 0 0 1px rgba(255,255,255,0.12), 0 34px 68px rgba(0,0,0,0.48)',
             }}
           >
             <Box
@@ -188,7 +188,7 @@ export function LuckyWheelShowcase({
                 inset: { xs: 10, sm: 14 },
                 borderRadius: '50%',
                 background:
-                  'radial-gradient(circle at center, rgba(255, 255, 255, 0.08), rgba(255,255,255,0.02) 58%, rgba(0,0,0,0.2) 100%)',
+                  'radial-gradient(circle at center, rgba(255, 255, 255, 0.10), rgba(255,255,255,0.03) 58%, rgba(0,0,0,0.26) 100%)',
                 boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.12)',
               }}
             />
@@ -197,10 +197,10 @@ export function LuckyWheelShowcase({
               <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%" style={wheelStyle as any}>
                 <defs>
                   <radialGradient id="hubGlow" cx="35%" cy="25%" r="75%">
-                    <stop offset="0%" stopColor="#fff8d8" />
-                    <stop offset="38%" stopColor="#ffe28a" />
-                    <stop offset="70%" stopColor="#cfa23d" />
-                    <stop offset="100%" stopColor="#7a5716" />
+                    <stop offset="0%" stopColor="#edf6ff" />
+                    <stop offset="38%" stopColor="#8ec0ff" />
+                    <stop offset="70%" stopColor="#2b62e6" />
+                    <stop offset="100%" stopColor="#07142a" />
                   </radialGradient>
                   <filter id="glow">
                     <feGaussianBlur stdDeviation="6" result="b" />
@@ -218,8 +218,8 @@ export function LuckyWheelShowcase({
 
                 <circle cx={center} cy={center} r={outerR} fill="url(#hubGlow)" opacity="0.9" />
                 <circle cx={center} cy={center} r={outerR - 2} fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="10" />
-                <circle cx={center} cy={center} r={outerR - 22} fill="none" stroke="rgba(35,24,8,0.82)" strokeWidth="2" />
-                <circle cx={center} cy={center} r={outerR - 38} fill="#fef8eb" />
+                <circle cx={center} cy={center} r={outerR - 22} fill="none" stroke="rgba(7,18,44,0.82)" strokeWidth="2" />
+                <circle cx={center} cy={center} r={outerR - 38} fill="#f8fbff" />
 
                 {safePrizes.map((prize, index) => {
                   const start = index * segmentAngle;
@@ -247,26 +247,26 @@ export function LuckyWheelShowcase({
                         opacity="0.35"
                       />
                       <text
-                        fill={prize.type === 'VOUCHER' || prize.type === 'VIP_CODE' ? '#111827' : '#0b1220'}
-                        fontSize="30"
+                        fill={prize.type === 'VOUCHER' || prize.type === 'VIP_CODE' ? '#0f172a' : '#081223'}
+                        fontSize="24"
                         fontWeight="900"
                         textAnchor="middle"
-                        style={{ letterSpacing: '0.06em', paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.45)', strokeWidth: 2 }}
+                        style={{ letterSpacing: '0.04em', paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.5)', strokeWidth: 2 }}
                       >
                         <textPath href={`#arc-${index}`} startOffset="50%" textAnchor="middle">
                           {prizeShortLabel(prize)}
                         </textPath>
                       </text>
                       <g transform={`translate(${polarToCartesian(center, center, outerR - 106, mid).x}, ${polarToCartesian(center, center, outerR - 106, mid).y}) rotate(${mid + 90})`}>
-                        <circle r="20" fill="rgba(255,255,255,0.25)" />
+                        <circle r="18" fill="rgba(255,255,255,0.22)" />
                       </g>
                     </g>
                   );
                 })}
 
                 <circle cx={center} cy={center} r={innerR + 18} fill="rgba(14, 22, 32, 0.1)" />
-                <circle cx={center} cy={center} r={innerR} fill="url(#hubGlow)" stroke="rgba(80,58,20,0.82)" strokeWidth="10" />
-                <circle cx={center} cy={center} r={innerR - 28} fill="#09202c" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
+                <circle cx={center} cy={center} r={innerR} fill="url(#hubGlow)" stroke="rgba(255,255,255,0.18)" strokeWidth="10" />
+                <circle cx={center} cy={center} r={innerR - 28} fill="#081223" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
               </svg>
 
               <Box
@@ -281,14 +281,14 @@ export function LuckyWheelShowcase({
                 }}
               >
                 <Stack spacing={1} alignItems="center">
-                  <Box sx={{ width: { xs: 118, sm: 136 }, height: { xs: 118, sm: 136 }, borderRadius: '50%', overflow: 'hidden', border: '6px solid rgba(76,55,15,0.72)', boxShadow: '0 18px 30px rgba(0,0,0,0.28)' }}>
+                  <Box sx={{ width: { xs: 118, sm: 136 }, height: { xs: 118, sm: 136 }, borderRadius: '50%', overflow: 'hidden', border: '6px solid rgba(8,18,35,0.72)', boxShadow: '0 18px 30px rgba(0,0,0,0.28)' }}>
                     <Image src="/hang-cu-mark.jpg" alt="Hang Cú" width={136} height={136} style={{ width: '100%', height: '100%', objectFit: 'cover' }} priority />
                   </Box>
-                  <Typography sx={{ color: '#ffe7a3', fontWeight: 900, letterSpacing: '0.32em', fontSize: '0.72rem' }}>SPIN WHEEL</Typography>
-                  <Typography sx={{ color: '#fff5d1', fontWeight: 900, fontSize: { xs: '1.5rem', sm: '1.9rem' }, lineHeight: 1, textShadow: '0 2px 16px rgba(0,0,0,0.28)' }}>
+                  <Typography sx={{ color: '#9cc7ff', fontWeight: 900, letterSpacing: '0.32em', fontSize: '0.72rem' }}>SPIN WHEEL</Typography>
+                  <Typography sx={{ color: '#f6fbff', fontWeight: 900, fontSize: { xs: '1.42rem', sm: '1.82rem' }, lineHeight: 1, textShadow: '0 2px 16px rgba(0,0,0,0.28)' }}>
                     {spinning ? 'ĐANG QUAY' : resultName ?? 'SẴN SÀNG'}
                   </Typography>
-                  <Typography sx={{ color: 'rgba(247,245,235,0.75)', fontWeight: 700 }}>
+                  <Typography sx={{ color: 'rgba(229,239,255,0.72)', fontWeight: 700 }}>
                     {spins > 0 ? `Lượt quay hiện có: ${spins}` : 'Hết lượt quay'}
                   </Typography>
                 </Stack>
@@ -309,10 +309,10 @@ export function LuckyWheelShowcase({
                 fontWeight: 900,
                 fontSize: { xs: '1rem', sm: '1.1rem' },
                 letterSpacing: '0.12em',
-                color: '#fff5cc',
-                background: 'linear-gradient(180deg, rgba(28,73,244,0.98) 0%, rgba(20,58,207,1) 100%)',
-                boxShadow: '0 18px 36px rgba(37,99,235,0.42), inset 0 1px 0 rgba(255,255,255,0.22), 0 0 0 1px rgba(255,255,255,0.12)',
-                '&:hover': { background: 'linear-gradient(180deg, rgba(46,95,255,0.98) 0%, rgba(20,58,207,1) 100%)' },
+                color: '#f8fbff',
+                background: 'linear-gradient(180deg, rgba(37,99,235,0.98) 0%, rgba(30,64,175,1) 100%)',
+                boxShadow: '0 18px 36px rgba(37,99,235,0.44), inset 0 1px 0 rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.12)',
+                '&:hover': { background: 'linear-gradient(180deg, rgba(59,130,246,0.98) 0%, rgba(30,64,175,1) 100%)' },
               }}
             >
               {spinning ? 'ĐANG QUAY...' : spins > 0 ? 'QUAY NGAY' : 'HẾT LƯỢT'}
@@ -321,9 +321,9 @@ export function LuckyWheelShowcase({
         </Box>
 
         <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" sx={{ mt: 1.5 }}>
-          <Chip label="Hang Cú branding" sx={{ bgcolor: 'rgba(255, 230, 163, 0.13)', color: '#ffe7a3', border: '1px solid rgba(255, 230, 163, 0.18)' }} />
-          <Chip label="Game UI style" sx={{ bgcolor: 'rgba(29, 78, 216, 0.16)', color: '#c7ddff', border: '1px solid rgba(29, 78, 216, 0.2)' }} />
-          <Chip label={`${safePrizes.length} phần thưởng`} sx={{ bgcolor: 'rgba(16, 185, 129, 0.15)', color: '#c9f7e8', border: '1px solid rgba(16, 185, 129, 0.18)' }} />
+          <Chip label="Hang Cú branding" sx={{ bgcolor: 'rgba(59,130,246,0.14)', color: '#dbeafe', border: '1px solid rgba(59,130,246,0.18)' }} />
+          <Chip label="Game UI style" sx={{ bgcolor: 'rgba(96,165,250,0.16)', color: '#e0f2fe', border: '1px solid rgba(96,165,250,0.2)' }} />
+          <Chip label={`${safePrizes.length} phần thưởng`} sx={{ bgcolor: 'rgba(14,165,233,0.14)', color: '#cffafe', border: '1px solid rgba(14,165,233,0.18)' }} />
         </Stack>
       </Box>
     </Box>
