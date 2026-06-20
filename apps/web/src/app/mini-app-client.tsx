@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Component, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Alert, Avatar, Box, Button, Chip, Container, Divider, Fade, Skeleton, Stack, Typography } from '@mui/material';
 import { apiClient } from '../lib/api';
 import { AppSection, HeroChip, MetricCard, PageShell, SectionButton } from './shared-ui';
@@ -43,6 +43,50 @@ type BootIssue =
   | 'missing_user_id'
   | 'auth_failed'
   | 'unknown_error';
+
+type MiniAppErrorBoundaryState = {
+  hasError: boolean;
+  errorMessage: string;
+};
+
+class MiniAppErrorBoundary extends Component<{ children: ReactNode }, MiniAppErrorBoundaryState> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorMessage: '' };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return {
+      hasError: true,
+      errorMessage: error?.message ?? 'Mini app crashed',
+    };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('[mini-app-client] render error', error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <PageShell>
+          <Container maxWidth="sm" sx={{ py: 6 }}>
+            <AppSection title="Có lỗi hiển thị" subtitle="Mini app vừa gặp exception khi render giao diện." accent="rose" action={<HeroChip label="Fallback" color="error" />}>
+              <Stack spacing={2}>
+                <Alert severity="error">{this.state.errorMessage}</Alert>
+                <Typography variant="body2" color="text.secondary">
+                  Nếu lỗi này tiếp tục xuất hiện, mở DevTools console hoặc gửi lại ảnh màn hình này để mình đọc đúng exception.
+                </Typography>
+              </Stack>
+            </AppSection>
+          </Container>
+        </PageShell>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 function sanitizeInitDataUnsafe(value: any) {
   if (!value || typeof value !== 'object') return null;
@@ -312,7 +356,8 @@ export default function MiniAppClient() {
   }
 
   return (
-    <PageShell>
+    <MiniAppErrorBoundary>
+      <PageShell>
       <Container maxWidth="sm" sx={{ py: 4 }}>
         <Stack spacing={2}>
           <Fade in timeout={500}>
@@ -372,9 +417,10 @@ export default function MiniAppClient() {
             </Stack>
           </AppSection>
 
-          {renderDebugCard()}
-        </Stack>
+        {renderDebugCard()}
+      </Stack>
       </Container>
-    </PageShell>
+      </PageShell>
+    </MiniAppErrorBoundary>
   );
 }
