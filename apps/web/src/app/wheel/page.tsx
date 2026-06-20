@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Container,
-  Skeleton,
   Stack,
   Box,
   Chip,
@@ -25,6 +24,19 @@ export default function WheelPage() {
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const client = useMemo(() => apiClient(token), [token]);
+  const fallbackCampaign = {
+    name: 'Demo Lucky Wheel',
+    description: 'Vòng quay demo để luôn hiển thị tốt trên desktop và mobile.',
+    is_active: true,
+  };
+  const fallbackPrizes = [
+    { id: 'demo-point-10', name: '+10 điểm', type: 'POINT', weight: 4, metadata: { points: 10 } },
+    { id: 'demo-spin-1', name: '+1 spin', type: 'SPIN_TICKET', weight: 3, metadata: {} },
+    { id: 'demo-point-25', name: '+25 điểm', type: 'POINT', weight: 2, metadata: { points: 25 } },
+    { id: 'demo-voucher', name: 'Voucher', type: 'VOUCHER', weight: 1, metadata: {} },
+  ];
+  const displayCampaign = campaign ?? fallbackCampaign;
+  const displayPrizes = prizes.length ? prizes : fallbackPrizes;
 
   useEffect(() => {
     setToken(window.localStorage.getItem('tele-member-token'));
@@ -134,60 +146,53 @@ export default function WheelPage() {
             </Alert>
           ) : null}
 
-          {loading ? (
-            <GameSection title="Đang tải wheel..." subtitle="Dữ liệu campaign và prize đang được đồng bộ.">
-              <Stack spacing={1.5}>
-                <Skeleton width="60%" height={30} />
-                <Skeleton width="40%" />
-                <Skeleton height={220} sx={{ borderRadius: 4 }} />
-                <Skeleton height={44} />
-              </Stack>
-            </GameSection>
-          ) : (
-            <>
-              <LuckyWheelShowcase
-                prizes={prizes}
-                spins={spins}
-                spinning={spinning}
-                rotation={rotation}
-                resultName={result?.prize?.name}
-                campaignName={campaign?.name}
-                campaignDescription={campaign?.description}
-                onSpin={spin}
-                disabled={!campaign}
-              />
+          <LuckyWheelShowcase
+            prizes={displayPrizes}
+            spins={spins}
+            spinning={spinning}
+            rotation={rotation}
+            resultName={result?.prize?.name}
+            campaignName={displayCampaign.name}
+            campaignDescription={displayCampaign.description}
+            onSpin={spin}
+            disabled={!campaign || loading}
+          />
 
-              <GameSection title="Danh sách giải" subtitle="Toàn bộ giải thưởng trong campaign hiện tại.">
-                <Stack spacing={1}>
-                  {prizes.length ? (
-                    prizes.map((prize) => (
-                      <Box
-                        key={prize.id}
-                        sx={{
-                          p: 1.5,
-                          borderRadius: 2,
-                          border: '1px solid rgba(96,165,250,0.14)',
-                          bgcolor: 'rgba(59,130,246,0.06)',
-                        }}
-                      >
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-                          <Box>
-                            <Typography fontWeight={900} sx={{ color: '#f5f9ff' }}>{prize.name}</Typography>
-                            <Typography variant="body2" sx={{ color: 'rgba(229,239,255,0.68)' }}>
-                              {prize.type}
-                            </Typography>
-                          </Box>
-                          <Chip label={`x${prize.weight}`} size="small" sx={{ bgcolor: 'rgba(59,130,246,0.16)', color: '#dbeafe', border: '1px solid rgba(59,130,246,0.2)' }} />
-                        </Stack>
+          <GameSection title="Danh sách giải" subtitle="Toàn bộ giải thưởng trong campaign hiện tại.">
+            <Stack spacing={1}>
+              {displayPrizes.length ? (
+                displayPrizes.map((prize) => (
+                  <Box
+                    key={prize.id}
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 2,
+                      border: '1px solid rgba(96,165,250,0.14)',
+                      bgcolor: 'rgba(59,130,246,0.06)',
+                    }}
+                  >
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+                      <Box>
+                        <Typography fontWeight={900} sx={{ color: '#f5f9ff' }}>{prize.name}</Typography>
+                        <Typography variant="body2" sx={{ color: 'rgba(229,239,255,0.68)' }}>
+                          {prize.type}
+                        </Typography>
                       </Box>
-                    ))
-                  ) : (
-                    <Typography sx={{ color: 'rgba(229,239,255,0.68)' }}>Chưa có prize nào cho campaign này.</Typography>
-                  )}
-                </Stack>
-              </GameSection>
-            </>
-          )}
+                      <Chip label={`x${prize.weight}`} size="small" sx={{ bgcolor: 'rgba(59,130,246,0.16)', color: '#dbeafe', border: '1px solid rgba(59,130,246,0.2)' }} />
+                    </Stack>
+                  </Box>
+                ))
+              ) : (
+                <Typography sx={{ color: 'rgba(229,239,255,0.68)' }}>Chưa có prize nào cho campaign này.</Typography>
+              )}
+            </Stack>
+          </GameSection>
+
+          {loading ? (
+            <Typography sx={{ color: 'rgba(229,239,255,0.62)', textAlign: 'center', fontSize: '0.88rem' }}>
+              Đang đồng bộ dữ liệu thật, wheel demo vẫn hiển thị để không bị trống trên mobile.
+            </Typography>
+          ) : null}
         </Stack>
       </Container>
     </PageShell>
