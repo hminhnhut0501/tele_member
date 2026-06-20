@@ -129,7 +129,7 @@ export function createBotRouter(deps: {
     if (text.startsWith('/help')) {
       await deps.sendTelegramMessage(
         chatId,
-        ['Commands:', '/start', '/help', '/diemdanh', '/checkin', '/diem'].join('\n'),
+        ['Commands:', '/start', '/help', '/diemdanh', '/checkin', '/diem', '/thuong', '/vongquay'].join('\n'),
       );
       return { ok: true };
     }
@@ -145,6 +145,18 @@ export function createBotRouter(deps: {
       const summary = await deps.points.getSummary(profile.telegramId);
       await deps.sendTelegramMessage(chatId, `Số điểm hiện tại của bạn: ${summary.balance}`);
       return { ok: true, summary };
+    }
+
+    if (text.startsWith('/thuong')) {
+      const webAppUrl = process.env.NEXT_PUBLIC_WEB_APP_URL ?? 'https://tele-member.vercel.app';
+      await deps.sendTelegramMessage(chatId, `Mở Reward Store: ${webAppUrl}/rewards`);
+      return { ok: true };
+    }
+
+    if (text.startsWith('/vongquay')) {
+      const webAppUrl = process.env.NEXT_PUBLIC_WEB_APP_URL ?? 'https://tele-member.vercel.app';
+      await deps.sendTelegramMessage(chatId, `Mở Lucky Wheel: ${webAppUrl}/wheel`);
+      return { ok: true };
     }
 
     return { ok: true };

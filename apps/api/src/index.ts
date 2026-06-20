@@ -53,7 +53,7 @@ app.post('/auth/admin/login', async (request, reply) => {
 });
 
 app.addHook('onRequest', async (request, reply) => {
-  if (request.url.startsWith('/admin')) {
+  if (request.url.startsWith('/admin') || request.url.startsWith('/api/admin')) {
     await request.jwtVerify();
     const payload = request.user as { role?: string } | undefined;
     if (payload?.role !== 'admin') {
@@ -61,7 +61,7 @@ app.addHook('onRequest', async (request, reply) => {
     }
   }
 
-  if (request.url.startsWith('/me')) {
+  if (request.url.startsWith('/me') || request.url.startsWith('/api/me')) {
     await request.jwtVerify();
     const payload = request.user as { role?: string } | undefined;
     if (payload?.role !== 'telegram') {
@@ -171,6 +171,222 @@ app.get('/admin/debug/telegram-bot', async (request, reply) => {
     canReadAllGroupMessages: data.result?.can_read_all_group_messages ?? null,
     supportsInlineQueries: data.result?.supports_inline_queries ?? null,
   };
+});
+
+app.get('/api/rewards', async () => ({
+  rewards: await context.rewards.listRewards(),
+}));
+
+app.get('/api/rewards/:id', async (request, reply) => {
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  const reward = await context.rewards.getReward(params.id);
+  if (!reward) return reply.code(404).send({ message: 'Not found' });
+  return reward;
+});
+
+app.post('/api/rewards/:id/redeem', async (request, reply) => {
+  const payload = request.user as { telegramId?: string } | undefined;
+  const telegramId = payload?.telegramId;
+  if (!telegramId) return reply.code(401).send({ message: 'Unauthorized' });
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  const user = await context.points.getUserByTelegramId(telegramId);
+  if (!user) return reply.code(404).send({ message: 'User not found' });
+  return context.rewards.redeemReward({ userId: user.id, rewardId: params.id });
+});
+
+app.get('/api/me/rewards', async (request, reply) => {
+  const payload = request.user as { telegramId?: string } | undefined;
+  const telegramId = payload?.telegramId;
+  if (!telegramId) return reply.code(401).send({ message: 'Unauthorized' });
+  const user = await context.points.getUserByTelegramId(telegramId);
+  if (!user) return { rewards: [] };
+  return { rewards: await context.rewards.listMyRedemptions(user.id) };
+});
+
+app.get('/api/me/spins', async (request, reply) => {
+  const payload = request.user as { telegramId?: string } | undefined;
+  const telegramId = payload?.telegramId;
+  if (!telegramId) return reply.code(401).send({ message: 'Unauthorized' });
+  const user = await context.points.getUserByTelegramId(telegramId);
+  if (!user) return { balance: 0 };
+  const { data } = await context.supabase.from('spin_wallets').select('balance').eq('user_id', user.id).maybeSingle();
+  return { balance: data?.balance ?? 0 };
+});
+
+app.get('/api/me/spin-transactions', async (request, reply) => {
+  const payload = request.user as { telegramId?: string } | undefined;
+  const telegramId = payload?.telegramId;
+  if (!telegramId) return reply.code(401).send({ message: 'Unauthorized' });
+  const user = await context.points.getUserByTelegramId(telegramId);
+  if (!user) return { transactions: [] };
+  const { data = [] } = await context.supabase
+    .from('spin_transactions')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+  return { transactions: data };
+});
+
+app.get('/api/wheel/current', async () => {
+  const campaign = await context.wheel.getCurrentCampaign();
+  if (!campaign) return { campaign: null, prizes: [] };
+  return { campaign, prizes: await context.wheel.listCampaignPrizes(campaign.id) };
+});
+
+app.post('/api/wheel/spin', async (request, reply) => {
+  const payload = request.user as { telegramId?: string } | undefined;
+  const telegramId = payload?.telegramId;
+  if (!telegramId) return reply.code(401).send({ message: 'Unauthorized' });
+  const user = await context.points.getUserByTelegramId(telegramId);
+  if (!user) return reply.code(404).send({ message: 'User not found' });
+  const campaign = await context.wheel.getCurrentCampaign();
+  if (!campaign) return reply.code(400).send({ message: 'No active campaign' });
+  return context.wheel.spin(user.id, campaign.id);
+});
+
+app.get('/api/wheel/history', async (request, reply) => {
+  const payload = request.user as { telegramId?: string } | undefined;
+  const telegramId = payload?.telegramId;
+  if (!telegramId) return reply.code(401).send({ message: 'Unauthorized' });
+  const user = await context.points.getUserByTelegramId(telegramId);
+  if (!user) return { spins: [] };
+  return { spins: await context.wheel.listSpinHistory(user.id) };
+});
+
+app.get('/api/admin/rewards', async () => ({ rewards: await context.rewards.listRewards() }));
+
+app.post('/api/admin/rewards', async (request) => {
+  const body = z.object({
+    name: z.string().min(1),
+    description: z.string().nullable().optional(),
+    type: z.enum(['VOUCHER', 'VIP_CODE', 'SPIN_TICKET', 'POINT_BONUS', 'CUSTOM']),
+    pointCost: z.number().int().nonnegative(),
+    stock: z.number().int().nullable().optional(),
+    isActive: z.boolean().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  }).parse(request.body);
+  return context.rewards.createReward(body);
+});
+
+app.patch('/api/admin/rewards/:id', async (request) => {
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  const body = z.object({
+    name: z.string().optional(),
+    description: z.string().nullable().optional(),
+    type: z.enum(['VOUCHER', 'VIP_CODE', 'SPIN_TICKET', 'POINT_BONUS', 'CUSTOM']).optional(),
+    pointCost: z.number().int().nonnegative().optional(),
+    stock: z.number().int().nullable().optional(),
+    isActive: z.boolean().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  }).parse(request.body);
+  return context.rewards.updateReward(params.id, body);
+});
+
+app.delete('/api/admin/rewards/:id', async (request) => {
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  return context.rewards.updateReward(params.id, { isActive: false });
+});
+
+app.post('/api/admin/rewards/:id/codes/import', async (request) => {
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  const body = z.object({ codes: z.array(z.string().min(1)) }).parse(request.body);
+  return { codes: await context.rewards.importCodes(params.id, body.codes) };
+});
+
+app.get('/api/admin/rewards/:id/codes', async (request) => {
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  return { codes: await context.rewards.listCodes(params.id) };
+});
+
+app.get('/api/admin/redemptions', async (request) => {
+  const query = z.object({
+    rewardId: z.string().uuid().optional(),
+    userId: z.string().uuid().optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+  }).parse(request.query);
+  return { redemptions: await context.rewards.listAdminRedemptions(query) };
+});
+
+app.get('/api/admin/wheel/campaigns', async () => {
+  const { data = [] } = await context.supabase.from('wheel_campaigns').select('*').order('created_at', { ascending: false });
+  return { campaigns: data };
+});
+
+app.post('/api/admin/wheel/campaigns', async (request) => {
+  const body = z.object({
+    name: z.string().min(1),
+    description: z.string().nullable().optional(),
+    isActive: z.boolean().optional(),
+    startsAt: z.string().nullable().optional(),
+    endsAt: z.string().nullable().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  }).parse(request.body);
+  return context.wheel.createCampaign(body);
+});
+
+app.patch('/api/admin/wheel/campaigns/:id', async (request) => {
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  const body = z.object({
+    name: z.string().optional(),
+    description: z.string().nullable().optional(),
+    isActive: z.boolean().optional(),
+    startsAt: z.string().nullable().optional(),
+    endsAt: z.string().nullable().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  }).parse(request.body);
+  return context.wheel.updateCampaign(params.id, body);
+});
+
+app.delete('/api/admin/wheel/campaigns/:id', async (request) => {
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  return context.wheel.updateCampaign(params.id, { isActive: false });
+});
+
+app.get('/api/admin/wheel/campaigns/:id/prizes', async (request) => {
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  return { prizes: await context.wheel.listCampaignPrizes(params.id) };
+});
+
+app.post('/api/admin/wheel/campaigns/:id/prizes', async (request) => {
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  const body = z.object({
+    name: z.string().min(1),
+    type: z.enum(['POINT', 'VOUCHER', 'VIP_CODE', 'SPIN_TICKET', 'NOTHING', 'CUSTOM']),
+    weight: z.number().int().positive(),
+    stock: z.number().int().nullable().optional(),
+    isActive: z.boolean().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  }).parse(request.body);
+  return context.wheel.createPrize(params.id, body);
+});
+
+app.patch('/api/admin/wheel/prizes/:id', async (request) => {
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  const body = z.object({
+    name: z.string().optional(),
+    type: z.enum(['POINT', 'VOUCHER', 'VIP_CODE', 'SPIN_TICKET', 'NOTHING', 'CUSTOM']).optional(),
+    weight: z.number().int().positive().optional(),
+    stock: z.number().int().nullable().optional(),
+    isActive: z.boolean().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  }).parse(request.body);
+  return context.wheel.updatePrize(params.id, body);
+});
+
+app.delete('/api/admin/wheel/prizes/:id', async (request) => {
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  return context.wheel.updatePrize(params.id, { isActive: false });
+});
+
+app.get('/api/admin/wheel/spins', async (request) => {
+  const query = z.object({
+    userId: z.string().uuid().optional(),
+    campaignId: z.string().uuid().optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+  }).parse(request.query);
+  return { spins: await context.wheel.listAdminSpins(query) };
 });
 
 app.post('/admin/adjust', async (request) => {

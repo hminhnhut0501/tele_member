@@ -73,6 +73,98 @@ export const manualAdjustmentSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
+export const rewardTypeSchema = z.enum(['VOUCHER', 'VIP_CODE', 'SPIN_TICKET', 'POINT_BONUS', 'CUSTOM']);
+export const rewardStatusSchema = z.enum(['AVAILABLE', 'USED', 'EXPIRED']);
+export const redemptionStatusSchema = z.enum(['PENDING', 'COMPLETED', 'CANCELLED', 'REFUNDED']);
+export const wheelPrizeTypeSchema = z.enum(['POINT', 'VOUCHER', 'VIP_CODE', 'SPIN_TICKET', 'NOTHING', 'CUSTOM']);
+
+export const rewardSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  type: rewardTypeSchema,
+  pointCost: z.number().int(),
+  stock: z.number().int().nullable(),
+  isActive: z.boolean(),
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const rewardCodeSchema = z.object({
+  id: z.string().uuid(),
+  rewardId: z.string().uuid(),
+  code: z.string(),
+  status: rewardStatusSchema,
+  assignedTo: z.string().uuid().nullable(),
+  assignedAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+
+export const rewardRedemptionSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  rewardId: z.string().uuid(),
+  codeId: z.string().uuid().nullable(),
+  pointCost: z.number().int(),
+  status: redemptionStatusSchema,
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+});
+
+export const spinWalletSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  balance: z.number().int(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const spinTransactionSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  amount: z.number().int(),
+  type: z.enum(['REDEEM_REWARD', 'ADMIN_ADJUST', 'SPIN_USED', 'SPIN_PRIZE', 'SYSTEM_REFUND']),
+  reason: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+});
+
+export const wheelCampaignSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  isActive: z.boolean(),
+  startsAt: z.string().nullable(),
+  endsAt: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const wheelPrizeSchema = z.object({
+  id: z.string().uuid(),
+  campaignId: z.string().uuid(),
+  name: z.string(),
+  type: wheelPrizeTypeSchema,
+  weight: z.number().int(),
+  stock: z.number().int().nullable(),
+  isActive: z.boolean(),
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const wheelSpinSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  campaignId: z.string().uuid(),
+  prizeId: z.string().uuid().nullable(),
+  costSpins: z.number().int(),
+  resultMetadata: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+});
+
 export const telegramProfileSchema = z.object({
   telegramId: z.string(),
   username: z.string().nullable(),
@@ -90,3 +182,11 @@ export type AdminTransactionRow = z.infer<typeof adminTransactionRowSchema>;
 export type AdminAuditLog = z.infer<typeof adminAuditLogSchema>;
 export type ManualAdjustment = z.infer<typeof manualAdjustmentSchema>;
 export type TelegramProfile = z.infer<typeof telegramProfileSchema>;
+export type Reward = z.infer<typeof rewardSchema>;
+export type RewardCode = z.infer<typeof rewardCodeSchema>;
+export type RewardRedemption = z.infer<typeof rewardRedemptionSchema>;
+export type SpinWallet = z.infer<typeof spinWalletSchema>;
+export type SpinTransaction = z.infer<typeof spinTransactionSchema>;
+export type WheelCampaign = z.infer<typeof wheelCampaignSchema>;
+export type WheelPrize = z.infer<typeof wheelPrizeSchema>;
+export type WheelSpin = z.infer<typeof wheelSpinSchema>;
