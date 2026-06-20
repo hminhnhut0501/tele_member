@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
+import crypto from 'node:crypto';
 import { z } from 'zod';
 import {
   adminAuditLogSchema,
@@ -19,6 +20,11 @@ await app.register(jwt, { secret: process.env.JWT_SECRET ?? 'dev-secret' });
 const context = createServiceContext();
 
 app.get('/health', async () => ({ ok: true }));
+
+function fingerprint(value: string | undefined) {
+  if (!value) return null;
+  return crypto.createHash('sha256').update(value).digest('hex').slice(0, 12);
+}
 
 app.post('/auth/admin/login', async (request, reply) => {
   const body = z
@@ -120,6 +126,23 @@ app.get('/admin/audit-logs', async (request) => {
     logs,
     limit: query.limit,
     offset: query.offset,
+  };
+});
+
+app.get('/admin/debug/env', async () => {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
+  return {
+    botTokenFingerprint: fingerprint(botToken),
+    webhookSecretFingerprint: fingerprint(webhookSecret),
+    telegramBotUsername: process.env.TELEGRAM_BOT_USERNAME ?? null,
+    webAppUrl: process.env.NEXT_PUBLIC_WEB_APP_URL ?? null,
+    apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? null,
+    host: process.env.HOST ?? null,
+    port: process.env.PORT ?? null,
+    nodeEnv: process.env.NODE_ENV ?? null,
+    hasBotToken: Boolean(botToken),
+    hasWebhookSecret: Boolean(webhookSecret),
   };
 });
 
