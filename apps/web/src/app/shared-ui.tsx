@@ -155,7 +155,27 @@ export function PageShell({ children }: { children: ReactNode }) {
         minHeight: '100vh',
         bgcolor: '#081222',
         backgroundImage:
-          'radial-gradient(circle at top left, rgba(59,130,246,0.18), transparent 28%), radial-gradient(circle at top right, rgba(14,165,233,0.12), transparent 22%), radial-gradient(circle at 50% -10%, rgba(29,78,216,0.16), transparent 35%), linear-gradient(180deg, rgba(9,17,33,0.96) 0%, rgba(6,10,20,1) 100%)',
+          'radial-gradient(circle at top left, rgba(59,130,246,0.20), transparent 24%), radial-gradient(circle at top right, rgba(14,165,233,0.14), transparent 20%), radial-gradient(circle at 50% 0%, rgba(37,99,235,0.16), transparent 32%), linear-gradient(180deg, rgba(9,17,33,0.96) 0%, rgba(6,10,20,1) 100%)',
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'fixed',
+          inset: 0,
+          pointerEvents: 'none',
+          opacity: 0.22,
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)',
+          backgroundSize: '56px 56px',
+          maskImage: 'radial-gradient(circle at center, black 0%, black 60%, transparent 100%)',
+        },
+        '&::after': {
+          content: '""',
+          position: 'fixed',
+          inset: 0,
+          pointerEvents: 'none',
+          background:
+            'radial-gradient(circle at 20% 15%, rgba(255,255,255,0.06) 0%, transparent 18%), radial-gradient(circle at 80% 10%, rgba(255,255,255,0.04) 0%, transparent 16%), radial-gradient(circle at 50% 92%, rgba(255,255,255,0.05) 0%, transparent 24%)',
+        },
       }}
     >
       {children}
