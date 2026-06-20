@@ -7,7 +7,6 @@ import {
   Chip,
   Container,
   Divider,
-  Fade,
   Skeleton,
   Stack,
   Typography,
@@ -51,20 +50,18 @@ export default function MyRewardsPage() {
     <PageShell>
       <Container maxWidth="sm" sx={{ py: 3, position: 'relative' }}>
         <Stack spacing={2}>
-          <Fade in timeout={350}>
-            <AppSection
-              title="Quà đã nhận"
-              subtitle="Theo dõi voucher, VIP code và các phần thưởng bạn đã đổi."
-              accent="amber"
-              action={<HeroChip label="My Rewards" color="warning" />}
-            >
-              <Stack direction="row" spacing={1} flexWrap="wrap">
-                <Chip label={`${items.length} mục`} />
-                <Chip label="Code hiển thị khi có" />
-                <Chip label="Lịch sử đổi thưởng" />
-              </Stack>
-            </AppSection>
-          </Fade>
+          <AppSection
+            title="Quà đã nhận"
+            subtitle="Theo dõi voucher, VIP code và các phần thưởng bạn đã đổi."
+            accent="amber"
+            action={<HeroChip label="My Rewards" color="warning" />}
+          >
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Chip label={`${items.length} mục`} />
+              <Chip label="Code hiển thị khi có" />
+              <Chip label="Lịch sử đổi thưởng" />
+            </Stack>
+          </AppSection>
 
           {error ? <Alert severity="error">{error}</Alert> : null}
 

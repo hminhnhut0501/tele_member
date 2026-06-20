@@ -7,7 +7,6 @@ import {
   Chip,
   Container,
   Divider,
-  Fade,
   Skeleton,
   Stack,
   Typography,
@@ -72,19 +71,17 @@ export default function WheelPage() {
     <PageShell>
       <Container maxWidth="sm" sx={{ py: 3, position: 'relative' }}>
         <Stack spacing={2}>
-          <Fade in timeout={350}>
-            <AppSection
-              title="Vòng quay may mắn"
-              subtitle="Dùng lượt quay để nhận điểm, code, spin ticket hoặc phần thưởng đặc biệt."
-              accent="blue"
-              action={<HeroChip label="Lucky Wheel" color="info" />}
-            >
-              <Stack direction="row" spacing={1} flexWrap="wrap">
-                <Chip label={`${spins} lượt quay`} color="secondary" />
-                <Chip label={campaign?.is_active ? 'Campaign đang chạy' : 'Chưa có campaign active'} />
-              </Stack>
-            </AppSection>
-          </Fade>
+          <AppSection
+            title="Vòng quay may mắn"
+            subtitle="Dùng lượt quay để nhận điểm, code, spin ticket hoặc phần thưởng đặc biệt."
+            accent="blue"
+            action={<HeroChip label="Lucky Wheel" color="info" />}
+          >
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Chip label={`${spins} lượt quay`} color="secondary" />
+              <Chip label={campaign?.is_active ? 'Campaign đang chạy' : 'Chưa có campaign active'} />
+            </Stack>
+          </AppSection>
 
           {error ? <Alert severity="error">{error}</Alert> : null}
           {result ? <Alert severity="success">Trúng: {result.prize?.name ?? 'Không trúng'}</Alert> : null}

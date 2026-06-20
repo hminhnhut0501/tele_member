@@ -7,7 +7,6 @@ import {
   Chip,
   Container,
   Divider,
-  Fade,
   Skeleton,
   Stack,
   Typography,
@@ -86,21 +85,19 @@ export default function RewardsPage() {
     <PageShell>
       <Container maxWidth="sm" sx={{ py: 3, position: 'relative' }}>
         <Stack spacing={2}>
-          <Fade in timeout={350}>
-            <AppSection
-              title="Đổi điểm lấy quà"
-              subtitle="Chọn phần thưởng phù hợp, kiểm tra tồn kho và đổi ngay trong một chạm."
-              accent="emerald"
-              action={<HeroChip label="Reward Store" color="success" />}
-            >
-              <Stack direction="row" spacing={1} flexWrap="wrap">
-                <Chip label={`${rewards.filter((reward) => reward.is_active).length} món active`} />
-                <Chip label="Voucher" />
-                <Chip label="VIP Code" />
-                <Chip label="Spin Ticket" />
-              </Stack>
-            </AppSection>
-          </Fade>
+          <AppSection
+            title="Đổi điểm lấy quà"
+            subtitle="Chọn phần thưởng phù hợp, kiểm tra tồn kho và đổi ngay trong một chạm."
+            accent="emerald"
+            action={<HeroChip label="Reward Store" color="success" />}
+          >
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Chip label={`${rewards.filter((reward) => reward.is_active).length} món active`} />
+              <Chip label="Voucher" />
+              <Chip label="VIP Code" />
+              <Chip label="Spin Ticket" />
+            </Stack>
+          </AppSection>
 
           {error ? <Alert severity="error">{error}</Alert> : null}
           {message ? <Alert severity="success">{message}</Alert> : null}
