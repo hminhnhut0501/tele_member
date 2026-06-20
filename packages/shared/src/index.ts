@@ -29,6 +29,7 @@ export const pointSummarySchema = z.object({
   avatarUrl: z.string().nullable(),
   balance: z.number().int(),
   streak: z.number().int(),
+  lastCheckinAt: z.string().nullable(),
   transactions: z.array(pointTransactionSchema),
 });
 

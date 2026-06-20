@@ -1,7 +1,20 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Avatar, Box, Button, Card, CardContent, Chip, Container, Divider, Skeleton, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  Divider,
+  Skeleton,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { apiClient } from '../lib/api';
 
 type Summary = {
@@ -12,6 +25,7 @@ type Summary = {
   avatarUrl: string | null;
   balance: number;
   streak: number;
+  lastCheckinAt: string | null;
   transactions: Array<{
     id: string;
     amount: number;
@@ -184,6 +198,10 @@ export default function MiniAppClient() {
                 </Typography>
               </Box>
             </Stack>
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="body2" color="text.secondary">
+              Lần điểm danh gần nhất: {summary?.lastCheckinAt ? new Date(summary.lastCheckinAt).toLocaleString('vi-VN') : 'Chưa có'}
+            </Typography>
           </CardContent>
         </Card>
         <Button variant="contained" size="large" onClick={handleCheckin}>
@@ -216,7 +234,18 @@ export default function MiniAppClient() {
                   </Card>
                 ))
               ) : (
-                <Typography color="text.secondary">Chưa có giao dịch.</Typography>
+                <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
+                  <CardContent>
+                    <Stack spacing={1.5} alignItems="center" textAlign="center" sx={{ py: 2 }}>
+                      <Typography variant="h6" fontWeight={700}>
+                        Chưa có giao dịch
+                      </Typography>
+                      <Typography color="text.secondary">
+                        Khi bạn điểm danh hoặc nhận thưởng, lịch sử sẽ xuất hiện ở đây.
+                      </Typography>
+                    </Stack>
+                  </CardContent>
+                </Card>
               )}
             </Stack>
           </CardContent>

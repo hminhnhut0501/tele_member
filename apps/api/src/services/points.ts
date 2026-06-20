@@ -99,6 +99,7 @@ export function createPointService(supabase: any) {
         avatarUrl: null,
         balance: 0,
         streak: 0,
+        lastCheckinAt: null,
         transactions: [],
       };
     }
@@ -115,6 +116,7 @@ export function createPointService(supabase: any) {
       avatarUrl: user.avatar_url ?? null,
       balance: wallet?.balance ?? 0,
       streak: latestCheckin?.streak ?? 0,
+      lastCheckinAt: latestCheckin?.created_at ?? null,
       transactions: transactions,
     };
   }

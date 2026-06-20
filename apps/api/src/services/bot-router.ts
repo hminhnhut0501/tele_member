@@ -52,34 +52,35 @@ export function createBotRouter(deps: {
 
     if (text.startsWith('/start')) {
       await deps.points.upsertUser(profile);
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      const webAppUrl = process.env.NEXT_PUBLIC_WEB_APP_URL ?? 'https://tele-member.vercel.app';
       await deps.sendTelegramMessage(
         chatId,
         [
           'Chào mừng bạn đến với Tele Member.',
-          'Bấm Open App để mở mini app và xem dashboard của bạn.',
-          'Commands:',
-          '/help - xem hướng dẫn',
-          '/diemdanh hoặc /checkin - nhận điểm mỗi ngày',
-          '/diem - xem số điểm hiện tại',
+          'Bấm nút bên dưới để mở mini app và xem dashboard của bạn.',
         ].join('\n'),
       );
-      const token = process.env.TELEGRAM_BOT_TOKEN;
       if (token) {
         await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             chat_id: chatId,
-            text: 'Open your app:',
+            text: 'Open App',
             reply_markup: {
               inline_keyboard: [
                 [
                   {
                     text: 'Open App',
                     web_app: {
-                      url: process.env.NEXT_PUBLIC_WEB_APP_URL ?? 'https://tele-member.vercel.app',
+                      url: webAppUrl,
                     },
                   },
+                ],
+                [
+                  { text: 'Điểm danh', callback_data: 'checkin' },
+                  { text: 'Xem điểm', callback_data: 'points' },
                 ],
               ],
             },
@@ -90,7 +91,10 @@ export function createBotRouter(deps: {
     }
 
     if (text.startsWith('/help')) {
-      await deps.sendTelegramMessage(chatId, ['/start', '/help', '/diemdanh', '/checkin', '/diem'].join('\n'));
+      await deps.sendTelegramMessage(
+        chatId,
+        ['Commands:', '/start', '/help', '/diemdanh', '/checkin', '/diem'].join('\n'),
+      );
       return { ok: true };
     }
 
