@@ -3,16 +3,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
-  Box,
-  Chip,
   Container,
-  Divider,
   Skeleton,
   Stack,
+  Box,
+  Chip,
   Typography,
 } from '@mui/material';
 import { apiClient } from '../../lib/api';
 import { AppSection, HeroChip, PageShell, SectionButton } from '../shared-ui';
+import { LuckyWheelShowcase } from './lucky-wheel-showcase';
 
 export default function WheelPage() {
   const [token, setToken] = useState<string | null>(null);
@@ -23,6 +23,7 @@ export default function WheelPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
+  const [rotation, setRotation] = useState(0);
   const client = useMemo(() => apiClient(token), [token]);
 
   useEffect(() => {
@@ -56,8 +57,16 @@ export default function WheelPage() {
       setError('');
       setResult(null);
       setSpinning(true);
+      setRotation((value) => value + 1440 + Math.floor(Math.random() * 720));
       const data = await client.spinWheel();
       setResult(data);
+      const prizeId = data?.prize?.id;
+      const prizeIndex = prizes.findIndex((prize) => prize.id === prizeId);
+      if (prizeIndex >= 0) {
+        const segmentAngle = 360 / Math.max(prizes.length, 1);
+        const finalAngle = 360 - (prizeIndex * segmentAngle + segmentAngle / 2);
+        setRotation((value) => value + finalAngle);
+      }
       const spinData = await client.getMySpins();
       setSpins(spinData.balance ?? 0);
     } catch (err) {
@@ -74,12 +83,28 @@ export default function WheelPage() {
           <AppSection
             title="Vòng quay may mắn"
             subtitle="Dùng lượt quay để nhận điểm, code, spin ticket hoặc phần thưởng đặc biệt."
-            accent="blue"
+            accent="amber"
             action={<HeroChip label="Lucky Wheel" color="info" />}
           >
             <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Chip label={`${spins} lượt quay`} color="secondary" />
-              <Chip label={campaign?.is_active ? 'Campaign đang chạy' : 'Chưa có campaign active'} />
+              <Chip
+                label={`${spins} lượt quay`}
+                sx={{
+                  bgcolor: 'rgba(245, 158, 11, 0.12)',
+                  color: '#92400e',
+                  fontWeight: 800,
+                  border: '1px solid rgba(245, 158, 11, 0.18)',
+                }}
+              />
+              <Chip
+                label={campaign?.is_active ? 'Campaign đang chạy' : 'Chưa có campaign active'}
+                sx={{
+                  bgcolor: campaign?.is_active ? 'rgba(16, 185, 129, 0.12)' : 'rgba(148, 163, 184, 0.12)',
+                  color: campaign?.is_active ? '#065f46' : '#334155',
+                  fontWeight: 800,
+                  border: '1px solid rgba(0,0,0,0.06)',
+                }}
+              />
             </Stack>
           </AppSection>
 
@@ -97,65 +122,19 @@ export default function WheelPage() {
             </AppSection>
           ) : (
             <>
-              <AppSection
-                title={campaign?.name ?? 'Chưa có campaign'}
-                subtitle={campaign?.description ?? 'Admin chưa kích hoạt campaign hiện tại.'}
-                accent="blue"
-                action={<Chip label={`${spins} spins`} color="secondary" />}
-              >
-                <Stack spacing={2}>
-                  <Box
-                    sx={{
-                      position: 'relative',
-                      aspectRatio: '1 / 1',
-                      borderRadius: '50%',
-                      background:
-                        'conic-gradient(from 180deg, #2563eb 0deg, #06b6d4 72deg, #10b981 144deg, #f59e0b 216deg, #f43f5e 288deg, #2563eb 360deg)',
-                      p: '10px',
-                      mx: 'auto',
-                      width: '100%',
-                      maxWidth: 320,
-                      boxShadow: 'inset 0 0 0 12px rgba(255,255,255,0.95), 0 24px 54px rgba(15, 23, 42, 0.14)',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        borderRadius: '50%',
-                        bgcolor: 'rgba(255,255,255,0.96)',
-                        display: 'grid',
-                        placeItems: 'center',
-                        textAlign: 'center',
-                        p: 3,
-                      }}
-                    >
-                      <Stack spacing={1} alignItems="center">
-                        <Typography variant="overline" color="text.secondary">
-                          SPIN WHEEL
-                        </Typography>
-                        <Typography variant="h5" fontWeight={900}>
-                          {spinning ? 'Đang quay...' : 'Sẵn sàng'}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Lượt quay hiện có: {spins}
-                        </Typography>
-                        <SectionButton
-                          variant="contained"
-                          disabled={!spins || !campaign || spinning}
-                          onClick={spin}
-                          sx={{ mt: 1, px: 3, py: 1.2 }}
-                        >
-                          {spinning ? 'Đang xử lý...' : 'Quay ngay'}
-                        </SectionButton>
-                      </Stack>
-                    </Box>
-                  </Box>
-                </Stack>
-              </AppSection>
+              <LuckyWheelShowcase
+                prizes={prizes}
+                spins={spins}
+                spinning={spinning}
+                rotation={rotation}
+                resultName={result?.prize?.name}
+                campaignName={campaign?.name}
+                campaignDescription={campaign?.description}
+                onSpin={spin}
+                disabled={!campaign}
+              />
 
               <AppSection title="Danh sách giải" subtitle="Toàn bộ giải thưởng trong campaign hiện tại." accent="violet">
-                <Divider sx={{ my: 2 }} />
                 <Stack spacing={1}>
                   {prizes.length ? (
                     prizes.map((prize) => (
