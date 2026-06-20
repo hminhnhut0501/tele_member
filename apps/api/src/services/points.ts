@@ -91,15 +91,30 @@ export function createPointService(supabase: any) {
   async function getSummary(telegramId: string) {
     const user = await getUserByTelegramId(telegramId);
     if (!user) {
-      return { telegramId, balance: 0, transactions: [] };
+      return {
+        telegramId,
+        username: null,
+        firstName: null,
+        lastName: null,
+        avatarUrl: null,
+        balance: 0,
+        streak: 0,
+        transactions: [],
+      };
     }
 
     const wallet = await getWalletByUserId(user.id);
     const transactions = await repos.transactions.listByUserId(user.id);
+    const latestCheckin = await repos.checkins.findLatestByUser(user.id);
 
     return {
       telegramId,
+      username: user.username ?? null,
+      firstName: user.first_name ?? null,
+      lastName: user.last_name ?? null,
+      avatarUrl: user.avatar_url ?? null,
       balance: wallet?.balance ?? 0,
+      streak: latestCheckin?.streak ?? 0,
       transactions: transactions,
     };
   }

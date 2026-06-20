@@ -23,7 +23,12 @@ export const pointTransactionSchema = z.object({
 
 export const pointSummarySchema = z.object({
   telegramId: z.string(),
+  username: z.string().nullable(),
+  firstName: z.string().nullable(),
+  lastName: z.string().nullable(),
+  avatarUrl: z.string().nullable(),
   balance: z.number().int(),
+  streak: z.number().int(),
   transactions: z.array(pointTransactionSchema),
 });
 

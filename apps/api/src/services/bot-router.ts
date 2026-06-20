@@ -33,6 +33,7 @@ export function createBotRouter(deps: {
     getSummary(telegramId: string): Promise<any>;
   };
   sendTelegramMessage(chatId: string | number, text: string): Promise<void>;
+  createWebAppButton?(): any;
 }) {
   async function handleWebhook(update: TelegramUpdate) {
     const text = extractMessageText(update);
@@ -55,12 +56,36 @@ export function createBotRouter(deps: {
         chatId,
         [
           'Chào mừng bạn đến với Tele Member.',
+          'Bấm Open App để mở mini app và xem dashboard của bạn.',
           'Commands:',
           '/help - xem hướng dẫn',
           '/diemdanh hoặc /checkin - nhận điểm mỗi ngày',
           '/diem - xem số điểm hiện tại',
         ].join('\n'),
       );
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      if (token) {
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: 'Open your app:',
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: 'Open App',
+                    web_app: {
+                      url: process.env.NEXT_PUBLIC_WEB_APP_URL ?? 'https://tele-member.vercel.app',
+                    },
+                  },
+                ],
+              ],
+            },
+          }),
+        });
+      }
       return { ok: true };
     }
 

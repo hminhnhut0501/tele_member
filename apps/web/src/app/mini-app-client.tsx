@@ -1,12 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Card, CardContent, Chip, Container, Divider, Stack, Typography } from '@mui/material';
+import { Alert, Avatar, Box, Button, Card, CardContent, Chip, Container, Divider, Skeleton, Stack, Typography } from '@mui/material';
 import { apiClient } from '../lib/api';
 
 type Summary = {
   telegramId: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  avatarUrl: string | null;
   balance: number;
+  streak: number;
   transactions: Array<{
     id: string;
     amount: number;
@@ -81,12 +86,34 @@ export default function MiniAppClient() {
 
   if (status === 'loading') {
     return (
-      <Container maxWidth="sm" sx={{ py: 6 }}>
-        <Card>
-          <CardContent>
-            <Typography>Đang đăng nhập Telegram...</Typography>
-          </CardContent>
-        </Card>
+      <Container maxWidth="sm" sx={{ py: 4 }}>
+        <Stack spacing={2}>
+          <Card>
+            <CardContent>
+              <Stack spacing={2} direction="row" alignItems="center">
+                <Skeleton variant="circular" width={56} height={56} />
+                <Box sx={{ flex: 1 }}>
+                  <Skeleton width="60%" height={28} />
+                  <Skeleton width="35%" />
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <Skeleton width="30%" />
+              <Skeleton width="50%" height={72} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <Skeleton width="40%" />
+              <Skeleton width="100%" height={48} />
+              <Skeleton width="100%" height={48} />
+              <Skeleton width="100%" height={48} />
+            </CardContent>
+          </Card>
+        </Stack>
       </Container>
     );
   }
@@ -94,7 +121,25 @@ export default function MiniAppClient() {
   if (status === 'error') {
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
-        <Alert severity="error">{error}</Alert>
+        <Card sx={{ borderRadius: 4 }}>
+          <CardContent>
+            <Stack spacing={2} alignItems="flex-start">
+              <Alert severity="error" sx={{ width: '100%' }}>
+                {error}
+              </Alert>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  setError('');
+                  setStatus('loading');
+                  window.location.reload();
+                }}
+              >
+                Thử lại
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
       </Container>
     );
   }
@@ -102,16 +147,43 @@ export default function MiniAppClient() {
   return (
     <Container maxWidth="sm" sx={{ py: 4 }}>
       <Stack spacing={2}>
-        <Typography variant="h4" fontWeight={800}>
-          Tele Member
-        </Typography>
-        <Chip label={`Telegram ID: ${summary?.telegramId ?? '-'}`} />
         <Card>
           <CardContent>
-            <Typography color="text.secondary">Điểm hiện tại</Typography>
-            <Typography variant="h2" fontWeight={800}>
-              {summary?.balance ?? 0}
-            </Typography>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Avatar
+                src={summary?.avatarUrl ?? undefined}
+                sx={{ width: 56, height: 56, bgcolor: 'primary.main', fontWeight: 700 }}
+              >
+                {(summary?.firstName?.[0] ?? summary?.username?.[0] ?? 'T').toUpperCase()}
+              </Avatar>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="h5" fontWeight={800} noWrap>
+                  {[summary?.firstName, summary?.lastName].filter(Boolean).join(' ') || summary?.username || 'Tele Member'}
+                </Typography>
+                <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
+                  <Chip size="small" label={`@${summary?.username ?? 'unknown'}`} />
+                  <Chip size="small" label={`ID ${summary?.telegramId ?? '-'}`} />
+                </Stack>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <Stack direction="row" spacing={2} justifyContent="space-between">
+              <Box>
+                <Typography color="text.secondary">Điểm hiện tại</Typography>
+                <Typography variant="h2" fontWeight={800}>
+                  {summary?.balance ?? 0}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography color="text.secondary">Streak</Typography>
+                <Typography variant="h2" fontWeight={800}>
+                  {summary?.streak ?? 0}
+                </Typography>
+              </Box>
+            </Stack>
           </CardContent>
         </Card>
         <Button variant="contained" size="large" onClick={handleCheckin}>
@@ -127,12 +199,19 @@ export default function MiniAppClient() {
                 summary.transactions.map((tx) => (
                   <Card key={tx.id} variant="outlined">
                     <CardContent>
-                      <Typography fontWeight={700}>
-                        {tx.type.toUpperCase()} {tx.amount}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {tx.reason} | {tx.createdAt}
-                      </Typography>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+                        <Box>
+                          <Typography fontWeight={700}>
+                            {tx.type.toUpperCase()} {tx.amount}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {tx.reason}
+                          </Typography>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {tx.createdAt}
+                        </Typography>
+                      </Stack>
                     </CardContent>
                   </Card>
                 ))
