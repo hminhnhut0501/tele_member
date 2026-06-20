@@ -45,8 +45,19 @@ type DebugInfo = {
   platform: string;
   version: string;
   userAgent: string;
+  href: string;
+  referrer: string;
+  hash: string;
   initDataUnsafe: Record<string, unknown> | null;
 };
+
+type BootIssue =
+  | 'none'
+  | 'no_telegram_object'
+  | 'no_webapp_bridge'
+  | 'empty_init_data'
+  | 'auth_failed'
+  | 'unknown_error';
 
 function sanitizeInitDataUnsafe(value: any) {
   if (!value || typeof value !== 'object') return null;
@@ -77,6 +88,7 @@ export default function MiniAppClient() {
   const client = useMemo(() => apiClient(), []);
   const [status, setStatus] = useState<'loading' | 'ready' | 'not-telegram' | 'error'>('loading');
   const [error, setError] = useState('');
+  const [bootIssue, setBootIssue] = useState<BootIssue>('none');
   const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
@@ -85,6 +97,32 @@ export default function MiniAppClient() {
   const debugEnabled = process.env.NEXT_PUBLIC_DEBUG_WEBAPP === 'true';
 
   const bridgeReady = Boolean(debugInfo?.hasTelegram && debugInfo?.hasWebApp && (debugInfo?.initDataLength ?? 0) > 0);
+
+  function getFallbackInitData() {
+    const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+    if (!hash) return '';
+
+    const params = new URLSearchParams(hash);
+    const direct = params.get('tgWebAppData') ?? params.get('initData') ?? '';
+    return direct ? decodeURIComponent(direct) : '';
+  }
+
+  function getBootIssueMessage(issue: BootIssue) {
+    switch (issue) {
+      case 'no_telegram_object':
+        return 'Trang này đang mở ngoài Telegram, nên `window.Telegram` không tồn tại.';
+      case 'no_webapp_bridge':
+        return 'Telegram có mở trang, nhưng chưa inject được WebApp bridge.';
+      case 'empty_init_data':
+        return 'Bridge có tồn tại nhưng `initData` rỗng. Thường là Telegram desktop/app mở sai luồng hoặc app chưa nhận context.';
+      case 'auth_failed':
+        return 'Bridge đã có dữ liệu, nhưng server từ chối xác thực `initData`. Có thể token/bot hoặc chữ ký đang lệch.';
+      case 'unknown_error':
+        return 'Có lỗi không xác định trong lúc khởi tạo WebApp.';
+      default:
+        return 'Sẵn sàng.';
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -109,8 +147,13 @@ export default function MiniAppClient() {
         const readyWebApp = await waitForBridge();
         if (cancelled) return;
 
+        const fallbackInitData = readyWebApp?.initData ? '' : getFallbackInitData();
+        const initData = readyWebApp?.initData || fallbackInitData || '';
         const initDataUnsafe = sanitizeInitDataUnsafe(readyWebApp?.initDataUnsafe ?? null);
         const userAgent = window.navigator.userAgent;
+        const href = window.location.href;
+        const referrer = window.document.referrer;
+        const hash = window.location.hash;
         if (debugEnabled) {
           console.debug('[webapp debug] Telegram WebApp bridge', {
             hasTelegram: Boolean(telegram),
@@ -118,20 +161,36 @@ export default function MiniAppClient() {
             platform: readyWebApp?.platform ?? 'unknown',
             version: readyWebApp?.version ?? 'unknown',
             userAgent,
+            href,
+            referrer,
+            hash,
+            fallbackInitDataLength: fallbackInitData.length,
             initDataUnsafe,
           });
         }
         setDebugInfo({
           hasTelegram: Boolean(telegram),
           hasWebApp: Boolean(readyWebApp),
-          initDataLength: readyWebApp?.initData?.length ?? 0,
+          initDataLength: initData.length,
           platform: readyWebApp?.platform ?? 'unknown',
           version: readyWebApp?.version ?? 'unknown',
           userAgent,
+          href,
+          referrer,
+          hash,
           initDataUnsafe,
         });
 
-        const initData = readyWebApp?.initData ?? '';
+        if (!telegram) {
+          setBootIssue('no_telegram_object');
+        } else if (!readyWebApp) {
+          setBootIssue('no_webapp_bridge');
+        } else if (!initData) {
+          setBootIssue('empty_init_data');
+        } else {
+          setBootIssue('none');
+        }
+
         if (!initData) {
           setError('Telegram WebApp bridge chưa sẵn sàng hoặc không được inject.');
           setStatus('not-telegram');
@@ -151,6 +210,7 @@ export default function MiniAppClient() {
         setStatus('ready');
       } catch (err) {
         if (cancelled) return;
+        setBootIssue('auth_failed');
         setError('Không thể xác thực Telegram WebApp.');
         setStatus('error');
       }
@@ -203,6 +263,9 @@ export default function MiniAppClient() {
             <Typography variant="body2">initDataLength: {debugInfo?.initDataLength ?? 0}</Typography>
             <Typography variant="body2">platform: {debugInfo?.platform ?? 'unknown'}</Typography>
             <Typography variant="body2">version: {debugInfo?.version ?? 'unknown'}</Typography>
+            <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>href: {debugInfo?.href ?? 'unknown'}</Typography>
+            <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>referrer: {debugInfo?.referrer ?? 'unknown'}</Typography>
+            <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>hash: {debugInfo?.hash ?? 'unknown'}</Typography>
             <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
               userAgent: {debugInfo?.userAgent ?? 'unknown'}
             </Typography>
@@ -276,16 +339,24 @@ export default function MiniAppClient() {
               </Stack>
               <Typography variant="h5" fontWeight={800}>Mở trong Telegram để tiếp tục</Typography>
               <Typography color="text.secondary">
-                Mini app này cần được khởi chạy từ nút <strong>Open App</strong> trong bot để Telegram gửi `initData`.
+                {getBootIssueMessage(bootIssue)}
               </Typography>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                 <Button variant="contained" onClick={() => { setError(''); setStatus('loading'); window.location.reload(); }} sx={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)' }}>Thử lại</Button>
                 <Button variant="outlined" onClick={() => navigator.clipboard?.writeText(window.location.href)}>Copy link</Button>
+                {debugEnabled ? (
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigator.clipboard?.writeText(JSON.stringify(debugInfo ?? { bootIssue, error }, null, 2))}
+                  >
+                    Copy debug
+                  </Button>
+                ) : null}
               </Stack>
               <Card variant="outlined" sx={{ bgcolor: 'rgba(15,118,110,0.04)' }}>
                 <CardContent>
                   <Typography variant="subtitle2" fontWeight={700} gutterBottom>Cách mở đúng</Typography>
-                  <Typography variant="body2" color="text.secondary">1. Quay lại bot Telegram<br />2. Gõ /start<br />3. Bấm Open App</Typography>
+                  <Typography variant="body2" color="text.secondary">1. Quay lại bot Telegram<br />2. Gõ /start<br />3. Bấm Open App<br />4. Nếu vẫn lỗi, gửi cho mình JSON debug bên dưới</Typography>
                 </CardContent>
               </Card>
               {renderDebugCard()}
@@ -303,11 +374,19 @@ export default function MiniAppClient() {
           <CardContent>
             <Stack spacing={2}>
               <Typography variant="h5" fontWeight={800}>Có lỗi xảy ra</Typography>
-              <Typography color="text.secondary">Mình không thể xác thực Telegram WebApp ngay lúc này. Bạn có thể thử lại hoặc mở lại từ bot.</Typography>
+              <Typography color="text.secondary">{getBootIssueMessage(bootIssue)}</Typography>
               <Alert severity="error">{error}</Alert>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                 <Button variant="contained" onClick={() => { setError(''); setStatus('loading'); window.location.reload(); }} sx={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)' }}>Thử lại</Button>
                 <Button variant="outlined" onClick={() => navigator.clipboard?.writeText(window.location.href)}>Copy link</Button>
+                {debugEnabled ? (
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigator.clipboard?.writeText(JSON.stringify(debugInfo ?? { bootIssue, error }, null, 2))}
+                  >
+                    Copy debug
+                  </Button>
+                ) : null}
               </Stack>
               {renderDebugCard()}
             </Stack>
