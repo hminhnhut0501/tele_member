@@ -10,14 +10,15 @@ export function createAdminService(supabase: any, points: any) {
       builder = builder.or(`telegram_id.ilike.%${query.q}%,username.ilike.%${query.q}%,first_name.ilike.%${query.q}%,last_name.ilike.%${query.q}%`);
     }
 
-    const { data = [] } = await builder;
-    const userIds = data.map((row: any) => row.id);
+    const { data } = await builder;
+    const users = data ?? [];
+    const userIds = users.map((row: any) => row.id);
     const [{ data: wallets = [] }, { data: checkins = [] }] = await Promise.all([
       supabase.from('point_wallets').select('user_id, balance').in('user_id', userIds),
       supabase.from('daily_checkins').select('user_id, checkin_date').in('user_id', userIds).order('checkin_date', { ascending: false }),
     ]);
 
-    return data.map((row: any) => ({
+    return users.map((row: any) => ({
       id: row.id,
       telegramId: row.telegram_id,
       username: row.username,
@@ -42,8 +43,9 @@ export function createAdminService(supabase: any, points: any) {
       builder = builder.or(`reason.ilike.%${query.q}%,type.ilike.%${query.q}%`);
     }
 
-    const { data = [] } = await builder;
-    return data.map((row: any) => ({
+    const { data } = await builder;
+    const transactions = data ?? [];
+    return transactions.map((row: any) => ({
       id: row.id,
       userId: row.user_id,
       amount: row.amount,
@@ -59,13 +61,14 @@ export function createAdminService(supabase: any, points: any) {
   }
 
   async function listAuditLogs(query: { limit: number; offset: number }) {
-    const { data = [] } = await supabase
+    const { data } = await supabase
       .from('admin_audit_logs')
       .select('*')
       .order('created_at', { ascending: false })
       .range(query.offset, query.offset + query.limit - 1);
 
-    return data.map((row: any) => ({
+    const logs = data ?? [];
+    return logs.map((row: any) => ({
       id: row.id,
       actorEmail: row.actor_email,
       action: row.action,
