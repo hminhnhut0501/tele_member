@@ -109,6 +109,7 @@ export function createPointService(supabase: any) {
     amount: number;
     reason: string;
     metadata?: Record<string, unknown>;
+    actorEmail?: string;
   }) {
     const user = await upsertUser({
       telegramId: input.telegramId,

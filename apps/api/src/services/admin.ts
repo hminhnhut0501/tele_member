@@ -58,9 +58,45 @@ export function createAdminService(supabase: any, points: any) {
     }));
   }
 
-  async function adjustPoints(input: { telegramId: string; amount: number; reason: string; metadata?: Record<string, unknown> }) {
-    return points.adjustBalance(input);
+  async function listAuditLogs(query: { limit: number; offset: number }) {
+    const { data = [] } = await supabase
+      .from('admin_audit_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(query.offset, query.offset + query.limit - 1);
+
+    return data.map((row: any) => ({
+      id: row.id,
+      actorEmail: row.actor_email,
+      action: row.action,
+      targetTelegramId: row.target_telegram_id,
+      metadata: row.metadata ?? {},
+      createdAt: row.created_at,
+    }));
   }
 
-  return { listUsers, listTransactions, adjustPoints };
+  async function adjustPoints(input: {
+    telegramId: string;
+    amount: number;
+    reason: string;
+    metadata?: Record<string, unknown>;
+    actorEmail?: string;
+  }) {
+    const result = await points.adjustBalance(input);
+    if (input.actorEmail) {
+      await supabase.from('admin_audit_logs').insert({
+        actor_email: input.actorEmail,
+        action: 'adjust_points',
+        target_telegram_id: input.telegramId,
+        metadata: {
+          amount: input.amount,
+          reason: input.reason,
+          ...input.metadata,
+        },
+      });
+    }
+    return result;
+  }
+
+  return { listUsers, listTransactions, listAuditLogs, adjustPoints };
 }

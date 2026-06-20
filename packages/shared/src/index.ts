@@ -49,6 +49,15 @@ export const adminTransactionRowSchema = pointTransactionSchema.extend({
   lastName: z.string().nullable(),
 });
 
+export const adminAuditLogSchema = z.object({
+  id: z.string().uuid(),
+  actorEmail: z.string().email(),
+  action: z.string(),
+  targetTelegramId: z.string().nullable(),
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+});
+
 export const manualAdjustmentSchema = z.object({
   telegramId: z.string().min(1),
   amount: z.number().int().refine((value) => value !== 0, 'Amount must not be zero'),
@@ -70,5 +79,6 @@ export type PointSummary = z.infer<typeof pointSummarySchema>;
 export type CheckinResponse = z.infer<typeof checkinResponseSchema>;
 export type AdminUserRow = z.infer<typeof adminUserRowSchema>;
 export type AdminTransactionRow = z.infer<typeof adminTransactionRowSchema>;
+export type AdminAuditLog = z.infer<typeof adminAuditLogSchema>;
 export type ManualAdjustment = z.infer<typeof manualAdjustmentSchema>;
 export type TelegramProfile = z.infer<typeof telegramProfileSchema>;

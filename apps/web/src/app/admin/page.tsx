@@ -47,9 +47,13 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [transactions, setTransactions] = useState<AdminTransaction[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [telegramId, setTelegramId] = useState('');
   const [amount, setAmount] = useState(10);
   const [reason, setReason] = useState('manual_adjustment');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(0);
+  const pageSize = 20;
   const client = apiClient(token);
 
   useEffect(() => {
@@ -60,14 +64,18 @@ export default function AdminPage() {
   useEffect(() => {
     if (!token) return;
     client
-      .getUsers('')
+      .getUsers(search, page * pageSize, pageSize)
       .then((data) => setUsers(data.users ?? data))
       .catch((err) => setError(String(err)));
     client
-      .getTransactions('')
+      .getTransactions(search, page * pageSize, pageSize)
       .then((data) => setTransactions(data.transactions ?? data))
       .catch((err) => setError(String(err)));
-  }, [token]);
+    client
+      .getAuditLogs(page * pageSize, pageSize)
+      .then((data) => setAuditLogs(data.logs ?? data))
+      .catch((err) => setError(String(err)));
+  }, [token, search, page]);
 
   async function handleLogin() {
     try {
@@ -83,10 +91,12 @@ export default function AdminPage() {
   async function handleAdjust() {
     try {
       await client.adjust({ telegramId, amount: Number(amount), reason });
-      const updated = await client.getUsers('');
-      const refreshed = await client.getTransactions('');
+      const updated = await client.getUsers(search, page * pageSize, pageSize);
+      const refreshed = await client.getTransactions(search, page * pageSize, pageSize);
+      const logs = await client.getAuditLogs(page * pageSize, pageSize);
       setUsers(updated.users ?? updated);
       setTransactions(refreshed.transactions ?? refreshed);
+      setAuditLogs(logs.logs ?? logs);
       setError('');
     } catch (err) {
       setError('Cập nhật điểm thất bại');
@@ -127,6 +137,15 @@ export default function AdminPage() {
           Admin Control Panel
         </Typography>
         {error ? <Alert severity="warning">{error}</Alert> : null}
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
+          <TextField fullWidth label="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Button variant="outlined" onClick={() => setPage((value) => Math.max(0, value - 1))}>
+            Prev
+          </Button>
+          <Button variant="outlined" onClick={() => setPage((value) => value + 1)}>
+            Next
+          </Button>
+        </Stack>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
           <Card>
             <CardContent>
@@ -190,8 +209,25 @@ export default function AdminPage() {
             </Stack>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent>
+            <Typography variant="h6">Audit Logs</Typography>
+            <Divider sx={{ my: 2 }} />
+            <Stack spacing={1}>
+              {auditLogs.map((log) => (
+                <Box key={log.id} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                  <Typography fontWeight={700}>
+                    {log.action} - {log.actorEmail}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {log.targetTelegramId ?? '-'} | {log.createdAt}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
+          </CardContent>
+        </Card>
       </Stack>
     </Container>
   );
 }
-

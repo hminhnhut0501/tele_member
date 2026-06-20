@@ -24,8 +24,17 @@ export function apiClient(token?: string | null) {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       }),
-    getUsers: (q = '') => request(`/admin/users?q=${encodeURIComponent(q)}`, {}, token),
-    getTransactions: (q = '') => request(`/admin/transactions?q=${encodeURIComponent(q)}`, {}, token),
+    telegramLogin: (initData: string) =>
+      request('/auth/telegram/webapp', {
+        method: 'POST',
+        body: JSON.stringify({ initData }),
+      }),
+    getUsers: (q = '', offset = 0, limit = 20) =>
+      request(`/admin/users?q=${encodeURIComponent(q)}&offset=${offset}&limit=${limit}`, {}, token),
+    getTransactions: (q = '', offset = 0, limit = 20) =>
+      request(`/admin/transactions?q=${encodeURIComponent(q)}&offset=${offset}&limit=${limit}`, {}, token),
+    getAuditLogs: (offset = 0, limit = 20) =>
+      request(`/admin/audit-logs?offset=${offset}&limit=${limit}`, {}, token),
     adjust: (payload: { telegramId: string; amount: number; reason: string }) =>
       request('/admin/adjust', {
         method: 'POST',
@@ -33,4 +42,3 @@ export function apiClient(token?: string | null) {
       }, token),
   };
 }
-

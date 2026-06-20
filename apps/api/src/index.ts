@@ -3,11 +3,13 @@ import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import { z } from 'zod';
 import {
+  adminAuditLogSchema,
   checkinResponseSchema,
   manualAdjustmentSchema,
   pointSummarySchema,
 } from '@tele-member/shared';
 import { createServiceContext } from './services/context.js';
+import { validateTelegramWebAppInitData } from './lib/telegram-webapp.js';
 
 const app = Fastify({ logger: true });
 
@@ -32,6 +34,13 @@ app.post('/auth/admin/login', async (request, reply) => {
   ) {
     return reply.code(401).send({ message: 'Invalid credentials' });
   }
+
+  await context.supabase.from('admin_audit_logs').insert({
+    actor_email: body.email,
+    action: 'admin_login',
+    target_telegram_id: null,
+    metadata: {},
+  });
 
   const token = await reply.jwtSign({ role: 'admin', email: body.email });
   return { token };
@@ -91,10 +100,57 @@ app.get('/admin/transactions', async (request) => {
   };
 });
 
+app.get('/admin/audit-logs', async (request) => {
+  const query = z
+    .object({
+      limit: z.coerce.number().int().min(1).max(100).default(50),
+      offset: z.coerce.number().int().min(0).default(0),
+    })
+    .parse(request.query);
+  const logs = await context.admin.listAuditLogs(query);
+  return {
+    logs,
+    limit: query.limit,
+    offset: query.offset,
+  };
+});
+
 app.post('/admin/adjust', async (request) => {
   const body = manualAdjustmentSchema.parse(request.body);
-  const result = await context.admin.adjustPoints(body);
+  const auth = (request.user as { email?: string } | undefined)?.email;
+  const result = await context.admin.adjustPoints({ ...body, actorEmail: auth });
   return result;
+});
+
+app.post('/auth/telegram/webapp', async (request, reply) => {
+  const body = z
+    .object({
+      initData: z.string().min(1),
+    })
+    .parse(request.body);
+
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) {
+    return reply.code(500).send({ message: 'Missing bot token' });
+  }
+
+  const payload = validateTelegramWebAppInitData(body.initData, botToken);
+  if (!payload?.user?.id) {
+    return reply.code(401).send({ message: 'Invalid Telegram WebApp initData' });
+  }
+
+  const telegramId = String(payload.user.id);
+  const profile = {
+    telegramId,
+    username: payload.user.username ?? null,
+    firstName: payload.user.first_name ?? null,
+    lastName: payload.user.last_name ?? null,
+    avatarUrl: payload.user.photo_url ?? null,
+  };
+
+  await context.points.upsertUser(profile);
+  const token = await reply.jwtSign({ role: 'telegram', telegramId });
+  return { token, telegramId };
 });
 
 app.post('/bot/webhook', async (request) => {
