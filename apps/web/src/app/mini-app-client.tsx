@@ -1,7 +1,7 @@
 'use client';
 
 import { Component, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Alert, Avatar, Box, Button, Chip, Container, Divider, Fade, Skeleton, Stack, Typography } from '@mui/material';
+import { Alert, Avatar, Box, Button, Chip, Container, Divider, Skeleton, Stack, Typography } from '@mui/material';
 import { apiClient } from '../lib/api';
 import { AppSection, HeroChip, MetricCard, PageShell, SectionButton } from './shared-ui';
 
@@ -360,7 +360,6 @@ export default function MiniAppClient() {
       <PageShell>
       <Container maxWidth="sm" sx={{ py: 4 }}>
         <Stack spacing={2}>
-          <Fade in timeout={500}>
             <AppSection title="Tele Member" subtitle="Mini app dashboard kết nối Telegram bridge và Supabase." accent={appTone} action={<HeroChip label={bridgeReady ? 'Telegram bridge: ON' : 'Telegram bridge: OFF'} color={bridgeReady ? 'success' : 'error'} />}>
               <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
                 <Stack direction="row" spacing={2} alignItems="center" sx={{ minWidth: 0 }}>
@@ -379,7 +378,6 @@ export default function MiniAppClient() {
                 </Stack>
               </Stack>
             </AppSection>
-          </Fade>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
             <MetricCard label="Điểm hiện tại" value={String(summary?.balance ?? 0)} note="Số điểm đang có trong ví" accent="emerald" />
