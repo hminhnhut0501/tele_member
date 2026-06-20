@@ -50,39 +50,61 @@ export default function MiniAppClient() {
   const debugEnabled = process.env.NEXT_PUBLIC_DEBUG_WEBAPP === 'true';
 
   useEffect(() => {
+    let cancelled = false;
     const initTelegram = async () => {
       try {
         const telegram = (window as any).Telegram;
         const tg = telegram?.WebApp;
+        const waitForBridge = async () => {
+          for (let attempt = 0; attempt < 20; attempt += 1) {
+            const currentTelegram = (window as any).Telegram;
+            const currentWebApp = currentTelegram?.WebApp;
+            if (currentWebApp?.initData !== undefined) {
+              return currentWebApp;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 100));
+          }
+          return tg;
+        };
+
+        const readyWebApp = await waitForBridge();
+        if (cancelled) return;
+
         setDebugInfo({
           hasTelegram: Boolean(telegram),
-          hasWebApp: Boolean(tg),
-          initDataLength: tg?.initData?.length ?? 0,
-          platform: tg?.platform ?? 'unknown',
+          hasWebApp: Boolean(readyWebApp),
+          initDataLength: readyWebApp?.initData?.length ?? 0,
+          platform: readyWebApp?.platform ?? 'unknown',
         });
-        const initData = tg?.initData ?? '';
+        const initData = readyWebApp?.initData ?? '';
         if (!initData) {
           setError('Mini app chỉ hoạt động khi mở từ Telegram.');
           setStatus('not-telegram');
           return;
         }
 
-        tg?.ready?.();
-        tg?.expand?.();
+        readyWebApp?.ready?.();
+        readyWebApp?.expand?.();
 
         const auth = await client.telegramLogin(initData);
+        if (cancelled) return;
         setToken(auth.token);
 
         const data = await fetchSummary(auth.token);
+        if (cancelled) return;
         setSummary(data);
         setStatus('ready');
       } catch (err) {
+        if (cancelled) return;
         setError('Không thể xác thực Telegram WebApp.');
         setStatus('error');
       }
     };
 
     void initTelegram();
+    return () => {
+      cancelled = true;
+    };
   }, [client]);
 
   async function fetchSummary(authToken: string) {
