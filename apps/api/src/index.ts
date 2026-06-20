@@ -146,6 +146,33 @@ app.get('/admin/debug/env', async () => {
   };
 });
 
+app.get('/admin/debug/telegram-bot', async (request, reply) => {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) {
+    return reply.code(500).send({ message: 'Missing bot token' });
+  }
+
+  const response = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data?.ok) {
+    return reply.code(502).send({
+      message: 'Unable to fetch Telegram bot identity',
+      status: response.status,
+      description: data?.description ?? null,
+    });
+  }
+
+  return {
+    id: data.result?.id ?? null,
+    isBot: data.result?.is_bot ?? null,
+    firstName: data.result?.first_name ?? null,
+    username: data.result?.username ?? null,
+    canJoinGroups: data.result?.can_join_groups ?? null,
+    canReadAllGroupMessages: data.result?.can_read_all_group_messages ?? null,
+    supportsInlineQueries: data.result?.supports_inline_queries ?? null,
+  };
+});
+
 app.post('/admin/adjust', async (request) => {
   const body = manualAdjustmentSchema.parse(request.body);
   const auth = (request.user as { email?: string } | undefined)?.email;

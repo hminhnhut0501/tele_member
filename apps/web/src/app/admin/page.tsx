@@ -54,6 +54,7 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [debugEnv, setDebugEnv] = useState<any>(null);
+  const [botInfo, setBotInfo] = useState<any>(null);
   const [debugLoading, setDebugLoading] = useState(false);
   const pageSize = 20;
   const client = apiClient(token);
@@ -110,8 +111,9 @@ export default function AdminPage() {
     try {
       setDebugLoading(true);
       setError('');
-      const data = await client.getDebugEnv();
-      setDebugEnv(data);
+      const [envData, botData] = await Promise.all([client.getDebugEnv(), client.getTelegramBotInfo()]);
+      setDebugEnv(envData);
+      setBotInfo(botData);
     } catch {
       setError('Không thể tải debug env');
     } finally {
@@ -251,20 +253,38 @@ export default function AdminPage() {
             <Typography variant="h6">Debug Env</Typography>
             <Divider sx={{ my: 2 }} />
             {debugEnv ? (
-              <Box
-                component="pre"
-                sx={{
-                  m: 0,
-                  p: 2,
-                  borderRadius: 2,
-                  bgcolor: 'rgba(2,6,23,0.04)',
-                  overflow: 'auto',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {JSON.stringify(debugEnv, null, 2)}
-              </Box>
+              <Stack spacing={2}>
+                <Box
+                  component="pre"
+                  sx={{
+                    m: 0,
+                    p: 2,
+                    borderRadius: 2,
+                    bgcolor: 'rgba(2,6,23,0.04)',
+                    overflow: 'auto',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {JSON.stringify(debugEnv, null, 2)}
+                </Box>
+                {botInfo ? (
+                  <Box
+                    component="pre"
+                    sx={{
+                      m: 0,
+                      p: 2,
+                      borderRadius: 2,
+                      bgcolor: 'rgba(15,118,110,0.06)',
+                      overflow: 'auto',
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {JSON.stringify(botInfo, null, 2)}
+                  </Box>
+                ) : null}
+              </Stack>
             ) : (
               <Typography color="text.secondary">
                 Bấm <strong>Debug Env</strong> để xem fingerprint môi trường đang chạy trên Render.

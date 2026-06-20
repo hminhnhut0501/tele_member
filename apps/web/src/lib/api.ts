@@ -49,5 +49,6 @@ export function apiClient(token?: string | null) {
         body: JSON.stringify(payload),
       }, token),
     getDebugEnv: () => request('/admin/debug/env', {}, token),
+    getTelegramBotInfo: () => request('/admin/debug/telegram-bot', {}, token),
   };
 }
