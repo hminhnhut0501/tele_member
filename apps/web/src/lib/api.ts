@@ -11,7 +11,15 @@ async function request(path: string, options: RequestInit = {}, token?: string |
   });
 
   if (!response.ok) {
-    throw new Error(await response.text());
+    const contentType = response.headers.get('content-type') ?? '';
+    const body = contentType.includes('application/json')
+      ? await response.json().catch(() => null)
+      : await response.text().catch(() => '');
+    const error = new Error(typeof body === 'string' ? body : body?.message ?? 'Request failed') as Error & {
+      response?: unknown;
+    };
+    error.response = body;
+    throw error;
   }
 
   return response.json();

@@ -173,8 +173,16 @@ app.post('/auth/telegram/webapp', async (request, reply) => {
   }
 
   const payload = validateTelegramWebAppInitData(body.initData, botToken);
-  if (!payload?.user?.id) {
-    return reply.code(401).send({ message: 'Invalid Telegram WebApp initData' });
+  if (!payload.ok) {
+    return reply.code(401).send({
+      message: 'Invalid Telegram WebApp initData',
+      reason: payload.reason,
+      details: 'details' in payload ? payload.details : undefined,
+    });
+  }
+
+  if (!payload.user?.id) {
+    return reply.code(401).send({ message: 'Invalid Telegram WebApp initData', reason: 'missing_user_id' });
   }
 
   const telegramId = String(payload.user.id);

@@ -10,7 +10,9 @@ function safeCompare(a: string, b: string) {
 export function validateTelegramWebAppInitData(initData: string, botToken: string) {
   const params = new URLSearchParams(initData);
   const hash = params.get('hash');
-  if (!hash) return null;
+  if (!hash) {
+    return { ok: false as const, reason: 'missing_hash' as const };
+  }
 
   params.delete('hash');
   const pairs = Array.from(params.entries())
@@ -21,14 +23,31 @@ export function validateTelegramWebAppInitData(initData: string, botToken: strin
   const secretKey = crypto.createHash('sha256').update(botToken).digest();
   const calculatedHash = crypto.createHmac('sha256', secretKey).update(pairs).digest('hex');
 
-  if (!safeCompare(calculatedHash, hash)) return null;
+  if (!safeCompare(calculatedHash, hash)) {
+    return {
+      ok: false as const,
+      reason: 'hash_mismatch' as const,
+      details: {
+        calculatedHash,
+        receivedHash: hash,
+        pairCount: params.size,
+        hasUser: params.has('user'),
+        hasAuthDate: params.has('auth_date'),
+      },
+    };
+  }
 
   const userRaw = params.get('user');
-  const user = userRaw ? JSON.parse(userRaw) : null;
-  return {
-    authDate: Number(params.get('auth_date') ?? '0'),
-    queryId: params.get('query_id'),
-    startParam: params.get('start_param'),
-    user,
-  };
+  try {
+    const user = userRaw ? JSON.parse(userRaw) : null;
+    return {
+      ok: true as const,
+      authDate: Number(params.get('auth_date') ?? '0'),
+      queryId: params.get('query_id'),
+      startParam: params.get('start_param'),
+      user,
+    };
+  } catch {
+    return { ok: false as const, reason: 'invalid_user_json' as const };
+  }
 }

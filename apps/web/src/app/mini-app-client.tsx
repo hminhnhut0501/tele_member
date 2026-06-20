@@ -56,6 +56,10 @@ type BootIssue =
   | 'no_telegram_object'
   | 'no_webapp_bridge'
   | 'empty_init_data'
+  | 'missing_hash'
+  | 'hash_mismatch'
+  | 'invalid_user_json'
+  | 'missing_user_id'
   | 'auth_failed'
   | 'unknown_error';
 
@@ -117,6 +121,14 @@ export default function MiniAppClient() {
         return 'Bridge có tồn tại nhưng `initData` rỗng. Thường là Telegram desktop/app mở sai luồng hoặc app chưa nhận context.';
       case 'auth_failed':
         return 'Bridge đã có dữ liệu, nhưng server từ chối xác thực `initData`. Có thể token/bot hoặc chữ ký đang lệch.';
+      case 'missing_hash':
+        return 'initData gửi lên server không có `hash`, nên Telegram không thể xác thực.';
+      case 'hash_mismatch':
+        return 'Chữ ký HMAC không khớp. Thường là bot token ở Render đang khác bot thật, hoặc dữ liệu initData bị sửa/truncated.';
+      case 'invalid_user_json':
+        return 'Trường `user` trong initData không parse được JSON.';
+      case 'missing_user_id':
+        return 'initData có nhưng không có `user.id`.';
       case 'unknown_error':
         return 'Có lỗi không xác định trong lúc khởi tạo WebApp.';
       default:
@@ -210,8 +222,14 @@ export default function MiniAppClient() {
         setStatus('ready');
       } catch (err) {
         if (cancelled) return;
-        setBootIssue('auth_failed');
-        setError('Không thể xác thực Telegram WebApp.');
+        const response = (err as any)?.response;
+        const serverReason = response?.reason as string | undefined;
+        if (serverReason === 'missing_hash') setBootIssue('missing_hash');
+        else if (serverReason === 'hash_mismatch') setBootIssue('hash_mismatch');
+        else if (serverReason === 'invalid_user_json') setBootIssue('invalid_user_json');
+        else if (serverReason === 'missing_user_id') setBootIssue('missing_user_id');
+        else setBootIssue('auth_failed');
+        setError(response?.message ?? 'Không thể xác thực Telegram WebApp.');
         setStatus('error');
       }
     };
@@ -376,6 +394,22 @@ export default function MiniAppClient() {
               <Typography variant="h5" fontWeight={800}>Có lỗi xảy ra</Typography>
               <Typography color="text.secondary">{getBootIssueMessage(bootIssue)}</Typography>
               <Alert severity="error">{error}</Alert>
+              {bootIssue === 'hash_mismatch' ? (
+                <Card variant="outlined" sx={{ bgcolor: 'rgba(239,68,68,0.04)' }}>
+                  <CardContent>
+                    <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                      Cách fix nhanh
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      1. Kiểm tra `TELEGRAM_BOT_TOKEN` trên Render có đúng bot đang mở app không.
+                      <br />
+                      2. Redeploy backend sau khi đổi env.
+                      <br />
+                      3. Mở lại mini app từ `/start` và nút `Open App` mới.
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ) : null}
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                 <Button variant="contained" onClick={() => { setError(''); setStatus('loading'); window.location.reload(); }} sx={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)' }}>Thử lại</Button>
                 <Button variant="outlined" onClick={() => navigator.clipboard?.writeText(window.location.href)}>Copy link</Button>
