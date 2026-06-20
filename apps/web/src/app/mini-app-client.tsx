@@ -1,22 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Container,
-  Divider,
-  Fade,
-  Skeleton,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Avatar, Box, Button, Chip, Container, Divider, Fade, Skeleton, Stack, Typography } from '@mui/material';
 import { apiClient } from '../lib/api';
+import { AppSection, HeroChip, MetricCard, PageShell, SectionButton } from './shared-ui';
 
 type Summary = {
   telegramId: string;
@@ -29,13 +16,7 @@ type Summary = {
   lastCheckinAt: string | null;
   todayStatus: 'checked_in' | 'not_checked_in' | 'already_checked_in';
   pointsGainedToday: number;
-  transactions: Array<{
-    id: string;
-    amount: number;
-    reason: string;
-    type: 'credit' | 'debit';
-    createdAt: string;
-  }>;
+  transactions: Array<{ id: string; amount: number; reason: string; type: 'credit' | 'debit'; createdAt: string }>;
 };
 
 type DebugInfo = {
@@ -65,7 +46,6 @@ type BootIssue =
 
 function sanitizeInitDataUnsafe(value: any) {
   if (!value || typeof value !== 'object') return null;
-
   const user = value.user && typeof value.user === 'object'
     ? {
         id: value.user.id ?? null,
@@ -77,7 +57,6 @@ function sanitizeInitDataUnsafe(value: any) {
         allows_write_to_pm: value.user.allows_write_to_pm ?? null,
       }
     : null;
-
   return {
     query_id: value.query_id ?? null,
     auth_date: value.auth_date ?? null,
@@ -99,13 +78,12 @@ export default function MiniAppClient() {
   const [checkinMessage, setCheckinMessage] = useState('');
   const [pulse, setPulse] = useState(false);
   const debugEnabled = process.env.NEXT_PUBLIC_DEBUG_WEBAPP === 'true';
-
   const bridgeReady = Boolean(debugInfo?.hasTelegram && debugInfo?.hasWebApp && (debugInfo?.initDataLength ?? 0) > 0);
+  const appTone = status === 'error' ? 'rose' : status === 'not-telegram' ? 'amber' : 'emerald';
 
   function getFallbackInitData() {
     const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
     if (!hash) return '';
-
     const params = new URLSearchParams(hash);
     const direct = params.get('tgWebAppData') ?? params.get('initData') ?? '';
     return direct ? decodeURIComponent(direct) : '';
@@ -113,95 +91,63 @@ export default function MiniAppClient() {
 
   function getBootIssueMessage(issue: BootIssue) {
     switch (issue) {
-      case 'no_telegram_object':
-        return 'Trang này đang mở ngoài Telegram, nên `window.Telegram` không tồn tại.';
-      case 'no_webapp_bridge':
-        return 'Telegram có mở trang, nhưng chưa inject được WebApp bridge.';
-      case 'empty_init_data':
-        return 'Bridge có tồn tại nhưng `initData` rỗng. Thường là Telegram desktop/app mở sai luồng hoặc app chưa nhận context.';
-      case 'auth_failed':
-        return 'Bridge đã có dữ liệu, nhưng server từ chối xác thực `initData`. Có thể token/bot hoặc chữ ký đang lệch.';
-      case 'missing_hash':
-        return 'initData gửi lên server không có `hash`, nên Telegram không thể xác thực.';
-      case 'hash_mismatch':
-        return 'Chữ ký HMAC không khớp. Thường là bot token ở Render đang khác bot thật, hoặc dữ liệu initData bị sửa/truncated.';
-      case 'invalid_user_json':
-        return 'Trường `user` trong initData không parse được JSON.';
-      case 'missing_user_id':
-        return 'initData có nhưng không có `user.id`.';
-      case 'unknown_error':
-        return 'Có lỗi không xác định trong lúc khởi tạo WebApp.';
-      default:
-        return 'Sẵn sàng.';
+      case 'no_telegram_object': return 'Trang này đang mở ngoài Telegram, nên `window.Telegram` không tồn tại.';
+      case 'no_webapp_bridge': return 'Telegram có mở trang, nhưng chưa inject được WebApp bridge.';
+      case 'empty_init_data': return 'Bridge có tồn tại nhưng `initData` rỗng.';
+      case 'auth_failed': return 'Bridge đã có dữ liệu, nhưng server từ chối xác thực `initData`.';
+      case 'missing_hash': return 'initData gửi lên server không có `hash`.';
+      case 'hash_mismatch': return 'Chữ ký HMAC không khớp. Token/bot hoặc dữ liệu initData đang lệch.';
+      case 'invalid_user_json': return 'Trường `user` trong initData không parse được JSON.';
+      case 'missing_user_id': return 'initData có nhưng không có `user.id`.';
+      case 'unknown_error': return 'Có lỗi không xác định trong lúc khởi tạo WebApp.';
+      default: return 'Sẵn sàng.';
     }
+  }
+
+  async function fetchSummary(authToken: string) {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000'}/me/summary`, {
+      headers: { authorization: `Bearer ${authToken}` },
+    });
+    if (!response.ok) throw new Error('Failed to load summary');
+    return response.json();
   }
 
   useEffect(() => {
     let cancelled = false;
-
     const initTelegram = async () => {
       try {
         let telegram = (window as any).Telegram;
         let tg = telegram?.WebApp;
-
-        const waitForBridge = async () => {
-          for (let attempt = 0; attempt < 50; attempt += 1) {
-            telegram = (window as any).Telegram;
-            tg = telegram?.WebApp;
-            if (tg?.initData !== undefined) {
-              return tg;
-            }
-            await new Promise((resolve) => setTimeout(resolve, 100));
-          }
-          return tg;
-        };
-
-        const readyWebApp = await waitForBridge();
+        for (let attempt = 0; attempt < 50; attempt += 1) {
+          telegram = (window as any).Telegram;
+          tg = telegram?.WebApp;
+          if (tg?.initData !== undefined) break;
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
         if (cancelled) return;
 
-        const fallbackInitData = readyWebApp?.initData ? '' : getFallbackInitData();
-        const initData = readyWebApp?.initData || fallbackInitData || '';
-        const initDataUnsafe = sanitizeInitDataUnsafe(readyWebApp?.initDataUnsafe ?? null);
-        const userAgent = window.navigator.userAgent;
-        const href = window.location.href;
-        const referrer = window.document.referrer;
-        const hash = window.location.hash;
-        if (debugEnabled) {
-          console.debug('[webapp debug] Telegram WebApp bridge', {
-            hasTelegram: Boolean(telegram),
-            hasWebApp: Boolean(readyWebApp),
-            platform: readyWebApp?.platform ?? 'unknown',
-            version: readyWebApp?.version ?? 'unknown',
-            userAgent,
-            href,
-            referrer,
-            hash,
-            fallbackInitDataLength: fallbackInitData.length,
-            initDataUnsafe,
-          });
-        }
-        setDebugInfo({
+        const fallbackInitData = tg?.initData ? '' : getFallbackInitData();
+        const initData = tg?.initData || fallbackInitData || '';
+        const initDataUnsafe = sanitizeInitDataUnsafe(tg?.initDataUnsafe ?? null);
+        const debugPayload = {
           hasTelegram: Boolean(telegram),
-          hasWebApp: Boolean(readyWebApp),
+          hasWebApp: Boolean(tg),
           initDataLength: initData.length,
-          platform: readyWebApp?.platform ?? 'unknown',
-          version: readyWebApp?.version ?? 'unknown',
-          userAgent,
-          href,
-          referrer,
-          hash,
+          platform: tg?.platform ?? 'unknown',
+          version: tg?.version ?? 'unknown',
+          userAgent: window.navigator.userAgent,
+          href: window.location.href,
+          referrer: window.document.referrer,
+          hash: window.location.hash,
           initDataUnsafe,
-        });
+        };
+        if (debugEnabled) console.debug('[webapp debug]', debugPayload);
+        setDebugInfo(debugPayload);
 
-        if (!telegram) {
-          setBootIssue('no_telegram_object');
-        } else if (!readyWebApp) {
-          setBootIssue('no_webapp_bridge');
-        } else if (!initData) {
-          setBootIssue('empty_init_data');
-        } else {
-          setBootIssue('none');
-        }
+        if (!telegram) setBootIssue('no_telegram_object');
+        else if (!tg) setBootIssue('no_webapp_bridge');
+        else if (!initData) setBootIssue('empty_init_data');
+        else setBootIssue('none');
 
         if (!initData) {
           setError('Telegram WebApp bridge chưa sẵn sàng hoặc không được inject.');
@@ -209,13 +155,13 @@ export default function MiniAppClient() {
           return;
         }
 
-        readyWebApp?.ready?.();
-        readyWebApp?.expand?.();
+        tg?.ready?.();
+        tg?.expand?.();
 
         const auth = await client.telegramLogin(initData);
         if (cancelled) return;
         setToken(auth.token);
-
+        window.localStorage.setItem('tele-member-token', auth.token);
         const data = await fetchSummary(auth.token);
         if (cancelled) return;
         setSummary(data);
@@ -233,30 +179,20 @@ export default function MiniAppClient() {
         setStatus('error');
       }
     };
-
     void initTelegram();
-    return () => {
-      cancelled = true;
-    };
-  }, [client]);
-
-  async function fetchSummary(authToken: string) {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000'}/me/summary`, {
-      headers: { authorization: `Bearer ${authToken}` },
-    });
-    if (!response.ok) {
-      throw new Error('Failed to load summary');
-    }
-    return response.json();
-  }
+    return () => { cancelled = true; };
+  }, [client, debugEnabled]);
 
   async function handleCheckin() {
     if (!token) return;
     try {
+      setError('');
+      setCheckinMessage('');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000'}/me/checkin`, {
         method: 'POST',
         headers: { authorization: `Bearer ${token}` },
       });
+      if (!response.ok) throw new Error('Check-in failed');
       const data = await response.json();
       setCheckinMessage(data.message ?? 'Done');
       setPulse(true);
@@ -270,51 +206,29 @@ export default function MiniAppClient() {
   const renderDebugCard = () => {
     if (!debugEnabled) return null;
     return (
-      <Card variant="outlined">
-        <CardContent>
-          <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-            Debug
-          </Typography>
-          <Stack spacing={0.5}>
-            <Typography variant="body2">hasTelegram: {String(debugInfo?.hasTelegram ?? false)}</Typography>
-            <Typography variant="body2">hasWebApp: {String(debugInfo?.hasWebApp ?? false)}</Typography>
-            <Typography variant="body2">initDataLength: {debugInfo?.initDataLength ?? 0}</Typography>
-            <Typography variant="body2">platform: {debugInfo?.platform ?? 'unknown'}</Typography>
-            <Typography variant="body2">version: {debugInfo?.version ?? 'unknown'}</Typography>
-            <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>href: {debugInfo?.href ?? 'unknown'}</Typography>
-            <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>referrer: {debugInfo?.referrer ?? 'unknown'}</Typography>
-            <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>hash: {debugInfo?.hash ?? 'unknown'}</Typography>
-            <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-              userAgent: {debugInfo?.userAgent ?? 'unknown'}
-            </Typography>
-            <Box
-              component="pre"
-              sx={{
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word',
-                m: 0,
-                p: 1.5,
-                borderRadius: 2,
-                bgcolor: 'rgba(2,6,23,0.04)',
-                fontSize: 12,
-                lineHeight: 1.5,
-                overflow: 'auto',
-              }}
-            >
-              {JSON.stringify(debugInfo?.initDataUnsafe ?? null, null, 2)}
-            </Box>
-          </Stack>
-        </CardContent>
-      </Card>
+      <AppSection title="Debug bridge" subtitle="Thông tin bridge, version và initData đã che dữ liệu nhạy cảm." accent="violet">
+        <Stack spacing={1.2}>
+          <MetricCard label="Bridge" value={bridgeReady ? 'ONLINE' : 'OFFLINE'} note={`Telegram: ${String(debugInfo?.hasTelegram ?? false)} | WebApp: ${String(debugInfo?.hasWebApp ?? false)}`} accent={bridgeReady ? 'emerald' : 'amber'} />
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 1.5 }}>
+            <Chip label={`platform: ${debugInfo?.platform ?? 'unknown'}`} variant="outlined" />
+            <Chip label={`version: ${debugInfo?.version ?? 'unknown'}`} variant="outlined" />
+            <Chip label={`initDataLength: ${debugInfo?.initDataLength ?? 0}`} variant="outlined" />
+            <Chip label={`status: ${status}`} variant="outlined" />
+          </Box>
+          <Box component="pre" sx={{ m: 0, p: 2, borderRadius: 2, bgcolor: 'rgba(2,6,23,0.04)', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, lineHeight: 1.55 }}>
+            {JSON.stringify(debugInfo, null, 2)}
+          </Box>
+        </Stack>
+      </AppSection>
     );
   };
 
   if (status === 'loading') {
     return (
-      <Container maxWidth="sm" sx={{ py: 4 }}>
-        <Stack spacing={2}>
-          <Card>
-            <CardContent>
+      <PageShell>
+        <Container maxWidth="sm" sx={{ py: 4 }}>
+          <AppSection title="Đang khởi tạo Telegram WebApp..." subtitle="Đợi bridge và initData từ Telegram." accent="cyan">
+            <Stack spacing={2}>
               <Stack spacing={2} direction="row" alignItems="center">
                 <Skeleton variant="circular" width={56} height={56} />
                 <Box sx={{ flex: 1 }}>
@@ -322,121 +236,87 @@ export default function MiniAppClient() {
                   <Skeleton width="35%" />
                 </Box>
               </Stack>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent>
               <Skeleton width="30%" />
               <Skeleton width="50%" height={72} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent>
-              <Skeleton width="40%" />
               <Skeleton width="100%" height={48} />
               <Skeleton width="100%" height={48} />
-              <Skeleton width="100%" height={48} />
-            </CardContent>
-          </Card>
-        </Stack>
-      </Container>
+            </Stack>
+          </AppSection>
+        </Container>
+      </PageShell>
     );
   }
 
   if (status === 'not-telegram') {
     return (
-      <Container maxWidth="sm" sx={{ py: 6 }}>
-        <Card sx={{ borderRadius: 5, boxShadow: '0 18px 50px rgba(15, 23, 42, 0.12)', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,247,250,0.96))' }}>
-          <CardContent>
+      <PageShell>
+        <Container maxWidth="sm" sx={{ py: 6 }}>
+          <AppSection title="Mở trong Telegram để tiếp tục" subtitle={getBootIssueMessage(bootIssue)} accent="amber" action={<HeroChip label={bridgeReady ? 'Telegram bridge: ON' : 'Telegram bridge: OFF'} color={bridgeReady ? 'success' : 'error'} />}>
             <Stack spacing={2}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Box sx={{ width: 56, height: 56, borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'linear-gradient(135deg, rgba(20,184,166,0.18), rgba(15,118,110,0.1))', color: 'primary.main', fontSize: 28 }}>
-                  ↗
-                </Box>
-                <Chip label={bridgeReady ? 'Telegram bridge: ON' : 'Telegram bridge: OFF'} color={bridgeReady ? 'success' : 'error'} size="small" />
-              </Stack>
-              <Typography variant="h5" fontWeight={800}>Mở trong Telegram để tiếp tục</Typography>
-              <Typography color="text.secondary">
-                {getBootIssueMessage(bootIssue)}
-              </Typography>
+              <Box sx={{ width: 56, height: 56, borderRadius: '50%', display: 'grid', placeItems: 'center', background: 'linear-gradient(135deg, rgba(37,99,235,0.14), rgba(16,185,129,0.12))', color: 'primary.main', fontSize: 28 }}>
+                ↗
+              </Box>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                <Button variant="contained" onClick={() => { setError(''); setStatus('loading'); window.location.reload(); }} sx={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)' }}>Thử lại</Button>
+                <SectionButton variant="contained" onClick={() => { setError(''); setStatus('loading'); window.location.reload(); }}>Thử lại</SectionButton>
                 <Button variant="outlined" onClick={() => navigator.clipboard?.writeText(window.location.href)}>Copy link</Button>
-                {debugEnabled ? (
-                  <Button
-                    variant="outlined"
-                    onClick={() => navigator.clipboard?.writeText(JSON.stringify(debugInfo ?? { bootIssue, error }, null, 2))}
-                  >
-                    Copy debug
-                  </Button>
-                ) : null}
+                {debugEnabled ? <Button variant="outlined" onClick={() => navigator.clipboard?.writeText(JSON.stringify(debugInfo ?? { bootIssue, error }, null, 2))}>Copy debug</Button> : null}
               </Stack>
-              <Card variant="outlined" sx={{ bgcolor: 'rgba(15,118,110,0.04)' }}>
-                <CardContent>
-                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>Cách mở đúng</Typography>
-                  <Typography variant="body2" color="text.secondary">1. Quay lại bot Telegram<br />2. Gõ /start<br />3. Bấm Open App<br />4. Nếu vẫn lỗi, gửi cho mình JSON debug bên dưới</Typography>
-                </CardContent>
-              </Card>
+              <AppSection title="Cách mở đúng" subtitle="Đường mở chuẩn để Telegram inject initData." accent="blue" compact>
+                <Typography variant="body2" color="text.secondary">
+                  1. Quay lại bot Telegram
+                  <br />
+                  2. Gõ /start
+                  <br />
+                  3. Bấm Open App
+                  <br />
+                  4. Nếu vẫn lỗi, gửi cho mình JSON debug bên dưới
+                </Typography>
+              </AppSection>
               {renderDebugCard()}
             </Stack>
-          </CardContent>
-        </Card>
-      </Container>
+          </AppSection>
+        </Container>
+      </PageShell>
     );
   }
 
   if (status === 'error') {
     return (
-      <Container maxWidth="sm" sx={{ py: 6 }}>
-        <Card sx={{ borderRadius: 5, boxShadow: '0 18px 50px rgba(15, 23, 42, 0.12)', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,244,244,0.96))' }}>
-          <CardContent>
+      <PageShell>
+        <Container maxWidth="sm" sx={{ py: 6 }}>
+          <AppSection title="Có lỗi xảy ra" subtitle={getBootIssueMessage(bootIssue)} accent="rose" action={<HeroChip label="Error" color="error" />}>
             <Stack spacing={2}>
-              <Typography variant="h5" fontWeight={800}>Có lỗi xảy ra</Typography>
-              <Typography color="text.secondary">{getBootIssueMessage(bootIssue)}</Typography>
               <Alert severity="error">{error}</Alert>
               {bootIssue === 'hash_mismatch' ? (
-                <Card variant="outlined" sx={{ bgcolor: 'rgba(239,68,68,0.04)' }}>
-                  <CardContent>
-                    <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                      Cách fix nhanh
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      1. Kiểm tra `TELEGRAM_BOT_TOKEN` trên Render có đúng bot đang mở app không.
-                      <br />
-                      2. Redeploy backend sau khi đổi env.
-                      <br />
-                      3. Mở lại mini app từ `/start` và nút `Open App` mới.
-                    </Typography>
-                  </CardContent>
-                </Card>
+                <AppSection title="Cách fix nhanh" subtitle="Các bước kiểm tra nhanh khi initData bị lệch." accent="rose" compact>
+                  <Typography variant="body2" color="text.secondary">
+                    1. Kiểm tra `TELEGRAM_BOT_TOKEN` trên Render có đúng bot đang mở app không.
+                    <br />
+                    2. Redeploy backend sau khi đổi env.
+                    <br />
+                    3. Mở lại mini app từ `/start` và nút `Open App` mới.
+                  </Typography>
+                </AppSection>
               ) : null}
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-                <Button variant="contained" onClick={() => { setError(''); setStatus('loading'); window.location.reload(); }} sx={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)' }}>Thử lại</Button>
+                <SectionButton variant="contained" onClick={() => { setError(''); setStatus('loading'); window.location.reload(); }}>Thử lại</SectionButton>
                 <Button variant="outlined" onClick={() => navigator.clipboard?.writeText(window.location.href)}>Copy link</Button>
-                {debugEnabled ? (
-                  <Button
-                    variant="outlined"
-                    onClick={() => navigator.clipboard?.writeText(JSON.stringify(debugInfo ?? { bootIssue, error }, null, 2))}
-                  >
-                    Copy debug
-                  </Button>
-                ) : null}
+                {debugEnabled ? <Button variant="outlined" onClick={() => navigator.clipboard?.writeText(JSON.stringify(debugInfo ?? { bootIssue, error }, null, 2))}>Copy debug</Button> : null}
               </Stack>
               {renderDebugCard()}
             </Stack>
-          </CardContent>
-        </Card>
-      </Container>
+          </AppSection>
+        </Container>
+      </PageShell>
     );
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4, position: 'relative' }}>
-      <Box sx={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: 'radial-gradient(circle at top left, rgba(15,118,110,0.18), transparent 35%), radial-gradient(circle at top right, rgba(245,158,11,0.12), transparent 28%), linear-gradient(180deg, rgba(255,255,255,0.9), rgba(246,247,251,0.98))', borderRadius: 6 }} />
-      <Stack spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
-        <Fade in timeout={500}>
-          <Card sx={{ boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)', background: 'linear-gradient(135deg, rgba(15,118,110,0.08), rgba(255,255,255,0.92))', transform: pulse ? 'translateY(-2px)' : 'translateY(0)', transition: 'transform 220ms ease, box-shadow 220ms ease' }}>
-            <CardContent>
+    <PageShell>
+      <Container maxWidth="sm" sx={{ py: 4 }}>
+        <Stack spacing={2}>
+          <Fade in timeout={500}>
+            <AppSection title="Tele Member" subtitle="Mini app dashboard kết nối Telegram bridge và Supabase." accent={appTone} action={<HeroChip label={bridgeReady ? 'Telegram bridge: ON' : 'Telegram bridge: OFF'} color={bridgeReady ? 'success' : 'error'} />}>
               <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
                 <Stack direction="row" spacing={2} alignItems="center" sx={{ minWidth: 0 }}>
                   <Avatar src={summary?.avatarUrl ?? undefined} sx={{ width: 56, height: 56, bgcolor: 'primary.main', fontWeight: 700 }}>
@@ -452,94 +332,49 @@ export default function MiniAppClient() {
                     </Stack>
                   </Box>
                 </Stack>
-                <Chip label={bridgeReady ? 'Telegram bridge: ON' : 'Telegram bridge: OFF'} color={bridgeReady ? 'success' : 'error'} size="small" />
               </Stack>
-            </CardContent>
-          </Card>
-        </Fade>
+            </AppSection>
+          </Fade>
 
-        <Fade in timeout={650}>
-          <Card sx={{ boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)' }}>
-            <CardContent>
-              <Stack direction="row" spacing={2} justifyContent="space-between">
-                <Box>
-                  <Typography color="text.secondary">Điểm hiện tại</Typography>
-                  <Typography variant="h2" fontWeight={800}>{summary?.balance ?? 0}</Typography>
-                </Box>
-                <Box>
-                  <Typography color="text.secondary">Streak</Typography>
-                  <Typography variant="h2" fontWeight={800}>{summary?.streak ?? 0}</Typography>
-                </Box>
-              </Stack>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="body2" color="text.secondary">
-                Lần điểm danh gần nhất: {summary?.lastCheckinAt ? new Date(summary.lastCheckinAt).toLocaleString('vi-VN') : 'Chưa có'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Trạng thái hôm nay: {summary?.todayStatus === 'checked_in' ? 'Đã điểm danh' : summary?.todayStatus === 'already_checked_in' ? 'Đã nhận điểm rồi' : 'Chưa điểm danh'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Điểm nhận hôm nay: {summary?.pointsGainedToday ?? 0}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Fade>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+            <MetricCard label="Điểm hiện tại" value={String(summary?.balance ?? 0)} note="Số điểm đang có trong ví" accent="emerald" />
+            <MetricCard label="Streak" value={String(summary?.streak ?? 0)} note={`Lần điểm danh gần nhất: ${summary?.lastCheckinAt ? new Date(summary.lastCheckinAt).toLocaleString('vi-VN') : 'Chưa có'}`} accent="blue" />
+          </Box>
 
-        <Button
-          variant="contained"
-          size="large"
-          onClick={handleCheckin}
-          sx={{
-            background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
-            boxShadow: '0 14px 30px rgba(20,184,166,0.28)',
-            '&:hover': {
-              background: 'linear-gradient(135deg, #115E59 0%, #0F766E 100%)',
-              boxShadow: '0 16px 34px rgba(20,184,166,0.34)',
-            },
-          }}
-        >
-          Điểm danh hôm nay
-        </Button>
+          <AppSection title="Today status" subtitle={`Trạng thái hôm nay: ${summary?.todayStatus === 'checked_in' ? 'Đã điểm danh' : summary?.todayStatus === 'already_checked_in' ? 'Đã nhận điểm rồi' : 'Chưa điểm danh'}`} accent="cyan">
+            <Typography variant="body2" color="text.secondary">Điểm nhận hôm nay: {summary?.pointsGainedToday ?? 0}</Typography>
+          </AppSection>
 
-        {checkinMessage ? <Alert severity="success">{checkinMessage}</Alert> : null}
+          <SectionButton variant="contained" size="large" onClick={handleCheckin} sx={{ py: 1.2 }}>
+            Điểm danh hôm nay
+          </SectionButton>
 
-        <Fade in timeout={800}>
-          <Card sx={{ boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)' }}>
-            <CardContent>
-              <Typography variant="h6">Lịch sử giao dịch</Typography>
-              <Divider sx={{ my: 2 }} />
-              <Stack spacing={1}>
-                {summary?.transactions?.length ? (
-                  summary.transactions.map((tx) => (
-                    <Card key={tx.id} variant="outlined">
-                      <CardContent>
-                        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-                          <Box>
-                            <Typography fontWeight={700}>{tx.type.toUpperCase()} {tx.amount}</Typography>
-                            <Typography variant="body2" color="text.secondary">{tx.reason}</Typography>
-                          </Box>
-                          <Typography variant="caption" color="text.secondary">{tx.createdAt}</Typography>
-                        </Stack>
-                      </CardContent>
-                    </Card>
-                  ))
-                ) : (
-                  <Card variant="outlined" sx={{ borderStyle: 'dashed' }}>
-                    <CardContent>
-                      <Stack spacing={1.5} alignItems="center" textAlign="center" sx={{ py: 2 }}>
-                        <Typography variant="h6" fontWeight={700}>Chưa có giao dịch</Typography>
-                        <Typography color="text.secondary">Khi bạn điểm danh hoặc nhận thưởng, lịch sử sẽ xuất hiện ở đây.</Typography>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                )}
-              </Stack>
-            </CardContent>
-          </Card>
-        </Fade>
+          {checkinMessage ? <Alert severity="success">{checkinMessage}</Alert> : null}
+          {error ? <Alert severity="error">{error}</Alert> : null}
 
-        {renderDebugCard()}
-      </Stack>
-    </Container>
+          <AppSection title="Lịch sử giao dịch" subtitle="Các phát sinh credit/debit gần nhất." accent="violet">
+            <Stack spacing={1}>
+              {summary?.transactions?.length ? (
+                summary.transactions.map((tx) => (
+                  <Box key={tx.id} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'rgba(255,255,255,0.8)' }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+                      <Box>
+                        <Typography fontWeight={700}>{tx.type.toUpperCase()} {tx.amount}</Typography>
+                        <Typography variant="body2" color="text.secondary">{tx.reason}</Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary">{new Date(tx.createdAt).toLocaleString('vi-VN')}</Typography>
+                    </Stack>
+                  </Box>
+                ))
+              ) : (
+                <Typography color="text.secondary">Chưa có giao dịch nào.</Typography>
+              )}
+            </Stack>
+          </AppSection>
+
+          {renderDebugCard()}
+        </Stack>
+      </Container>
+    </PageShell>
   );
 }
