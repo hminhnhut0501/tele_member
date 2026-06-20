@@ -4,9 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
-  Card,
-  CardContent,
   Chip,
   Container,
   Divider,
@@ -16,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { apiClient } from '../../lib/api';
+import { AppSection, HeroChip, PageShell, SectionButton } from '../shared-ui';
 
 type Reward = {
   id: string;
@@ -85,96 +83,58 @@ export default function RewardsPage() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 3, position: 'relative' }}>
-      <Box
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          background:
-            'radial-gradient(circle at top left, rgba(15,118,110,0.18), transparent 32%), radial-gradient(circle at top right, rgba(245,158,11,0.14), transparent 24%), linear-gradient(180deg, rgba(255,255,255,0.92), rgba(246,247,251,0.98))',
-          borderRadius: 6,
-        }}
-      />
-      <Stack spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
-        <Fade in timeout={350}>
-          <Card sx={{ boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)', background: 'linear-gradient(135deg, rgba(15,118,110,0.10), rgba(255,255,255,0.94))' }}>
-            <CardContent>
-              <Stack spacing={1.5}>
-                <Chip label="Reward Store" color="primary" size="small" sx={{ alignSelf: 'flex-start' }} />
-                <Typography variant="h4" fontWeight={900}>
-                  Đổi điểm lấy quà
-                </Typography>
-                <Typography color="text.secondary">
-                  Chọn phần thưởng phù hợp, kiểm tra tồn kho và đổi ngay trong một chạm.
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap">
-                  <Chip label={`${rewards.filter((reward) => reward.is_active).length} món active`} />
-                  <Chip label="Voucher" />
-                  <Chip label="VIP Code" />
-                  <Chip label="Spin Ticket" />
-                </Stack>
+    <PageShell>
+      <Container maxWidth="sm" sx={{ py: 3, position: 'relative' }}>
+        <Stack spacing={2}>
+          <Fade in timeout={350}>
+            <AppSection
+              title="Đổi điểm lấy quà"
+              subtitle="Chọn phần thưởng phù hợp, kiểm tra tồn kho và đổi ngay trong một chạm."
+              accent="emerald"
+              action={<HeroChip label="Reward Store" color="success" />}
+            >
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Chip label={`${rewards.filter((reward) => reward.is_active).length} món active`} />
+                <Chip label="Voucher" />
+                <Chip label="VIP Code" />
+                <Chip label="Spin Ticket" />
               </Stack>
-            </CardContent>
-          </Card>
-        </Fade>
+            </AppSection>
+          </Fade>
 
-        {error ? <Alert severity="error">{error}</Alert> : null}
-        {message ? <Alert severity="success">{message}</Alert> : null}
+          {error ? <Alert severity="error">{error}</Alert> : null}
+          {message ? <Alert severity="success">{message}</Alert> : null}
 
-        <Stack spacing={1.5}>
-          {loading ? (
-            [1, 2, 3].map((index) => (
-              <Card key={index}>
-                <CardContent>
+          <Stack spacing={1.5}>
+            {loading ? (
+              [1, 2, 3].map((index) => (
+                <AppSection key={index} title="Đang tải reward..." subtitle="Danh sách đang được đồng bộ." compact accent="cyan">
                   <Stack spacing={1.2}>
                     <Skeleton width="45%" height={28} />
                     <Skeleton width="80%" />
                     <Skeleton width="70%" />
                     <Skeleton height={44} />
                   </Stack>
-                </CardContent>
-              </Card>
-            ))
-          ) : rewards.length ? (
-            rewards.map((reward) => {
-              const isDisabled = !reward.is_active || reward.stock === 0;
-              return (
-                <Card
-                  key={reward.id}
-                  sx={{
-                    borderRadius: 4,
-                    boxShadow: '0 16px 44px rgba(15, 23, 42, 0.08)',
-                    border: '1px solid',
-                    borderColor: 'rgba(15,118,110,0.08)',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <Box
-                    sx={{
-                      height: 8,
-                      background: isDisabled
-                        ? 'linear-gradient(90deg, #cbd5e1 0%, #94a3b8 100%)'
-                        : 'linear-gradient(90deg, #0F766E 0%, #14B8A6 100%)',
-                    }}
-                  />
-                  <CardContent>
+                </AppSection>
+              ))
+            ) : rewards.length ? (
+              rewards.map((reward) => {
+                const isDisabled = !reward.is_active || reward.stock === 0;
+                return (
+                  <AppSection
+                    key={reward.id}
+                    title={reward.name}
+                    subtitle={reward.description ?? 'Không có mô tả'}
+                    accent={isDisabled ? 'blue' : 'emerald'}
+                    action={<Chip label={reward.type} size="small" variant={reward.is_active ? 'filled' : 'outlined'} color={reward.is_active ? 'primary' : 'default'} />}
+                  >
                     <Stack spacing={1.5}>
                       <Stack direction="row" justifyContent="space-between" alignItems="start" spacing={2}>
                         <Box sx={{ minWidth: 0 }}>
                           <Typography variant="h6" fontWeight={800} noWrap>
                             {reward.name}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                            {reward.description ?? 'Không có mô tả'}
-                          </Typography>
                         </Box>
-                        <Chip
-                          label={reward.type}
-                          size="small"
-                          color={reward.is_active ? 'primary' : 'default'}
-                          variant={reward.is_active ? 'filled' : 'outlined'}
-                        />
                       </Stack>
 
                       <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -185,40 +145,32 @@ export default function RewardsPage() {
                       <Divider />
 
                       <Stack direction="row" spacing={1}>
-                        <Button
+                        <SectionButton
                           fullWidth
                           variant="contained"
                           disabled={isDisabled || redeemingId === reward.id}
                           onClick={() => redeem(reward.id)}
-                          sx={{
-                            background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
-                            boxShadow: '0 14px 30px rgba(20,184,166,0.25)',
-                          }}
                         >
                           {redeemingId === reward.id ? 'Đang đổi...' : isDisabled ? 'Hết hàng / Tắt' : 'Đổi ngay'}
-                        </Button>
+                        </SectionButton>
                       </Stack>
                     </Stack>
-                  </CardContent>
-                </Card>
-              );
-            })
-          ) : (
-            <Card sx={{ borderRadius: 4, borderStyle: 'dashed' }}>
-              <CardContent>
+                  </AppSection>
+                );
+              })
+            ) : (
+              <AppSection title="Chưa có phần thưởng" subtitle="Admin chưa tạo reward active. Khi có hàng, danh sách sẽ hiện ở đây." accent="amber">
                 <Stack spacing={1} alignItems="center" textAlign="center" sx={{ py: 3 }}>
                   <Typography variant="h6" fontWeight={800}>
-                    Chưa có phần thưởng
+                    Danh sách đang trống
                   </Typography>
-                  <Typography color="text.secondary">
-                    Admin chưa tạo reward active. Khi có hàng, danh sách sẽ hiện ở đây.
-                  </Typography>
+                  <Typography color="text.secondary">Admin chưa tạo reward active. Khi có hàng, danh sách sẽ hiện ở đây.</Typography>
                 </Stack>
-              </CardContent>
-            </Card>
-          )}
+              </AppSection>
+            )}
+          </Stack>
         </Stack>
-      </Stack>
-    </Container>
+      </Container>
+    </PageShell>
   );
 }

@@ -40,6 +40,7 @@ import {
   UsersSection,
   WheelSection,
 } from './components/admin-sections';
+import { MetricCard, PageShell } from '../shared-ui';
 
 type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'settings';
 
@@ -54,20 +55,6 @@ const NAV_ITEMS: Array<{ key: SectionKey; label: string; icon: React.ReactNode }
 ];
 
 const DRAWER_WIDTH = 280;
-
-function StatCard({ label, value, helper }: { label: string; value: string; helper?: string }) {
-  return (
-    <Card sx={{ borderRadius: 2, boxShadow: '0 12px 36px rgba(15, 23, 42, 0.08)', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,247,251,0.98))' }}>
-      <CardContent>
-        <Stack spacing={0.5}>
-          <Typography variant="body2" color="text.secondary">{label}</Typography>
-          <Typography variant="h4" fontWeight={900}>{value}</Typography>
-          {helper ? <Typography variant="caption" color="text.secondary">{helper}</Typography> : null}
-        </Stack>
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function AdminPage() {
   const admin = useAdminDashboard();
@@ -95,7 +82,7 @@ export default function AdminPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#F3F6FB', background: 'radial-gradient(circle at top left, rgba(15,118,110,0.10), transparent 24%), radial-gradient(circle at top right, rgba(245,158,11,0.10), transparent 22%), #F3F6FB' }}>
+    <PageShell>
       <CssBaseline />
       <AppBar position="fixed" elevation={0} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, background: 'rgba(10, 20, 35, 0.88)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <Toolbar sx={{ gap: 2 }}>
@@ -161,6 +148,15 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
+            {admin.activeSection === 'overview' ? (
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 2 }}>
+                <MetricCard label="Users" value={String(admin.users.length)} note="Tài khoản đang quản lý" accent="blue" />
+                <MetricCard label="Transactions" value={String(admin.transactions.length)} note="Lịch sử giao dịch" accent="cyan" />
+                <MetricCard label="Rewards" value={String(admin.rewards.length)} note="Phần thưởng đã tạo" accent="emerald" />
+                <MetricCard label="Campaigns" value={String(admin.campaigns.length)} note="Lucky wheel campaigns" accent="violet" />
+              </Box>
+            ) : null}
+
             {admin.activeSection === 'overview' ? <OverviewSection users={admin.users} transactions={admin.transactions} rewards={admin.rewards} campaigns={admin.campaigns} /> : null}
             {admin.activeSection === 'users' ? <UsersSection {...admin} /> : null}
             {admin.activeSection === 'transactions' ? <TransactionsSection {...admin} /> : null}
@@ -177,6 +173,6 @@ export default function AdminPage() {
           </Stack>
         </Container>
       </Box>
-    </Box>
+    </PageShell>
   );
 }

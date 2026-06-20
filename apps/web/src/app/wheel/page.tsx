@@ -4,9 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Box,
-  Button,
-  Card,
-  CardContent,
   Chip,
   Container,
   Divider,
@@ -16,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import { apiClient } from '../../lib/api';
+import { AppSection, HeroChip, PageShell, SectionButton } from '../shared-ui';
 
 export default function WheelPage() {
   const [token, setToken] = useState<string | null>(null);
@@ -71,88 +69,51 @@ export default function WheelPage() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 3, position: 'relative' }}>
-      <Box
-        sx={{
-          position: 'absolute',
-          inset: 0,
-          pointerEvents: 'none',
-          background:
-            'radial-gradient(circle at top left, rgba(59,130,246,0.16), transparent 26%), radial-gradient(circle at top right, rgba(245,158,11,0.12), transparent 28%), linear-gradient(180deg, rgba(255,255,255,0.92), rgba(246,247,251,0.98))',
-          borderRadius: 6,
-        }}
-      />
-      <Stack spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
-        <Fade in timeout={350}>
-          <Card sx={{ boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)', background: 'linear-gradient(135deg, rgba(59,130,246,0.10), rgba(255,255,255,0.94))' }}>
-            <CardContent>
-              <Stack spacing={1.5}>
-                <Chip label="Lucky Wheel" color="info" size="small" sx={{ alignSelf: 'flex-start' }} />
-                <Typography variant="h4" fontWeight={900}>
-                  Vòng quay may mắn
-                </Typography>
-                <Typography color="text.secondary">
-                  Dùng lượt quay để nhận điểm, code, spin ticket hoặc phần thưởng đặc biệt.
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap">
-                  <Chip label={`${spins} lượt quay`} color="secondary" />
-                  <Chip label={campaign?.is_active ? 'Campaign đang chạy' : 'Chưa có campaign active'} />
-                </Stack>
+    <PageShell>
+      <Container maxWidth="sm" sx={{ py: 3, position: 'relative' }}>
+        <Stack spacing={2}>
+          <Fade in timeout={350}>
+            <AppSection
+              title="Vòng quay may mắn"
+              subtitle="Dùng lượt quay để nhận điểm, code, spin ticket hoặc phần thưởng đặc biệt."
+              accent="blue"
+              action={<HeroChip label="Lucky Wheel" color="info" />}
+            >
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Chip label={`${spins} lượt quay`} color="secondary" />
+                <Chip label={campaign?.is_active ? 'Campaign đang chạy' : 'Chưa có campaign active'} />
               </Stack>
-            </CardContent>
-          </Card>
-        </Fade>
+            </AppSection>
+          </Fade>
 
-        {error ? <Alert severity="error">{error}</Alert> : null}
-        {result ? <Alert severity="success">Trúng: {result.prize?.name ?? 'Không trúng'}</Alert> : null}
+          {error ? <Alert severity="error">{error}</Alert> : null}
+          {result ? <Alert severity="success">Trúng: {result.prize?.name ?? 'Không trúng'}</Alert> : null}
 
-        {loading ? (
-          <Card>
-            <CardContent>
+          {loading ? (
+            <AppSection title="Đang tải wheel..." subtitle="Dữ liệu campaign và prize đang được đồng bộ." accent="cyan" compact>
               <Stack spacing={1.5}>
                 <Skeleton width="60%" height={30} />
                 <Skeleton width="40%" />
                 <Skeleton height={220} sx={{ borderRadius: 4 }} />
                 <Skeleton height={44} />
               </Stack>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            <Card
-              sx={{
-                borderRadius: 5,
-                overflow: 'hidden',
-                boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)',
-              }}
-            >
-              <Box
-                sx={{
-                  height: 10,
-                  background: 'linear-gradient(90deg, #3B82F6 0%, #14B8A6 50%, #F59E0B 100%)',
-                }}
-              />
-              <CardContent>
+            </AppSection>
+          ) : (
+            <>
+              <AppSection
+                title={campaign?.name ?? 'Chưa có campaign'}
+                subtitle={campaign?.description ?? 'Admin chưa kích hoạt campaign hiện tại.'}
+                accent="blue"
+                action={<Chip label={`${spins} spins`} color="secondary" />}
+              >
                 <Stack spacing={2}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Box>
-                      <Typography variant="h6" fontWeight={800}>
-                        {campaign?.name ?? 'Chưa có campaign'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {campaign?.description ?? 'Admin chưa kích hoạt campaign hiện tại.'}
-                      </Typography>
-                    </Box>
-                    <Chip label={`${spins} spins`} color="secondary" />
-                  </Stack>
-
                   <Box
                     sx={{
                       position: 'relative',
                       aspectRatio: '1 / 1',
                       borderRadius: '50%',
                       background:
-                        'conic-gradient(from 180deg, #0F766E 0deg, #14B8A6 72deg, #3B82F6 144deg, #F59E0B 216deg, #EC4899 288deg, #0F766E 360deg)',
+                        'conic-gradient(from 180deg, #2563eb 0deg, #06b6d4 72deg, #10b981 144deg, #f59e0b 216deg, #f43f5e 288deg, #2563eb 360deg)',
                       p: '10px',
                       mx: 'auto',
                       width: '100%',
@@ -182,33 +143,21 @@ export default function WheelPage() {
                         <Typography variant="body2" color="text.secondary">
                           Lượt quay hiện có: {spins}
                         </Typography>
-                        <Button
+                        <SectionButton
                           variant="contained"
                           disabled={!spins || !campaign || spinning}
                           onClick={spin}
-                          sx={{
-                            mt: 1,
-                            px: 3,
-                            py: 1.2,
-                            borderRadius: 999,
-                            background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
-                            boxShadow: '0 14px 30px rgba(20,184,166,0.28)',
-                          }}
+                          sx={{ mt: 1, px: 3, py: 1.2 }}
                         >
                           {spinning ? 'Đang xử lý...' : 'Quay ngay'}
-                        </Button>
+                        </SectionButton>
                       </Stack>
                     </Box>
                   </Box>
                 </Stack>
-              </CardContent>
-            </Card>
+              </AppSection>
 
-            <Card sx={{ borderRadius: 4, boxShadow: '0 16px 44px rgba(15, 23, 42, 0.08)' }}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={800}>
-                  Danh sách giải
-                </Typography>
+              <AppSection title="Danh sách giải" subtitle="Toàn bộ giải thưởng trong campaign hiện tại." accent="violet">
                 <Divider sx={{ my: 2 }} />
                 <Stack spacing={1}>
                   {prizes.length ? (
@@ -217,10 +166,10 @@ export default function WheelPage() {
                         key={prize.id}
                         sx={{
                           p: 1.5,
-                          borderRadius: 3,
+                          borderRadius: 2,
                           border: '1px solid',
                           borderColor: 'divider',
-                          bgcolor: 'rgba(15,118,110,0.03)',
+                          bgcolor: 'rgba(37,99,235,0.03)',
                         }}
                       >
                         <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
@@ -238,11 +187,11 @@ export default function WheelPage() {
                     <Typography color="text.secondary">Chưa có prize nào cho campaign này.</Typography>
                   )}
                 </Stack>
-              </CardContent>
-            </Card>
-          </>
-        )}
-      </Stack>
-    </Container>
+              </AppSection>
+            </>
+          )}
+        </Stack>
+      </Container>
+    </PageShell>
   );
 }

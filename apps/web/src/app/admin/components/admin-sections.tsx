@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Alert,
   Box,
   Button,
   Card,
@@ -21,6 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import { AuditTable, TransactionsTable, UsersTable } from './admin-tables';
+import { MetricCard, AppSection } from '../../shared-ui';
 
 export function OverviewSection({ users, transactions, rewards, campaigns }: any) {
   return (
@@ -31,10 +31,10 @@ export function OverviewSection({ users, transactions, rewards, campaigns }: any
         gap: 2,
       }}
     >
-      <Card><CardContent><Typography color="text.secondary">Users</Typography><Typography variant="h4" fontWeight={900}>{users.length}</Typography></CardContent></Card>
-      <Card><CardContent><Typography color="text.secondary">Transactions</Typography><Typography variant="h4" fontWeight={900}>{transactions.length}</Typography></CardContent></Card>
-      <Card><CardContent><Typography color="text.secondary">Rewards</Typography><Typography variant="h4" fontWeight={900}>{rewards.length}</Typography></CardContent></Card>
-      <Card><CardContent><Typography color="text.secondary">Campaigns</Typography><Typography variant="h4" fontWeight={900}>{campaigns.length}</Typography></CardContent></Card>
+      <MetricCard label="Users" value={String(users.length)} note="Tài khoản đang hoạt động" accent="blue" />
+      <MetricCard label="Transactions" value={String(transactions.length)} note="Lịch sử giao dịch" accent="cyan" />
+      <MetricCard label="Rewards" value={String(rewards.length)} note="Phần thưởng đã tạo" accent="emerald" />
+      <MetricCard label="Campaigns" value={String(campaigns.length)} note="Wheel campaigns" accent="violet" />
     </Box>
   );
 }
@@ -76,7 +76,7 @@ export function AuditSection({ auditLogs, handleDebugEnv }: any) {
 export function RewardsSection(props: any) {
   return (
     <Stack spacing={2}>
-      <Card sx={{ borderRadius: 2 }}>
+      <AppSection title="Rewards" subtitle="Tạo, sửa, import code và quản lý tồn kho." accent="emerald">
         <CardContent>
           <Stack spacing={2}>
             <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
@@ -109,18 +109,17 @@ export function RewardsSection(props: any) {
             </Stack>
           </Stack>
         </CardContent>
-      </Card>
+      </AppSection>
 
-      <Card sx={{ borderRadius: 2 }}>
+      <AppSection title="Import Codes" subtitle="Nạp mã reward nhanh từ text list." accent="blue">
         <CardContent>
           <Stack spacing={2}>
-            <Typography variant="h6" fontWeight={900}>Import Codes</Typography>
             <TextField label="Reward ID" value={props.importRewardId} onChange={(e) => props.setImportRewardId(e.target.value)} />
             <TextField label="Codes" value={props.importCodesText} onChange={(e) => props.setImportCodesText(e.target.value)} multiline minRows={5} />
             <Button variant="outlined" onClick={props.handleImportCodes}>Import codes</Button>
           </Stack>
         </CardContent>
-      </Card>
+      </AppSection>
 
       <Dialog open={Boolean(props.editingReward)} onClose={() => props.setEditingReward(null)} fullWidth maxWidth="sm">
         <DialogTitle>Edit Reward</DialogTitle>
@@ -144,10 +143,9 @@ export function RewardsSection(props: any) {
 export function WheelSection(props: any) {
   return (
     <Stack spacing={2}>
-      <Card sx={{ borderRadius: 2 }}>
+      <AppSection title="Wheel Campaigns" subtitle="Quản lý campaign và danh sách prize." accent="violet">
         <CardContent>
           <Stack spacing={2}>
-            <Typography variant="h6" fontWeight={900}>Wheel Campaigns</Typography>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
               <TextField fullWidth label="Campaign name" value={props.campaignName} onChange={(e) => props.setCampaignName(e.target.value)} />
               <Button variant="contained" onClick={props.handleCreateCampaign}>Create campaign</Button>
@@ -168,12 +166,11 @@ export function WheelSection(props: any) {
             </Stack>
           </Stack>
         </CardContent>
-      </Card>
+      </AppSection>
 
-      <Card sx={{ borderRadius: 2 }}>
+      <AppSection title="Create Prize" subtitle="Thêm prize vào campaign đang quản lý." accent="amber">
         <CardContent>
           <Stack spacing={2}>
-            <Typography variant="h6" fontWeight={900}>Create Prize</Typography>
             <TextField label="Campaign ID" value={props.prizeCampaignId} onChange={(e) => props.setPrizeCampaignId(e.target.value)} />
             <TextField label="Prize name" value={props.prizeName} onChange={(e) => props.setPrizeName(e.target.value)} />
             <TextField label="Prize type" value={props.prizeType} onChange={(e) => props.setPrizeType(e.target.value)} />
@@ -181,7 +178,7 @@ export function WheelSection(props: any) {
             <Button variant="outlined" onClick={props.handleCreatePrize}>Create prize</Button>
           </Stack>
         </CardContent>
-      </Card>
+      </AppSection>
 
       <Dialog open={Boolean(props.editingCampaign)} onClose={() => props.setEditingCampaign(null)} fullWidth maxWidth="sm">
         <DialogTitle>Edit Wheel Campaign</DialogTitle>
@@ -209,13 +206,9 @@ export function WheelSection(props: any) {
 
 export function SettingsSection({ debugEnv, botInfo, debugLoading, handleDebugEnv }: any) {
   return (
-    <Card sx={{ borderRadius: 2 }}>
+    <AppSection title="Settings & Diagnostics" subtitle="Debug env và identity Telegram bot." accent="blue">
       <CardContent>
         <Stack spacing={2}>
-          <Box>
-            <Typography variant="h6" fontWeight={900}>Settings & Diagnostics</Typography>
-            <Typography variant="body2" color="text.secondary">Debug env và identity Telegram bot.</Typography>
-          </Box>
           <Button variant="outlined" onClick={handleDebugEnv} disabled={debugLoading} sx={{ alignSelf: 'flex-start' }}>
             {debugLoading ? 'Loading...' : 'Debug Env'}
           </Button>
@@ -223,6 +216,6 @@ export function SettingsSection({ debugEnv, botInfo, debugLoading, handleDebugEn
           {botInfo ? <Box component="pre" sx={{ m: 0, p: 2, borderRadius: 1, bgcolor: 'rgba(15,118,110,0.06)', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{JSON.stringify(botInfo, null, 2)}</Box> : null}
         </Stack>
       </CardContent>
-    </Card>
+    </AppSection>
   );
 }
