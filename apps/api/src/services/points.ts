@@ -124,7 +124,10 @@ export function createPointService(supabase: any) {
       amount: input.amount,
       type: input.amount > 0 ? 'credit' : 'debit',
       reason: input.reason,
-      metadata: input.metadata,
+      metadata: {
+        ...(input.metadata ?? {}),
+        actorEmail: input.actorEmail ?? null,
+      },
     });
 
     return { ok: true, transaction };

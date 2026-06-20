@@ -55,6 +55,14 @@ app.addHook('onRequest', async (request, reply) => {
     }
   }
 
+  if (request.url.startsWith('/me')) {
+    await request.jwtVerify();
+    const payload = request.user as { role?: string } | undefined;
+    if (payload?.role !== 'telegram') {
+      return reply.code(403).send({ message: 'Forbidden' });
+    }
+  }
+
   if (request.url.startsWith('/bot/webhook')) {
     const expectedSecret = process.env.TELEGRAM_WEBHOOK_SECRET;
     if (expectedSecret) {
@@ -120,6 +128,36 @@ app.post('/admin/adjust', async (request) => {
   const auth = (request.user as { email?: string } | undefined)?.email;
   const result = await context.admin.adjustPoints({ ...body, actorEmail: auth });
   return result;
+});
+
+app.get('/me/summary', async (request) => {
+  const payload = request.user as { telegramId?: string } | undefined;
+  const telegramId = payload?.telegramId;
+  if (!telegramId) {
+    return { telegramId: '', balance: 0, transactions: [] };
+  }
+
+  const summary = await context.points.getSummary(telegramId);
+  return summary;
+});
+
+app.post('/me/checkin', async (request) => {
+  const payload = request.user as { telegramId?: string } | undefined;
+  const telegramId = payload?.telegramId;
+  if (!telegramId) {
+    return { message: 'Unauthorized' };
+  }
+
+  const user = await context.points.getUserByTelegramId(telegramId);
+  const response = await context.points.checkIn({
+    telegramId,
+    username: user?.username ?? null,
+    firstName: user?.first_name ?? null,
+    lastName: user?.last_name ?? null,
+    avatarUrl: user?.avatar_url ?? null,
+  });
+
+  return response;
 });
 
 app.post('/auth/telegram/webapp', async (request, reply) => {
