@@ -11,7 +11,7 @@ const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 16,
+    borderRadius: 8,
   },
   typography: {
     fontFamily: ['Inter', 'system-ui', 'sans-serif'].join(','),

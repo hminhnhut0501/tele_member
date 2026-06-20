@@ -81,7 +81,7 @@ export function UsersTable({
   const filtered = useMemo(() => users, [users]);
 
   return (
-    <Card sx={{ borderRadius: 5 }}>
+    <Card sx={{ borderRadius: 2 }}>
       <CardContent>
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'start', md: 'center' }}>
@@ -155,7 +155,7 @@ export function TransactionsTable({
   onPageChange: (page: number) => void;
 }) {
   return (
-    <Card sx={{ borderRadius: 5 }}>
+    <Card sx={{ borderRadius: 2 }}>
       <CardContent>
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'start', md: 'center' }}>
@@ -217,7 +217,7 @@ export function AuditTable({
   onRefresh?: () => void;
 }) {
   return (
-    <Card sx={{ borderRadius: 5 }}>
+    <Card sx={{ borderRadius: 2 }}>
       <CardContent>
         <Stack spacing={2}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">

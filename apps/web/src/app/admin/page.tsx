@@ -57,7 +57,7 @@ const DRAWER_WIDTH = 280;
 
 function StatCard({ label, value, helper }: { label: string; value: string; helper?: string }) {
   return (
-    <Card sx={{ borderRadius: 4, boxShadow: '0 12px 36px rgba(15, 23, 42, 0.08)', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,247,251,0.98))' }}>
+    <Card sx={{ borderRadius: 2, boxShadow: '0 12px 36px rgba(15, 23, 42, 0.08)', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,247,251,0.98))' }}>
       <CardContent>
         <Stack spacing={0.5}>
           <Typography variant="body2" color="text.secondary">{label}</Typography>
@@ -75,7 +75,7 @@ export default function AdminPage() {
   if (!admin.token) {
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
-        <Card sx={{ borderRadius: 5, boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)' }}>
+        <Card sx={{ borderRadius: 2, boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)' }}>
           <CardContent>
             <Stack spacing={2}>
               <Chip label="Admin Login" color="primary" sx={{ alignSelf: 'flex-start' }} />
@@ -111,7 +111,7 @@ export default function AdminPage() {
       <Drawer variant="permanent" sx={{ width: DRAWER_WIDTH, flexShrink: 0, '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box', borderRight: '1px solid rgba(15,23,42,0.08)', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,247,251,0.98))' } }}>
         <Toolbar />
         <Box sx={{ px: 2, py: 2 }}>
-          <Card sx={{ borderRadius: 4, mb: 2, boxShadow: '0 12px 36px rgba(15, 23, 42, 0.06)' }}>
+          <Card sx={{ borderRadius: 2, mb: 2, boxShadow: '0 12px 36px rgba(15, 23, 42, 0.06)' }}>
             <CardContent>
               <Typography variant="overline" color="text.secondary">Workspace</Typography>
               <Typography variant="h6" fontWeight={900}>Control Center</Typography>
@@ -120,7 +120,7 @@ export default function AdminPage() {
           </Card>
           <List disablePadding>
             {NAV_ITEMS.map((item) => (
-              <ListItemButton key={item.key} selected={admin.activeSection === item.key} onClick={() => admin.setActiveSection(item.key)} sx={{ borderRadius: 3, mb: 0.5, '&.Mui-selected': { bgcolor: 'rgba(20,184,166,0.12)', color: '#0F766E', '& .MuiListItemIcon-root': { color: '#0F766E' } } }}>
+              <ListItemButton key={item.key} selected={admin.activeSection === item.key} onClick={() => admin.setActiveSection(item.key)} sx={{ borderRadius: 1, mb: 0.5, '&.Mui-selected': { bgcolor: 'rgba(20,184,166,0.12)', color: '#0F766E', '& .MuiListItemIcon-root': { color: '#0F766E' } } }}>
                 <ListItemIcon sx={{ minWidth: 38 }}>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.label} />
               </ListItemButton>
@@ -133,7 +133,7 @@ export default function AdminPage() {
         <Container maxWidth="xl">
           <Stack spacing={3}>
             {admin.error ? <Alert severity="warning">{admin.error}</Alert> : null}
-            <Card sx={{ borderRadius: 5, boxShadow: '0 20px 60px rgba(15,23,42,0.08)' }}>
+            <Card sx={{ borderRadius: 2, boxShadow: '0 20px 60px rgba(15,23,42,0.08)' }}>
               <CardContent>
                 <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
                   <Box>
@@ -153,7 +153,7 @@ export default function AdminPage() {
               </CardContent>
             </Card>
 
-            <Card sx={{ borderRadius: 5, boxShadow: '0 18px 50px rgba(15,23,42,0.06)' }}>
+            <Card sx={{ borderRadius: 2, boxShadow: '0 18px 50px rgba(15,23,42,0.06)' }}>
               <CardContent sx={{ pb: 1 }}>
                 <Tabs value={admin.activeSection} onChange={(_, value) => admin.setActiveSection(value)} variant="scrollable" scrollButtons="auto">
                   {NAV_ITEMS.map((item) => <Tab key={item.key} value={item.key} label={item.label} />)}

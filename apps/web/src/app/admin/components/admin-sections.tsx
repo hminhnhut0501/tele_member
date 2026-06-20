@@ -76,7 +76,7 @@ export function AuditSection({ auditLogs, handleDebugEnv }: any) {
 export function RewardsSection(props: any) {
   return (
     <Stack spacing={2}>
-      <Card sx={{ borderRadius: 5 }}>
+      <Card sx={{ borderRadius: 2 }}>
         <CardContent>
           <Stack spacing={2}>
             <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
@@ -94,7 +94,7 @@ export function RewardsSection(props: any) {
             <Divider />
             <Stack spacing={1}>
               {props.rewards.map((reward: any) => (
-                <Box key={reward.id} sx={{ p: 1.75, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+                <Box key={reward.id} sx={{ p: 1.75, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
                   <Typography fontWeight={800}>{reward.name}</Typography>
                   <Typography variant="body2" color="text.secondary">{reward.type} | cost {reward.point_cost} | stock {reward.stock ?? '∞'} | {reward.is_active ? 'Active' : 'Inactive'}</Typography>
                   <Button size="small" variant="outlined" sx={{ mt: 1 }} onClick={() => {
@@ -111,7 +111,7 @@ export function RewardsSection(props: any) {
         </CardContent>
       </Card>
 
-      <Card sx={{ borderRadius: 5 }}>
+      <Card sx={{ borderRadius: 2 }}>
         <CardContent>
           <Stack spacing={2}>
             <Typography variant="h6" fontWeight={900}>Import Codes</Typography>
@@ -144,7 +144,7 @@ export function RewardsSection(props: any) {
 export function WheelSection(props: any) {
   return (
     <Stack spacing={2}>
-      <Card sx={{ borderRadius: 5 }}>
+      <Card sx={{ borderRadius: 2 }}>
         <CardContent>
           <Stack spacing={2}>
             <Typography variant="h6" fontWeight={900}>Wheel Campaigns</Typography>
@@ -154,7 +154,7 @@ export function WheelSection(props: any) {
             </Stack>
             <Stack spacing={1}>
               {props.campaigns.map((campaign: any) => (
-                <Box key={campaign.id} sx={{ p: 1.75, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+                <Box key={campaign.id} sx={{ p: 1.75, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
                   <Typography fontWeight={800}>{campaign.name}</Typography>
                   <Typography variant="body2" color="text.secondary">{campaign.is_active ? 'Active' : 'Inactive'}</Typography>
                   <Button size="small" variant="outlined" sx={{ mt: 1 }} onClick={() => {
@@ -170,7 +170,7 @@ export function WheelSection(props: any) {
         </CardContent>
       </Card>
 
-      <Card sx={{ borderRadius: 5 }}>
+      <Card sx={{ borderRadius: 2 }}>
         <CardContent>
           <Stack spacing={2}>
             <Typography variant="h6" fontWeight={900}>Create Prize</Typography>
@@ -209,7 +209,7 @@ export function WheelSection(props: any) {
 
 export function SettingsSection({ debugEnv, botInfo, debugLoading, handleDebugEnv }: any) {
   return (
-    <Card sx={{ borderRadius: 5 }}>
+    <Card sx={{ borderRadius: 2 }}>
       <CardContent>
         <Stack spacing={2}>
           <Box>
@@ -219,8 +219,8 @@ export function SettingsSection({ debugEnv, botInfo, debugLoading, handleDebugEn
           <Button variant="outlined" onClick={handleDebugEnv} disabled={debugLoading} sx={{ alignSelf: 'flex-start' }}>
             {debugLoading ? 'Loading...' : 'Debug Env'}
           </Button>
-          {debugEnv ? <Box component="pre" sx={{ m: 0, p: 2, borderRadius: 3, bgcolor: 'rgba(2,6,23,0.04)', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{JSON.stringify(debugEnv, null, 2)}</Box> : null}
-          {botInfo ? <Box component="pre" sx={{ m: 0, p: 2, borderRadius: 3, bgcolor: 'rgba(15,118,110,0.06)', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{JSON.stringify(botInfo, null, 2)}</Box> : null}
+          {debugEnv ? <Box component="pre" sx={{ m: 0, p: 2, borderRadius: 1, bgcolor: 'rgba(2,6,23,0.04)', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{JSON.stringify(debugEnv, null, 2)}</Box> : null}
+          {botInfo ? <Box component="pre" sx={{ m: 0, p: 2, borderRadius: 1, bgcolor: 'rgba(15,118,110,0.06)', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{JSON.stringify(botInfo, null, 2)}</Box> : null}
         </Stack>
       </CardContent>
     </Card>
