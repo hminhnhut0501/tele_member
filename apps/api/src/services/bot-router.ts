@@ -70,20 +70,26 @@ export function createBotRouter(deps: {
           body: JSON.stringify({
             chat_id: chatId,
             text: 'Open App',
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  {
-                    text: 'Open App',
-                    web_app: {
-                      url: webAppUrl,
+              reply_markup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: 'Open App',
+                      web_app: {
+                        url: webAppUrl,
+                      },
                     },
-                  },
-                ],
-                [
-                  { text: 'Điểm danh', callback_data: 'checkin' },
-                  { text: 'Xem điểm', callback_data: 'points' },
-                ],
+                    {
+                      text: 'Lucky Wheel',
+                      web_app: {
+                        url: `${webAppUrl}/wheel`,
+                      },
+                    },
+                  ],
+                  [
+                    { text: 'Điểm danh', callback_data: 'checkin' },
+                    { text: 'Xem điểm', callback_data: 'points' },
+                  ],
               ],
             },
           }),
