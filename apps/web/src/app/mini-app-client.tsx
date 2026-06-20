@@ -59,14 +59,14 @@ export default function MiniAppClient() {
     let cancelled = false;
     const initTelegram = async () => {
       try {
-        const telegram = (window as any).Telegram;
-        const tg = telegram?.WebApp;
+        let telegram = (window as any).Telegram;
+        let tg = telegram?.WebApp;
         const waitForBridge = async () => {
-          for (let attempt = 0; attempt < 20; attempt += 1) {
-            const currentTelegram = (window as any).Telegram;
-            const currentWebApp = currentTelegram?.WebApp;
-            if (currentWebApp?.initData !== undefined) {
-              return currentWebApp;
+          for (let attempt = 0; attempt < 50; attempt += 1) {
+            telegram = (window as any).Telegram;
+            tg = telegram?.WebApp;
+            if (tg?.initData !== undefined) {
+              return tg;
             }
             await new Promise((resolve) => setTimeout(resolve, 100));
           }
@@ -85,7 +85,7 @@ export default function MiniAppClient() {
         });
         const initData = readyWebApp?.initData ?? '';
         if (!initData) {
-          setError('Mini app chỉ hoạt động khi mở từ Telegram.');
+          setError('Telegram WebApp bridge chưa sẵn sàng hoặc không được inject.');
           setStatus('not-telegram');
           return;
         }
