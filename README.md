@@ -21,3 +21,9 @@ Monorepo MVP for a Telegram community loyalty platform.
 
 - Business logic is isolated behind shared schemas and API routes so it can move to VPS later without rewriting the core flow.
 - Database access layer is intentionally left thin for the MVP and should be wired to Supabase client/server helpers next.
+
+## Deploy Layout
+
+- Render hosts `apps/api`
+- Vercel hosts `apps/web`
+- Root `pnpm dev` now starts only the API to avoid port conflicts in single-service environments like Render

@@ -3,7 +3,10 @@
   "private": true,
   "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
+    "dev": "pnpm --filter @tele-member/api dev",
+    "dev:all": "pnpm -r --parallel dev",
+    "dev:web": "pnpm --filter @tele-member/web dev",
+    "dev:api": "pnpm --filter @tele-member/api dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck"
