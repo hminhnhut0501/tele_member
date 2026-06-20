@@ -14,9 +14,9 @@ export function validateTelegramWebAppInitData(initData: string, botToken: strin
     return { ok: false as const, reason: 'missing_hash' as const };
   }
 
-  const dataCheckString = initData
-    .split('&')
-    .filter((part) => part && !part.startsWith('hash='))
+  const dataCheckString = Array.from(params.entries())
+    .filter(([key]) => key !== 'hash')
+    .map(([key, value]) => `${key}=${value}`)
     .sort()
     .join('\n');
 
