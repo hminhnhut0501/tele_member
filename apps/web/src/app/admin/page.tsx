@@ -56,6 +56,18 @@ export default function AdminPage() {
   const [debugEnv, setDebugEnv] = useState<any>(null);
   const [botInfo, setBotInfo] = useState<any>(null);
   const [debugLoading, setDebugLoading] = useState(false);
+  const [rewards, setRewards] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [rewardName, setRewardName] = useState('');
+  const [rewardPointCost, setRewardPointCost] = useState(0);
+  const [rewardType, setRewardType] = useState('VOUCHER');
+  const [campaignName, setCampaignName] = useState('');
+  const [importRewardId, setImportRewardId] = useState('');
+  const [importCodesText, setImportCodesText] = useState('');
+  const [prizeCampaignId, setPrizeCampaignId] = useState('');
+  const [prizeName, setPrizeName] = useState('');
+  const [prizeType, setPrizeType] = useState('POINT');
+  const [prizeWeight, setPrizeWeight] = useState(1);
   const pageSize = 20;
   const client = apiClient(token);
 
@@ -78,6 +90,8 @@ export default function AdminPage() {
       .getAuditLogs(page * pageSize, pageSize)
       .then((data) => setAuditLogs(data.logs ?? data))
       .catch((err) => setError(String(err)));
+    client.adminGetRewards().then((data) => setRewards(data.rewards ?? [])).catch(() => {});
+    client.adminGetWheelCampaigns().then((data) => setCampaigns(data.campaigns ?? [])).catch(() => {});
   }, [token, search, page]);
 
   async function handleLogin() {
@@ -88,6 +102,70 @@ export default function AdminPage() {
       window.localStorage.setItem('tele-member-admin-token', data.token);
     } catch (err) {
       setError('Đăng nhập thất bại');
+    }
+  }
+
+  async function handleCreateReward() {
+    try {
+      await client.adminCreateReward({
+        name: rewardName,
+        type: rewardType,
+        pointCost: rewardPointCost,
+        description: '',
+        stock: null,
+        isActive: true,
+        metadata: {},
+      });
+      const data = await client.adminGetRewards();
+      setRewards(data.rewards ?? []);
+      setError('');
+    } catch {
+      setError('Tạo reward thất bại');
+    }
+  }
+
+  async function handleCreateCampaign() {
+    try {
+      await client.adminCreateWheelCampaign({
+        name: campaignName,
+        isActive: false,
+        metadata: {},
+      });
+      const data = await client.adminGetWheelCampaigns();
+      setCampaigns(data.campaigns ?? []);
+      setError('');
+    } catch {
+      setError('Tạo campaign thất bại');
+    }
+  }
+
+  async function handleImportCodes() {
+    try {
+      const codes = importCodesText
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+      await client.adminImportRewardCodes(importRewardId, codes);
+      setError('');
+    } catch {
+      setError('Import code thất bại');
+    }
+  }
+
+  async function handleCreatePrize() {
+    try {
+      if (!prizeCampaignId) throw new Error('Missing campaign');
+      await client.adminCreateWheelPrize(prizeCampaignId, {
+        name: prizeName,
+        type: prizeType,
+        weight: prizeWeight,
+        stock: null,
+        isActive: true,
+        metadata: {},
+      });
+      setError('');
+    } catch {
+      setError('Tạo prize thất bại');
     }
   }
 
@@ -290,6 +368,74 @@ export default function AdminPage() {
                 Bấm <strong>Debug Env</strong> để xem fingerprint môi trường đang chạy trên Render.
               </Typography>
             )}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <Typography variant="h6">Rewards</Typography>
+            <Divider sx={{ my: 2 }} />
+            <Stack spacing={2}>
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+                <TextField label="Reward name" value={rewardName} onChange={(e) => setRewardName(e.target.value)} fullWidth />
+                <TextField label="Type" value={rewardType} onChange={(e) => setRewardType(e.target.value)} fullWidth />
+                <TextField label="Point cost" type="number" value={rewardPointCost} onChange={(e) => setRewardPointCost(Number(e.target.value))} fullWidth />
+                <Button variant="contained" onClick={handleCreateReward}>Create</Button>
+              </Stack>
+              <Stack spacing={1}>
+                {rewards.map((reward) => (
+                  <Box key={reward.id} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                    <Typography fontWeight={700}>{reward.name}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {reward.type} | cost {reward.point_cost} | stock {reward.stock ?? '∞'} | {reward.is_active ? 'Active' : 'Inactive'}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+              <Divider />
+              <Stack spacing={1.5}>
+                <Typography variant="subtitle1" fontWeight={700}>Import codes</Typography>
+                <TextField label="Reward ID" value={importRewardId} onChange={(e) => setImportRewardId(e.target.value)} />
+                <TextField
+                  label="Codes (one per line)"
+                  value={importCodesText}
+                  onChange={(e) => setImportCodesText(e.target.value)}
+                  multiline
+                  minRows={4}
+                />
+                <Button variant="outlined" onClick={handleImportCodes}>Import</Button>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent>
+            <Typography variant="h6">Wheel Campaigns</Typography>
+            <Divider sx={{ my: 2 }} />
+            <Stack spacing={2}>
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+                <TextField label="Campaign name" value={campaignName} onChange={(e) => setCampaignName(e.target.value)} fullWidth />
+                <Button variant="contained" onClick={handleCreateCampaign}>Create</Button>
+              </Stack>
+              <Stack spacing={1}>
+                {campaigns.map((campaign) => (
+                  <Box key={campaign.id} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                    <Typography fontWeight={700}>{campaign.name}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {campaign.is_active ? 'Active' : 'Inactive'}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
+              <Divider />
+              <Stack spacing={1.5}>
+                <Typography variant="subtitle1" fontWeight={700}>Create prize</Typography>
+                <TextField label="Campaign ID" value={prizeCampaignId} onChange={(e) => setPrizeCampaignId(e.target.value)} />
+                <TextField label="Prize name" value={prizeName} onChange={(e) => setPrizeName(e.target.value)} />
+                <TextField label="Prize type" value={prizeType} onChange={(e) => setPrizeType(e.target.value)} />
+                <TextField label="Weight" type="number" value={prizeWeight} onChange={(e) => setPrizeWeight(Number(e.target.value))} />
+                <Button variant="outlined" onClick={handleCreatePrize}>Create prize</Button>
+              </Stack>
+            </Stack>
           </CardContent>
         </Card>
       </Stack>

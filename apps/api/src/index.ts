@@ -61,7 +61,13 @@ app.addHook('onRequest', async (request, reply) => {
     }
   }
 
-  if (request.url.startsWith('/me') || request.url.startsWith('/api/me')) {
+  if (
+    request.url.startsWith('/me') ||
+    request.url.startsWith('/api/me') ||
+    (request.url.startsWith('/api/rewards/') && request.method !== 'GET') ||
+    request.url.startsWith('/api/wheel/spin') ||
+    request.url.startsWith('/api/wheel/history')
+  ) {
     await request.jwtVerify();
     const payload = request.user as { role?: string } | undefined;
     if (payload?.role !== 'telegram') {
