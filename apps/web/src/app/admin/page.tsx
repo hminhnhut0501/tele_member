@@ -1,18 +1,39 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
+  AppBar,
+  Avatar,
   Box,
   Button,
   Card,
   CardContent,
+  Chip,
   Container,
+  CssBaseline,
   Divider,
+  Drawer,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Stack,
+  Tab,
+  Tabs,
   TextField,
+  Toolbar,
   Typography,
 } from '@mui/material';
+import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
+import PeopleAltRoundedIcon from '@mui/icons-material/PeopleAltRounded';
+import ReceiptLongRoundedIcon from '@mui/icons-material/ReceiptLongRounded';
+import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
+import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
+import CasinoRoundedIcon from '@mui/icons-material/CasinoRounded';
+import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
+import ShieldRoundedIcon from '@mui/icons-material/ShieldRounded';
+import AddCardRoundedIcon from '@mui/icons-material/AddCardRounded';
 import { apiClient } from '../../lib/api';
 
 type AdminUser = {
@@ -40,24 +61,93 @@ type AdminTransaction = {
   createdAt: string;
 };
 
+type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'settings';
+
+const NAV_ITEMS: Array<{ key: SectionKey; label: string; icon: React.ReactNode }> = [
+  { key: 'overview', label: 'Overview', icon: <DashboardRoundedIcon /> },
+  { key: 'users', label: 'Users', icon: <PeopleAltRoundedIcon /> },
+  { key: 'transactions', label: 'Transactions', icon: <ReceiptLongRoundedIcon /> },
+  { key: 'audit', label: 'Audit Logs', icon: <FactCheckRoundedIcon /> },
+  { key: 'rewards', label: 'Rewards', icon: <Inventory2RoundedIcon /> },
+  { key: 'wheel', label: 'Lucky Wheel', icon: <CasinoRoundedIcon /> },
+  { key: 'settings', label: 'Settings', icon: <SettingsRoundedIcon /> },
+];
+
+const DRAWER_WIDTH = 280;
+
+function StatCard({ label, value, helper }: { label: string; value: string; helper?: string }) {
+  return (
+    <Card
+      sx={{
+        borderRadius: 4,
+        boxShadow: '0 12px 36px rgba(15, 23, 42, 0.08)',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,247,251,0.98))',
+      }}
+    >
+      <CardContent>
+        <Stack spacing={0.5}>
+          <Typography variant="body2" color="text.secondary">
+            {label}
+          </Typography>
+          <Typography variant="h4" fontWeight={900}>
+            {value}
+          </Typography>
+          {helper ? (
+            <Typography variant="caption" color="text.secondary">
+              {helper}
+            </Typography>
+          ) : null}
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SectionHeader({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'start', md: 'center' }} justifyContent="space-between">
+      <Box>
+        <Typography variant="h6" fontWeight={900}>
+          {title}
+        </Typography>
+        {description ? (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {description}
+          </Typography>
+        ) : null}
+      </Box>
+      {action}
+    </Stack>
+  );
+}
+
 export default function AdminPage() {
   const [token, setToken] = useState<string | null>(null);
   const [email, setEmail] = useState('admin@example.com');
   const [password, setPassword] = useState('admin123');
   const [error, setError] = useState('');
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [transactions, setTransactions] = useState<AdminTransaction[]>([]);
-  const [auditLogs, setAuditLogs] = useState<any[]>([]);
-  const [telegramId, setTelegramId] = useState('');
-  const [amount, setAmount] = useState(10);
-  const [reason, setReason] = useState('manual_adjustment');
+  const [activeSection, setActiveSection] = useState<SectionKey>('overview');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [debugEnv, setDebugEnv] = useState<any>(null);
   const [botInfo, setBotInfo] = useState<any>(null);
   const [debugLoading, setDebugLoading] = useState(false);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [transactions, setTransactions] = useState<AdminTransaction[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [rewards, setRewards] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [telegramId, setTelegramId] = useState('');
+  const [amount, setAmount] = useState(10);
+  const [reason, setReason] = useState('manual_adjustment');
   const [rewardName, setRewardName] = useState('');
   const [rewardPointCost, setRewardPointCost] = useState(0);
   const [rewardType, setRewardType] = useState('VOUCHER');
@@ -69,7 +159,7 @@ export default function AdminPage() {
   const [prizeType, setPrizeType] = useState('POINT');
   const [prizeWeight, setPrizeWeight] = useState(1);
   const pageSize = 20;
-  const client = apiClient(token);
+  const client = useMemo(() => apiClient(token), [token]);
 
   useEffect(() => {
     const saved = window.localStorage.getItem('tele-member-admin-token');
@@ -92,7 +182,7 @@ export default function AdminPage() {
       .catch((err) => setError(String(err)));
     client.adminGetRewards().then((data) => setRewards(data.rewards ?? [])).catch(() => {});
     client.adminGetWheelCampaigns().then((data) => setCampaigns(data.campaigns ?? [])).catch(() => {});
-  }, [token, search, page]);
+  }, [client, token, search, page]);
 
   async function handleLogin() {
     try {
@@ -100,8 +190,38 @@ export default function AdminPage() {
       const data = await client.login(email, password);
       setToken(data.token);
       window.localStorage.setItem('tele-member-admin-token', data.token);
-    } catch (err) {
+    } catch {
       setError('Đăng nhập thất bại');
+    }
+  }
+
+  async function handleAdjust() {
+    try {
+      await client.adjust({ telegramId, amount: Number(amount), reason });
+      const updated = await client.getUsers(search, page * pageSize, pageSize);
+      const refreshed = await client.getTransactions(search, page * pageSize, pageSize);
+      const logs = await client.getAuditLogs(page * pageSize, pageSize);
+      setUsers(updated.users ?? updated);
+      setTransactions(refreshed.transactions ?? refreshed);
+      setAuditLogs(logs.logs ?? logs);
+      setError('');
+    } catch {
+      setError('Cập nhật điểm thất bại');
+    }
+  }
+
+  async function handleDebugEnv() {
+    if (!token) return;
+    try {
+      setDebugLoading(true);
+      setError('');
+      const [envData, botData] = await Promise.all([client.getDebugEnv(), client.getTelegramBotInfo()]);
+      setDebugEnv(envData);
+      setBotInfo(botData);
+    } catch {
+      setError('Không thể tải debug env');
+    } finally {
+      setDebugLoading(false);
     }
   }
 
@@ -169,54 +289,27 @@ export default function AdminPage() {
     }
   }
 
-  async function handleAdjust() {
-    try {
-      await client.adjust({ telegramId, amount: Number(amount), reason });
-      const updated = await client.getUsers(search, page * pageSize, pageSize);
-      const refreshed = await client.getTransactions(search, page * pageSize, pageSize);
-      const logs = await client.getAuditLogs(page * pageSize, pageSize);
-      setUsers(updated.users ?? updated);
-      setTransactions(refreshed.transactions ?? refreshed);
-      setAuditLogs(logs.logs ?? logs);
-      setError('');
-    } catch (err) {
-      setError('Cập nhật điểm thất bại');
-    }
-  }
-
-  async function handleDebugEnv() {
-    if (!token) return;
-    try {
-      setDebugLoading(true);
-      setError('');
-      const [envData, botData] = await Promise.all([client.getDebugEnv(), client.getTelegramBotInfo()]);
-      setDebugEnv(envData);
-      setBotInfo(botData);
-    } catch {
-      setError('Không thể tải debug env');
-    } finally {
-      setDebugLoading(false);
-    }
-  }
-
   if (!token) {
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
-        <Card>
+        <Card sx={{ borderRadius: 5, boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)' }}>
           <CardContent>
             <Stack spacing={2}>
-              <Typography variant="h4" fontWeight={800}>
-                Admin Login
+              <Chip label="Admin Login" color="primary" sx={{ alignSelf: 'flex-start' }} />
+              <Typography variant="h4" fontWeight={900}>
+                Sign in to Admin CP
+              </Typography>
+              <Typography color="text.secondary">
+                Quản lý users, reward store, code import, wheel campaign và audit logs trong một khung dashboard thống nhất.
               </Typography>
               {error ? <Alert severity="error">{error}</Alert> : null}
               <TextField label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              <TextField
-                label="Password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <Button variant="contained" onClick={handleLogin}>
+              <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Button
+                variant="contained"
+                onClick={handleLogin}
+                sx={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)' }}
+              >
                 Login
               </Button>
             </Stack>
@@ -227,218 +320,430 @@ export default function AdminPage() {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Stack spacing={3}>
-        <Typography variant="h4" fontWeight={800}>
-          Admin Control Panel
-        </Typography>
-        {error ? <Alert severity="warning">{error}</Alert> : null}
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-          <TextField fullWidth label="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
-          <Button variant="outlined" onClick={() => setPage((value) => Math.max(0, value - 1))}>
-            Prev
-          </Button>
-          <Button variant="outlined" onClick={() => setPage((value) => value + 1)}>
-            Next
-          </Button>
-          <Button variant="contained" color="secondary" onClick={handleDebugEnv} disabled={debugLoading}>
-            {debugLoading ? 'Loading...' : 'Debug Env'}
-          </Button>
-        </Stack>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-          <Card>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#F3F6FB',
+        background:
+          'radial-gradient(circle at top left, rgba(15,118,110,0.10), transparent 24%), radial-gradient(circle at top right, rgba(245,158,11,0.10), transparent 22%), #F3F6FB',
+      }}
+    >
+      <CssBaseline />
+      <AppBar
+        position="fixed"
+        elevation={0}
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          background: 'rgba(10, 20, 35, 0.88)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}
+      >
+        <Toolbar sx={{ gap: 2 }}>
+          <Avatar sx={{ bgcolor: '#14B8A6', fontWeight: 900 }}>TM</Avatar>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography variant="subtitle1" fontWeight={800} color="common.white" noWrap>
+              Tele Member Admin CP
+            </Typography>
+            <Typography variant="caption" color="rgba(255,255,255,0.72)" noWrap>
+              Rewards, Wheel, Wallet, Audit and more
+            </Typography>
+          </Box>
+          <Chip label={token ? 'Online' : 'Offline'} color="success" size="small" />
+        </Toolbar>
+      </AppBar>
+
+      <Drawer
+        variant="permanent"
+        sx={{
+          width: DRAWER_WIDTH,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': {
+            width: DRAWER_WIDTH,
+            boxSizing: 'border-box',
+            borderRight: '1px solid rgba(15,23,42,0.08)',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,247,251,0.98))',
+          },
+        }}
+      >
+        <Toolbar />
+        <Box sx={{ px: 2, py: 2 }}>
+          <Card sx={{ borderRadius: 4, mb: 2, boxShadow: '0 12px 36px rgba(15, 23, 42, 0.06)' }}>
             <CardContent>
-              <Stack spacing={2}>
-                <Typography variant="h6">Cộng / Trừ Điểm</Typography>
-                <TextField label="Telegram ID" value={telegramId} onChange={(e) => setTelegramId(e.target.value)} />
-                <TextField
-                  label="Amount"
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(Number(e.target.value))}
-                />
-                <TextField label="Reason" value={reason} onChange={(e) => setReason(e.target.value)} />
-                <Button variant="contained" onClick={handleAdjust}>
-                  Submit
-                </Button>
-              </Stack>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent>
-              <Typography variant="h6">Summary</Typography>
-              <Typography>Users: {users.length}</Typography>
-              <Typography>Transactions: {transactions.length}</Typography>
-            </CardContent>
-          </Card>
-        </Box>
-        <Card>
-          <CardContent>
-            <Typography variant="h6">Users</Typography>
-            <Divider sx={{ my: 2 }} />
-            <Stack spacing={1}>
-              {users.map((user) => (
-                <Box key={user.id} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-                  <Typography fontWeight={700}>
-                    {user.firstName ?? ''} {user.lastName ?? ''}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    @{user.username ?? '-'} | {user.telegramId} | Balance: {user.balance}
-                  </Typography>
-                </Box>
-              ))}
-            </Stack>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <Typography variant="h6">Transactions</Typography>
-            <Divider sx={{ my: 2 }} />
-            <Stack spacing={1}>
-              {transactions.map((tx) => (
-                <Box key={tx.id} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-                  <Typography fontWeight={700}>
-                    {tx.type.toUpperCase()} {tx.amount} - {tx.reason}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {tx.telegramId} | @{tx.username ?? '-'} | {tx.createdAt}
-                  </Typography>
-                </Box>
-              ))}
-            </Stack>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <Typography variant="h6">Audit Logs</Typography>
-            <Divider sx={{ my: 2 }} />
-            <Stack spacing={1}>
-              {auditLogs.map((log) => (
-                <Box key={log.id} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-                  <Typography fontWeight={700}>
-                    {log.action} - {log.actorEmail}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {log.targetTelegramId ?? '-'} | {log.createdAt}
-                  </Typography>
-                </Box>
-              ))}
-            </Stack>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <Typography variant="h6">Debug Env</Typography>
-            <Divider sx={{ my: 2 }} />
-            {debugEnv ? (
-              <Stack spacing={2}>
-                <Box
-                  component="pre"
-                  sx={{
-                    m: 0,
-                    p: 2,
-                    borderRadius: 2,
-                    bgcolor: 'rgba(2,6,23,0.04)',
-                    overflow: 'auto',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {JSON.stringify(debugEnv, null, 2)}
-                </Box>
-                {botInfo ? (
-                  <Box
-                    component="pre"
-                    sx={{
-                      m: 0,
-                      p: 2,
-                      borderRadius: 2,
-                      bgcolor: 'rgba(15,118,110,0.06)',
-                      overflow: 'auto',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-word',
-                    }}
-                  >
-                    {JSON.stringify(botInfo, null, 2)}
-                  </Box>
-                ) : null}
-              </Stack>
-            ) : (
-              <Typography color="text.secondary">
-                Bấm <strong>Debug Env</strong> để xem fingerprint môi trường đang chạy trên Render.
+              <Typography variant="overline" color="text.secondary">
+                Workspace
               </Typography>
-            )}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <Typography variant="h6">Rewards</Typography>
-            <Divider sx={{ my: 2 }} />
-            <Stack spacing={2}>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-                <TextField label="Reward name" value={rewardName} onChange={(e) => setRewardName(e.target.value)} fullWidth />
-                <TextField label="Type" value={rewardType} onChange={(e) => setRewardType(e.target.value)} fullWidth />
-                <TextField label="Point cost" type="number" value={rewardPointCost} onChange={(e) => setRewardPointCost(Number(e.target.value))} fullWidth />
-                <Button variant="contained" onClick={handleCreateReward}>Create</Button>
-              </Stack>
-              <Stack spacing={1}>
-                {rewards.map((reward) => (
-                  <Box key={reward.id} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-                    <Typography fontWeight={700}>{reward.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {reward.type} | cost {reward.point_cost} | stock {reward.stock ?? '∞'} | {reward.is_active ? 'Active' : 'Inactive'}
+              <Typography variant="h6" fontWeight={900}>
+                Control Center
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Chuẩn bị sẵn để mở rộng thêm module sau này.
+              </Typography>
+            </CardContent>
+          </Card>
+          <List disablePadding>
+            {NAV_ITEMS.map((item) => (
+              <ListItemButton
+                key={item.key}
+                selected={activeSection === item.key}
+                onClick={() => setActiveSection(item.key)}
+                sx={{
+                  borderRadius: 3,
+                  mb: 0.5,
+                  '&.Mui-selected': {
+                    bgcolor: 'rgba(20,184,166,0.12)',
+                    color: '#0F766E',
+                    '& .MuiListItemIcon-root': { color: '#0F766E' },
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 38 }}>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            ))}
+          </List>
+        </Box>
+      </Drawer>
+
+      <Box sx={{ ml: `${DRAWER_WIDTH}px`, pt: 10, pb: 4 }}>
+        <Container maxWidth="xl">
+          <Stack spacing={3}>
+            {error ? <Alert severity="warning">{error}</Alert> : null}
+
+            <Card sx={{ borderRadius: 5, boxShadow: '0 20px 60px rgba(15,23,42,0.08)' }}>
+              <CardContent>
+                <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
+                  <Box>
+                    <Chip label="Admin Dashboard" color="primary" sx={{ mb: 1 }} />
+                    <Typography variant="h4" fontWeight={900}>
+                      Khung quản trị chuyên nghiệp
+                    </Typography>
+                    <Typography color="text.secondary" sx={{ maxWidth: 720, mt: 0.5 }}>
+                      Sidebar điều hướng, tabs theo module, và các khối quản lý tách riêng để dễ mở rộng về sau.
                     </Typography>
                   </Box>
-                ))}
+                  <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="start" justifyContent="flex-end">
+                    <Button variant="outlined" onClick={handleDebugEnv} disabled={debugLoading}>
+                      {debugLoading ? 'Loading...' : 'Debug Env'}
+                    </Button>
+                    <Chip label={`Users ${users.length}`} />
+                    <Chip label={`Rewards ${rewards.length}`} />
+                    <Chip label={`Campaigns ${campaigns.length}`} />
+                  </Stack>
+                </Stack>
+              </CardContent>
+            </Card>
+
+            <Card sx={{ borderRadius: 5, boxShadow: '0 18px 50px rgba(15,23,42,0.06)' }}>
+              <CardContent sx={{ pb: 1 }}>
+                <Tabs
+                  value={activeSection}
+                  onChange={(_, value) => setActiveSection(value)}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                >
+                  {NAV_ITEMS.map((item) => (
+                    <Tab key={item.key} value={item.key} label={item.label} />
+                  ))}
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            {activeSection === 'overview' ? (
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' },
+                  gap: 2,
+                }}
+              >
+                <StatCard label="Users" value={String(users.length)} helper="Danh sách người dùng" />
+                <StatCard label="Transactions" value={String(transactions.length)} helper="Point ledger hiện tại" />
+                <StatCard label="Rewards" value={String(rewards.length)} helper="Reward store items" />
+                <StatCard label="Campaigns" value={String(campaigns.length)} helper="Wheel campaign" />
+              </Box>
+            ) : null}
+
+            {activeSection === 'users' ? (
+              <Card sx={{ borderRadius: 5 }}>
+                <CardContent>
+                  <SectionHeader
+                    title="Users"
+                    description="Tra cứu user, balance và last check-in."
+                    action={
+                      <Stack direction="row" spacing={1}>
+                        <TextField size="small" label="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
+                        <Button variant="outlined" onClick={() => setPage((value) => Math.max(0, value - 1))}>
+                          Prev
+                        </Button>
+                        <Button variant="outlined" onClick={() => setPage((value) => value + 1)}>
+                          Next
+                        </Button>
+                      </Stack>
+                    }
+                  />
+                  <Divider sx={{ my: 2 }} />
+                  <Stack spacing={1.25}>
+                    {users.map((user) => (
+                      <Box
+                        key={user.id}
+                        sx={{
+                          p: 1.75,
+                          borderRadius: 3,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 2,
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography fontWeight={800} noWrap>
+                            {user.firstName ?? ''} {user.lastName ?? ''}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            @{user.username ?? '-'} | {user.telegramId}
+                          </Typography>
+                        </Box>
+                        <Stack direction="row" spacing={1} flexWrap="wrap">
+                          <Chip label={`Balance ${user.balance}`} />
+                          <Chip label={user.lastCheckinDate ?? 'No check-in'} variant="outlined" />
+                        </Stack>
+                      </Box>
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {activeSection === 'transactions' ? (
+              <Card sx={{ borderRadius: 5 }}>
+                <CardContent>
+                  <SectionHeader title="Transactions" description="Point ledger gần nhất." />
+                  <Divider sx={{ my: 2 }} />
+                  <Stack spacing={1.25}>
+                    {transactions.map((tx) => (
+                      <Box
+                        key={tx.id}
+                        sx={{
+                          p: 1.75,
+                          borderRadius: 3,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: '#fff',
+                        }}
+                      >
+                        <Stack direction="row" justifyContent="space-between" spacing={2}>
+                          <Box>
+                            <Typography fontWeight={800}>
+                              {tx.type.toUpperCase()} {tx.amount}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {tx.reason}
+                            </Typography>
+                          </Box>
+                          <Typography variant="caption" color="text.secondary">
+                            {tx.createdAt}
+                          </Typography>
+                        </Stack>
+                      </Box>
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {activeSection === 'audit' ? (
+              <Card sx={{ borderRadius: 5 }}>
+                <CardContent>
+                  <SectionHeader title="Audit Logs" description="Ghi nhận các hành động admin." />
+                  <Divider sx={{ my: 2 }} />
+                  <Stack spacing={1.25}>
+                    {auditLogs.map((log) => (
+                      <Box
+                        key={log.id}
+                        sx={{
+                          p: 1.75,
+                          borderRadius: 3,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: '#fff',
+                        }}
+                      >
+                        <Typography fontWeight={800}>{log.action}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {log.actorEmail} | {log.targetTelegramId ?? '-'} | {log.createdAt}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            {activeSection === 'rewards' ? (
+              <Stack spacing={2}>
+                <Card sx={{ borderRadius: 5 }}>
+                  <CardContent>
+                    <SectionHeader title="Create Reward" description="Tạo reward mới cho store." />
+                    <Divider sx={{ my: 2 }} />
+                    <Stack spacing={2}>
+                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+                        <TextField fullWidth label="Reward name" value={rewardName} onChange={(e) => setRewardName(e.target.value)} />
+                        <TextField fullWidth label="Type" value={rewardType} onChange={(e) => setRewardType(e.target.value)} />
+                        <TextField fullWidth label="Point cost" type="number" value={rewardPointCost} onChange={(e) => setRewardPointCost(Number(e.target.value))} />
+                        <Button variant="contained" onClick={handleCreateReward}>Create</Button>
+                      </Stack>
+                      <Stack spacing={1}>
+                        {rewards.map((reward) => (
+                          <Box
+                            key={reward.id}
+                            sx={{
+                              p: 1.75,
+                              borderRadius: 3,
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              bgcolor: '#fff',
+                            }}
+                          >
+                            <Typography fontWeight={800}>{reward.name}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {reward.type} | cost {reward.point_cost} | stock {reward.stock ?? '∞'} | {reward.is_active ? 'Active' : 'Inactive'}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+
+                <Card sx={{ borderRadius: 5 }}>
+                  <CardContent>
+                    <SectionHeader title="Import Codes" description="Dán nhiều mã, mỗi mã một dòng." />
+                    <Divider sx={{ my: 2 }} />
+                    <Stack spacing={2}>
+                      <TextField label="Reward ID" value={importRewardId} onChange={(e) => setImportRewardId(e.target.value)} />
+                      <TextField
+                        label="Codes"
+                        value={importCodesText}
+                        onChange={(e) => setImportCodesText(e.target.value)}
+                        multiline
+                        minRows={5}
+                      />
+                      <Button variant="outlined" onClick={handleImportCodes}>Import codes</Button>
+                    </Stack>
+                  </CardContent>
+                </Card>
               </Stack>
-              <Divider />
-              <Stack spacing={1.5}>
-                <Typography variant="subtitle1" fontWeight={700}>Import codes</Typography>
-                <TextField label="Reward ID" value={importRewardId} onChange={(e) => setImportRewardId(e.target.value)} />
-                <TextField
-                  label="Codes (one per line)"
-                  value={importCodesText}
-                  onChange={(e) => setImportCodesText(e.target.value)}
-                  multiline
-                  minRows={4}
-                />
-                <Button variant="outlined" onClick={handleImportCodes}>Import</Button>
+            ) : null}
+
+            {activeSection === 'wheel' ? (
+              <Stack spacing={2}>
+                <Card sx={{ borderRadius: 5 }}>
+                  <CardContent>
+                    <SectionHeader title="Wheel Campaigns" description="Quản lý campaign active." />
+                    <Divider sx={{ my: 2 }} />
+                    <Stack spacing={2}>
+                      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+                        <TextField fullWidth label="Campaign name" value={campaignName} onChange={(e) => setCampaignName(e.target.value)} />
+                        <Button variant="contained" onClick={handleCreateCampaign}>Create campaign</Button>
+                      </Stack>
+                      <Stack spacing={1}>
+                        {campaigns.map((campaign) => (
+                          <Box
+                            key={campaign.id}
+                            sx={{
+                              p: 1.75,
+                              borderRadius: 3,
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              bgcolor: '#fff',
+                            }}
+                          >
+                            <Typography fontWeight={800}>{campaign.name}</Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {campaign.is_active ? 'Active' : 'Inactive'}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+
+                <Card sx={{ borderRadius: 5 }}>
+                  <CardContent>
+                    <SectionHeader title="Create Prize" description="Tạo prize theo campaign." />
+                    <Divider sx={{ my: 2 }} />
+                    <Stack spacing={2}>
+                      <TextField label="Campaign ID" value={prizeCampaignId} onChange={(e) => setPrizeCampaignId(e.target.value)} />
+                      <TextField label="Prize name" value={prizeName} onChange={(e) => setPrizeName(e.target.value)} />
+                      <TextField label="Prize type" value={prizeType} onChange={(e) => setPrizeType(e.target.value)} />
+                      <TextField label="Weight" type="number" value={prizeWeight} onChange={(e) => setPrizeWeight(Number(e.target.value))} />
+                      <Button variant="outlined" onClick={handleCreatePrize}>Create prize</Button>
+                    </Stack>
+                  </CardContent>
+                </Card>
               </Stack>
-            </Stack>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent>
-            <Typography variant="h6">Wheel Campaigns</Typography>
-            <Divider sx={{ my: 2 }} />
-            <Stack spacing={2}>
-              <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
-                <TextField label="Campaign name" value={campaignName} onChange={(e) => setCampaignName(e.target.value)} fullWidth />
-                <Button variant="contained" onClick={handleCreateCampaign}>Create</Button>
-              </Stack>
-              <Stack spacing={1}>
-                {campaigns.map((campaign) => (
-                  <Box key={campaign.id} sx={{ p: 1.5, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
-                    <Typography fontWeight={700}>{campaign.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {campaign.is_active ? 'Active' : 'Inactive'}
-                    </Typography>
-                  </Box>
-                ))}
-              </Stack>
-              <Divider />
-              <Stack spacing={1.5}>
-                <Typography variant="subtitle1" fontWeight={700}>Create prize</Typography>
-                <TextField label="Campaign ID" value={prizeCampaignId} onChange={(e) => setPrizeCampaignId(e.target.value)} />
-                <TextField label="Prize name" value={prizeName} onChange={(e) => setPrizeName(e.target.value)} />
-                <TextField label="Prize type" value={prizeType} onChange={(e) => setPrizeType(e.target.value)} />
-                <TextField label="Weight" type="number" value={prizeWeight} onChange={(e) => setPrizeWeight(Number(e.target.value))} />
-                <Button variant="outlined" onClick={handleCreatePrize}>Create prize</Button>
-              </Stack>
-            </Stack>
-          </CardContent>
-        </Card>
-      </Stack>
-    </Container>
+            ) : null}
+
+            {activeSection === 'settings' ? (
+              <Card sx={{ borderRadius: 5 }}>
+                <CardContent>
+                  <SectionHeader title="Settings & Diagnostics" description="Debug env và identity Telegram bot." />
+                  <Divider sx={{ my: 2 }} />
+                  <Stack spacing={2}>
+                    <Button variant="outlined" onClick={handleDebugEnv} disabled={debugLoading} sx={{ alignSelf: 'flex-start' }}>
+                      {debugLoading ? 'Loading...' : 'Debug Env'}
+                    </Button>
+                    {debugEnv ? (
+                      <Box
+                        component="pre"
+                        sx={{
+                          m: 0,
+                          p: 2,
+                          borderRadius: 3,
+                          bgcolor: 'rgba(2,6,23,0.04)',
+                          overflow: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {JSON.stringify(debugEnv, null, 2)}
+                      </Box>
+                    ) : null}
+                    {botInfo ? (
+                      <Box
+                        component="pre"
+                        sx={{
+                          m: 0,
+                          p: 2,
+                          borderRadius: 3,
+                          bgcolor: 'rgba(15,118,110,0.06)',
+                          overflow: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                        }}
+                      >
+                        {JSON.stringify(botInfo, null, 2)}
+                      </Box>
+                    ) : null}
+                  </Stack>
+                </CardContent>
+              </Card>
+            ) : null}
+
+            <Box sx={{ py: 2 }}>
+              <Typography variant="caption" color="text.secondary">
+                Designed to scale: sidebar + tabs + section cards make it easy to add new modules later.
+              </Typography>
+            </Box>
+          </Stack>
+        </Container>
+      </Box>
+    </Box>
   );
 }
