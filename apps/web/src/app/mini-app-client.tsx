@@ -42,7 +42,13 @@ export default function MiniAppClient() {
   const client = useMemo(() => apiClient(), []);
   const [status, setStatus] = useState<'loading' | 'ready' | 'not-telegram' | 'error'>('loading');
   const [error, setError] = useState('');
-  const [debugInfo, setDebugInfo] = useState<{ hasTelegram: boolean; hasWebApp: boolean; initDataLength: number; platform: string } | null>(null);
+  const [debugInfo, setDebugInfo] = useState<{
+    hasTelegram: boolean;
+    hasWebApp: boolean;
+    initDataLength: number;
+    platform: string;
+    version: string;
+  } | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [checkinMessage, setCheckinMessage] = useState('');
@@ -75,6 +81,7 @@ export default function MiniAppClient() {
           hasWebApp: Boolean(readyWebApp),
           initDataLength: readyWebApp?.initData?.length ?? 0,
           platform: readyWebApp?.platform ?? 'unknown',
+          version: readyWebApp?.version ?? 'unknown',
         });
         const initData = readyWebApp?.initData ?? '';
         if (!initData) {
@@ -243,6 +250,7 @@ export default function MiniAppClient() {
                       <Typography variant="body2">hasWebApp: {String(debugInfo?.hasWebApp ?? false)}</Typography>
                       <Typography variant="body2">initDataLength: {debugInfo?.initDataLength ?? 0}</Typography>
                       <Typography variant="body2">platform: {debugInfo?.platform ?? 'unknown'}</Typography>
+                      <Typography variant="body2">version: {debugInfo?.version ?? 'unknown'}</Typography>
                     </Stack>
                   </CardContent>
                 </Card>
@@ -302,6 +310,7 @@ export default function MiniAppClient() {
                       <Typography variant="body2">hasWebApp: {String(debugInfo?.hasWebApp ?? false)}</Typography>
                       <Typography variant="body2">initDataLength: {debugInfo?.initDataLength ?? 0}</Typography>
                       <Typography variant="body2">platform: {debugInfo?.platform ?? 'unknown'}</Typography>
+                      <Typography variant="body2">version: {debugInfo?.version ?? 'unknown'}</Typography>
                     </Stack>
                   </CardContent>
                 </Card>
