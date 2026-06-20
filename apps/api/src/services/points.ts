@@ -88,6 +88,12 @@ export function createPointService(supabase: any) {
     return data;
   }
 
+  function deriveTodayStatus(summary: { alreadyCheckedIn?: boolean; streak?: number }) {
+    if (summary.alreadyCheckedIn) return 'already_checked_in';
+    if ((summary.streak ?? 0) > 0) return 'checked_in';
+    return 'not_checked_in';
+  }
+
   async function getSummary(telegramId: string) {
     const user = await getUserByTelegramId(telegramId);
     if (!user) {
@@ -117,6 +123,8 @@ export function createPointService(supabase: any) {
       balance: wallet?.balance ?? 0,
       streak: latestCheckin?.streak ?? 0,
       lastCheckinAt: latestCheckin?.created_at ?? null,
+      todayStatus: deriveTodayStatus({ streak: latestCheckin?.streak ?? 0 }),
+      pointsGainedToday: 0,
       transactions: transactions,
     };
   }

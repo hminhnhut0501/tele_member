@@ -33,12 +33,14 @@ export function createBotRouter(deps: {
     getSummary(telegramId: string): Promise<any>;
   };
   sendTelegramMessage(chatId: string | number, text: string): Promise<void>;
+  sendTelegramKeyboard?(chatId: string | number, text: string, replyMarkup: Record<string, unknown>): Promise<void>;
   createWebAppButton?(): any;
 }) {
   async function handleWebhook(update: TelegramUpdate) {
     const text = extractMessageText(update);
     const chatId = extractChatId(update);
     const user = extractUser(update);
+    const callbackQuery = (update as any).callback_query as { id?: string; data?: string } | undefined;
 
     if (!chatId || !user) return { ok: true };
 
@@ -88,6 +90,40 @@ export function createBotRouter(deps: {
         });
       }
       return { ok: true };
+    }
+
+    if (callbackQuery?.data === 'checkin') {
+      const result = await deps.points.checkIn(profile);
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      if (token) {
+        await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            callback_query_id: callbackQuery.id,
+            text: result.alreadyCheckedIn ? 'Hôm nay bạn đã điểm danh rồi.' : 'Điểm danh thành công!',
+          }),
+        });
+      }
+      await deps.sendTelegramMessage(chatId, result.message);
+      return { ok: true, result };
+    }
+
+    if (callbackQuery?.data === 'points') {
+      const summary = await deps.points.getSummary(profile.telegramId);
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      if (token) {
+        await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            callback_query_id: callbackQuery.id,
+            text: `Bạn đang có ${summary.balance} điểm.`,
+            show_alert: false,
+          }),
+        });
+      }
+      return { ok: true, summary };
     }
 
     if (text.startsWith('/help')) {

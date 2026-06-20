@@ -30,6 +30,8 @@ export const pointSummarySchema = z.object({
   balance: z.number().int(),
   streak: z.number().int(),
   lastCheckinAt: z.string().nullable(),
+  todayStatus: z.enum(['checked_in', 'not_checked_in', 'already_checked_in']),
+  pointsGainedToday: z.number().int(),
   transactions: z.array(pointTransactionSchema),
 });
 

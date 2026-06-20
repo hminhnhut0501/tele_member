@@ -11,6 +11,7 @@ import {
   Chip,
   Container,
   Divider,
+  Fade,
   Skeleton,
   Stack,
   Typography,
@@ -26,6 +27,8 @@ type Summary = {
   balance: number;
   streak: number;
   lastCheckinAt: string | null;
+  todayStatus: 'checked_in' | 'not_checked_in' | 'already_checked_in';
+  pointsGainedToday: number;
   transactions: Array<{
     id: string;
     amount: number;
@@ -42,6 +45,7 @@ export default function MiniAppClient() {
   const [token, setToken] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [checkinMessage, setCheckinMessage] = useState('');
+  const [pulse, setPulse] = useState(false);
 
   useEffect(() => {
     const initTelegram = async () => {
@@ -91,6 +95,7 @@ export default function MiniAppClient() {
       });
       const data = await response.json();
       setCheckinMessage(data.message ?? 'Done');
+      setPulse(true);
       const refreshed = await fetchSummary(token);
       setSummary(refreshed);
     } catch (err) {
@@ -159,9 +164,28 @@ export default function MiniAppClient() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Stack spacing={2}>
-        <Card>
+    <Container maxWidth="sm" sx={{ py: 4, position: 'relative' }}>
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: 'none',
+          background: 'radial-gradient(circle at top left, rgba(15,118,110,0.18), transparent 35%), radial-gradient(circle at top right, rgba(245,158,11,0.12), transparent 28%), linear-gradient(180deg, rgba(255,255,255,0.9), rgba(246,247,251,0.98))',
+          borderRadius: 6,
+          filter: 'blur(0px)',
+        }}
+      />
+      <Stack spacing={2} sx={{ position: 'relative', zIndex: 1 }}>
+        <Fade in timeout={500}>
+          <Card
+            sx={{
+              boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)',
+              background: 'linear-gradient(135deg, rgba(15,118,110,0.08), rgba(255,255,255,0.92))',
+              transform: pulse ? 'translateY(-2px)' : 'translateY(0)',
+              transition: 'transform 220ms ease, box-shadow 220ms ease',
+            }}
+          >
           <CardContent>
             <Stack direction="row" spacing={2} alignItems="center">
               <Avatar
@@ -181,8 +205,10 @@ export default function MiniAppClient() {
               </Box>
             </Stack>
           </CardContent>
-        </Card>
-        <Card>
+          </Card>
+        </Fade>
+        <Fade in timeout={650}>
+          <Card sx={{ boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)' }}>
           <CardContent>
             <Stack direction="row" spacing={2} justifyContent="space-between">
               <Box>
@@ -202,13 +228,33 @@ export default function MiniAppClient() {
             <Typography variant="body2" color="text.secondary">
               Lần điểm danh gần nhất: {summary?.lastCheckinAt ? new Date(summary.lastCheckinAt).toLocaleString('vi-VN') : 'Chưa có'}
             </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Trạng thái hôm nay: {summary?.todayStatus === 'checked_in' ? 'Đã điểm danh' : summary?.todayStatus === 'already_checked_in' ? 'Đã nhận điểm rồi' : 'Chưa điểm danh'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Điểm nhận hôm nay: {summary?.pointsGainedToday ?? 0}
+            </Typography>
           </CardContent>
-        </Card>
-        <Button variant="contained" size="large" onClick={handleCheckin}>
+          </Card>
+        </Fade>
+        <Button
+          variant="contained"
+          size="large"
+          onClick={handleCheckin}
+          sx={{
+            background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)',
+            boxShadow: '0 14px 30px rgba(20,184,166,0.28)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #115E59 0%, #0F766E 100%)',
+              boxShadow: '0 16px 34px rgba(20,184,166,0.34)',
+            },
+          }}
+        >
           Điểm danh hôm nay
         </Button>
         {checkinMessage ? <Alert severity="success">{checkinMessage}</Alert> : null}
-        <Card>
+        <Fade in timeout={800}>
+          <Card sx={{ boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)' }}>
           <CardContent>
             <Typography variant="h6">Lịch sử giao dịch</Typography>
             <Divider sx={{ my: 2 }} />
@@ -249,7 +295,8 @@ export default function MiniAppClient() {
               )}
             </Stack>
           </CardContent>
-        </Card>
+          </Card>
+        </Fade>
       </Stack>
     </Container>
   );
