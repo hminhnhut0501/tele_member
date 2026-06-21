@@ -70,8 +70,8 @@ export function LuckyWheelShowcase({
   const segmentAngle = 360 / slice;
   const size = 1000;
   const center = size / 2;
-  const outerR = isMobile ? 380 : 430;
-  const innerR = isMobile ? 148 : 172;
+  const outerR = isMobile ? 376 : 424;
+  const innerR = isMobile ? 130 : 150;
   const safePrizes = prizes.length
     ? prizes
     : [
@@ -115,15 +115,7 @@ export function LuckyWheelShowcase({
       <Box sx={{ position: 'relative', p: { xs: 1.5, sm: 2.5 } }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2} sx={{ mb: 1.5 }}>
           <Box sx={{ minWidth: 0 }}>
-            <Typography
-              sx={{
-                color: '#f5f9ff',
-                fontWeight: 900,
-                letterSpacing: '-0.04em',
-                fontSize: { xs: '1.24rem', sm: '1.7rem' },
-                lineHeight: 1.08,
-              }}
-            >
+              <Typography sx={{ color: '#f5f9ff', fontWeight: 900, letterSpacing: '-0.04em', fontSize: { xs: '1.2rem', sm: '1.6rem' }, lineHeight: 1.08 }}>
               {campaignName ?? 'Lucky Wheel'}
             </Typography>
             <Typography
@@ -153,7 +145,7 @@ export function LuckyWheelShowcase({
         <Box
           sx={{
             position: 'relative',
-            minHeight: { xs: 470, sm: 590 },
+            minHeight: { xs: 440, sm: 560 },
             display: 'grid',
             placeItems: 'center',
             py: { xs: 0.5, sm: 2 },
@@ -167,18 +159,18 @@ export function LuckyWheelShowcase({
               transform: 'translateX(-50%)',
               width: 0,
               height: 0,
-              borderLeft: isMobile ? '30px solid transparent' : '42px solid transparent',
-              borderRight: isMobile ? '30px solid transparent' : '42px solid transparent',
-              borderTop: isMobile ? '88px solid rgba(96,165,250,0.96)' : '112px solid rgba(96,165,250,0.96)',
+              borderLeft: isMobile ? '28px solid transparent' : '38px solid transparent',
+              borderRight: isMobile ? '28px solid transparent' : '38px solid transparent',
+              borderTop: isMobile ? '82px solid rgba(96,165,250,0.94)' : '104px solid rgba(96,165,250,0.94)',
               filter: 'drop-shadow(0 12px 18px rgba(0,0,0,0.4))',
               zIndex: 4,
               '&::before': {
                 content: '""',
                 position: 'absolute',
-                left: isMobile ? '-22px' : '-31px',
-                top: isMobile ? '-83px' : '-106px',
-                width: isMobile ? 44 : 62,
-                height: isMobile ? 44 : 62,
+                left: isMobile ? '-20px' : '-28px',
+                top: isMobile ? '-77px' : '-98px',
+                width: isMobile ? 40 : 56,
+                height: isMobile ? 40 : 56,
                 background: 'linear-gradient(180deg, #eef6ff 0%, #7fb4ff 55%, #1d4ed8 100%)',
                 clipPath: 'polygon(50% 100%, 0 0, 100% 0)',
                 opacity: 0.96,
@@ -190,13 +182,13 @@ export function LuckyWheelShowcase({
             sx={{
               position: 'relative',
               width: '100%',
-              maxWidth: isMobile ? 420 : 620,
+              maxWidth: isMobile ? 408 : 600,
               aspectRatio: '1 / 1',
               borderRadius: '50%',
               p: { xs: 1, sm: 1.5 },
               background: 'linear-gradient(180deg, #67a2ff 0%, #1d4ed8 46%, #081223 100%)',
               boxShadow:
-                'inset 0 0 0 4px rgba(255,255,255,0.18), inset 0 0 0 16px rgba(8,17,33,0.92), 0 0 0 1px rgba(255,255,255,0.10), 0 28px 54px rgba(0,0,0,0.42)',
+                'inset 0 0 0 4px rgba(255,255,255,0.16), inset 0 0 0 14px rgba(8,17,33,0.92), 0 0 0 1px rgba(255,255,255,0.10), 0 24px 44px rgba(0,0,0,0.36)',
             }}
           >
             <Box
@@ -205,8 +197,7 @@ export function LuckyWheelShowcase({
                 inset: { xs: 12, sm: 16 },
                 borderRadius: '50%',
                 background:
-                  'radial-gradient(circle at center, rgba(255,255,255,0.10), rgba(255,255,255,0.03) 58%, rgba(0,0,0,0.22) 100%)',
-                boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.12)',
+                  'radial-gradient(circle at center, rgba(255,255,255,0.08), rgba(255,255,255,0.02) 58%, rgba(0,0,0,0.20) 100%)',
               }}
             />
 
@@ -227,66 +218,64 @@ export function LuckyWheelShowcase({
                 </defs>
 
                 <circle cx={center} cy={center} r={outerR} fill="url(#hubGlow)" opacity="0.9" />
-                <circle cx={center} cy={center} r={outerR - 2} fill="none" stroke="rgba(255,255,255,0.72)" strokeWidth="10" />
-                <circle cx={center} cy={center} r={outerR - 22} fill="none" stroke="rgba(7,18,44,0.82)" strokeWidth="2" />
-                <circle cx={center} cy={center} r={outerR - 38} fill="#f8fbff" />
+                <circle cx={center} cy={center} r={outerR - 24} fill="none" stroke="rgba(255,255,255,0.56)" strokeWidth="4" />
+                <circle cx={center} cy={center} r={outerR - 40} fill="#f8fbff" />
 
                 {safePrizes.map((prize, index) => {
                   const start = index * segmentAngle;
                   const end = (index + 1) * segmentAngle;
                   const mid = start + segmentAngle / 2;
+                  const labelPoint = polarToCartesian(center, center, outerR - 110, mid);
                   return (
                     <g key={prize.id}>
                       <path d={describeArc(center, center, outerR - 38, start, end) + ` L ${center} ${center} Z`} fill={prizeAccent(prize, index)} opacity="0.97" />
-                      <path d={describeArc(center, center, outerR - 38, start, end)} fill="none" stroke="rgba(14, 23, 48, 0.9)" strokeWidth="3" />
                       <path
                         d={describeArc(center, center, outerR - 38, start, end)}
                         fill="none"
-                        stroke="rgba(255,255,255,0.24)"
-                        strokeWidth={isMobile ? 7 : 9}
+                        stroke="rgba(255,255,255,0.20)"
+                        strokeWidth={isMobile ? 5 : 6}
                         strokeLinecap="round"
-                        opacity="0.28"
+                        opacity="0.18"
                       />
-                      <text
-                        fill={prize.type === 'VOUCHER' || prize.type === 'VIP_CODE' ? '#10192f' : '#081223'}
-                        fontSize={isMobile ? '18' : '23'}
-                        fontWeight="900"
-                        textAnchor="middle"
-                        style={{ letterSpacing: '0.03em', paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.5)', strokeWidth: 2 }}
-                      >
-                        <textPath href={`#arc-${index}`} startOffset="50%" textAnchor="middle">
+                      <g transform={`translate(${labelPoint.x}, ${labelPoint.y}) rotate(${mid + 90})`}>
+                        <text
+                          x="0"
+                          y="0"
+                          fill={prize.type === 'VOUCHER' || prize.type === 'VIP_CODE' ? '#10192f' : '#071424'}
+                          fontSize={isMobile ? '16' : '21'}
+                          fontWeight="800"
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          style={{ letterSpacing: '0.02em', paintOrder: 'stroke', stroke: 'rgba(255,255,255,0.45)', strokeWidth: 2 }}
+                        >
                           {prizeShortLabel(prize)}
-                        </textPath>
-                      </text>
-                      <circle cx={polarToCartesian(center, center, outerR - 110, mid).x} cy={polarToCartesian(center, center, outerR - 110, mid).y} r={isMobile ? 14 : 18} fill="rgba(255,255,255,0.2)" />
+                        </text>
+                      </g>
                     </g>
                   );
                 })}
 
-                <circle cx={center} cy={center} r={innerR + 18} fill="rgba(14,22,32,0.08)" />
-                <circle cx={center} cy={center} r={innerR} fill="url(#hubGlow)" stroke="rgba(255,255,255,0.18)" strokeWidth="10" />
-                <circle cx={center} cy={center} r={innerR - 28} fill="#081223" stroke="rgba(255,255,255,0.12)" strokeWidth="2" />
+                <circle cx={center} cy={center} r={innerR + 20} fill="rgba(8, 17, 33, 0.18)" />
+                <circle cx={center} cy={center} r={innerR} fill="#f6f9ff" stroke="rgba(255,255,255,0.24)" strokeWidth="8" />
+                <circle cx={center} cy={center} r={innerR - 30} fill="rgba(37,99,235,0.12)" />
               </svg>
 
               <Box
                 sx={{
                   position: 'absolute',
-                  inset: { xs: '36% 19%', sm: '30% 18%' },
+                  inset: { xs: '36% 18%', sm: '31% 17%' },
                   display: 'grid',
                   placeItems: 'center',
                   textAlign: 'center',
                   pointerEvents: 'none',
                 }}
               >
-                <Stack spacing={0.4} alignItems="center" sx={{ px: 1 }}>
-                  <Typography sx={{ color: '#9cc7ff', fontWeight: 900, letterSpacing: '0.22em', fontSize: { xs: '0.6rem', sm: '0.72rem' } }}>
-                    SPIN WHEEL
-                  </Typography>
+                <Stack spacing={0.35} alignItems="center" sx={{ px: 1 }}>
                   <Typography
                     sx={{
                       color: '#f6fbff',
                       fontWeight: 900,
-                      fontSize: { xs: '1rem', sm: '1.55rem' },
+                      fontSize: { xs: '0.98rem', sm: '1.45rem' },
                       lineHeight: 1,
                       textShadow: '0 2px 14px rgba(0,0,0,0.28)',
                       maxWidth: '100%',
@@ -297,9 +286,9 @@ export function LuckyWheelShowcase({
                   </Typography>
                   <Typography
                     sx={{
-                      color: 'rgba(229,239,255,0.78)',
+                      color: 'rgba(229,239,255,0.82)',
                       fontWeight: 700,
-                      fontSize: { xs: '0.78rem', sm: '0.95rem' },
+                      fontSize: { xs: '0.76rem', sm: '0.92rem' },
                       textAlign: 'center',
                     }}
                   >
@@ -321,11 +310,11 @@ export function LuckyWheelShowcase({
                 minWidth: { xs: 200, sm: 260 },
                 borderRadius: 999,
                 fontWeight: 900,
-                fontSize: { xs: '0.95rem', sm: '1.05rem' },
-                letterSpacing: '0.12em',
+                fontSize: { xs: '0.92rem', sm: '1.02rem' },
+                letterSpacing: '0.08em',
                 color: '#f8fbff',
                 background: 'linear-gradient(180deg, rgba(37,99,235,0.98) 0%, rgba(30,64,175,1) 100%)',
-                boxShadow: '0 18px 36px rgba(37,99,235,0.44), inset 0 1px 0 rgba(255,255,255,0.18), 0 0 0 1px rgba(255,255,255,0.12)',
+                boxShadow: '0 14px 28px rgba(37,99,235,0.32)',
                 '&:hover': { background: 'linear-gradient(180deg, rgba(59,130,246,0.98) 0%, rgba(30,64,175,1) 100%)' },
               }}
             >
@@ -335,9 +324,9 @@ export function LuckyWheelShowcase({
         </Box>
 
         <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" sx={{ mt: 1.25 }}>
-          <Chip label="Hang Cú branding" sx={{ bgcolor: 'rgba(59,130,246,0.14)', color: '#dbeafe', border: '1px solid rgba(59,130,246,0.18)' }} />
-          <Chip label="Game UI style" sx={{ bgcolor: 'rgba(96,165,250,0.16)', color: '#e0f2fe', border: '1px solid rgba(96,165,250,0.2)' }} />
-          <Chip label={`${safePrizes.length} phần thưởng`} sx={{ bgcolor: 'rgba(14,165,233,0.14)', color: '#cffafe', border: '1px solid rgba(14,165,233,0.18)' }} />
+          <Chip label="Hang Cú branding" sx={{ bgcolor: 'rgba(59,130,246,0.12)', color: '#dbeafe', border: '1px solid rgba(59,130,246,0.14)' }} />
+          <Chip label="Minimal game UI" sx={{ bgcolor: 'rgba(96,165,250,0.14)', color: '#e0f2fe', border: '1px solid rgba(96,165,250,0.16)' }} />
+          <Chip label={`${safePrizes.length} phần thưởng`} sx={{ bgcolor: 'rgba(14,165,233,0.12)', color: '#cffafe', border: '1px solid rgba(14,165,233,0.14)' }} />
         </Stack>
       </Box>
     </Box>
