@@ -4,7 +4,7 @@ services:
     env: node
     plan: free
     buildCommand: pnpm install --frozen-lockfile && pnpm --filter @tele-member/api build
-    startCommand: pnpm --filter @tele-member/api dev
+    startCommand: pnpm --filter @tele-member/api start
     envVars:
       - key: NODE_ENV
         value: production

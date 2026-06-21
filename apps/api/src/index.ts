@@ -19,7 +19,38 @@ await app.register(jwt, { secret: process.env.JWT_SECRET ?? 'dev-secret' });
 
 const context = createServiceContext();
 
-app.get('/health', async () => ({ ok: true }));
+app.get('/health', async (_request, reply) => {
+  reply.header('Cache-Control', 'no-store');
+  reply.type('text/plain; charset=utf-8');
+  return reply.send('ok');
+});
+
+app.head('/health', async (_request, reply) => {
+  reply.header('Cache-Control', 'no-store');
+  return reply.code(200).send();
+});
+
+app.get('/ping', async (_request, reply) => {
+  reply.header('Cache-Control', 'no-store');
+  reply.type('text/plain; charset=utf-8');
+  return reply.send('pong');
+});
+
+app.head('/ping', async (_request, reply) => {
+  reply.header('Cache-Control', 'no-store');
+  return reply.code(200).send();
+});
+
+app.get('/keepalive', async (_request, reply) => {
+  reply.header('Cache-Control', 'no-store');
+  reply.type('text/plain; charset=utf-8');
+  return reply.send('alive');
+});
+
+app.head('/keepalive', async (_request, reply) => {
+  reply.header('Cache-Control', 'no-store');
+  return reply.code(200).send();
+});
 
 function fingerprint(value: string | undefined) {
   if (!value) return null;
