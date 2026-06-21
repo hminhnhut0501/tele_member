@@ -25,6 +25,10 @@ export function useAdminDashboard() {
   const [telegramId, setTelegramId] = useState('');
   const [amount, setAmount] = useState(10);
   const [reason, setReason] = useState('manual_adjustment');
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [adjustMode, setAdjustMode] = useState<'points' | 'spins'>('points');
+  const [adjustAmount, setAdjustAmount] = useState(10);
+  const [adjustReason, setAdjustReason] = useState('manual_adjustment');
   const [rewardName, setRewardName] = useState('');
   const [rewardPointCost, setRewardPointCost] = useState(0);
   const [rewardType, setRewardType] = useState('VOUCHER');
@@ -85,6 +89,34 @@ export function useAdminDashboard() {
       setError('');
     } catch {
       setError('Cập nhật điểm thất bại');
+    }
+  }
+
+  function openUserAdjust(user: AdminUser, mode: 'points' | 'spins') {
+    setSelectedUser(user);
+    setAdjustMode(mode);
+    setAdjustAmount(mode === 'points' ? 10 : 1);
+    setAdjustReason(mode === 'points' ? 'manual_adjustment' : 'manual_spin_adjustment');
+  }
+
+  async function submitUserAdjust() {
+    if (!selectedUser) return;
+    try {
+      setError('');
+      if (adjustMode === 'points') {
+        await service.adjust({ telegramId: selectedUser.telegramId, amount: Number(adjustAmount), reason: adjustReason });
+      } else {
+        await service.adjustSpins({ telegramId: selectedUser.telegramId, amount: Number(adjustAmount), reason: adjustReason });
+      }
+      const updated = await service.getUsers(search, page * pageSize, pageSize);
+      const refreshed = await service.getTransactions(search, page * pageSize, pageSize);
+      const logs = await service.getAuditLogs(page * pageSize, pageSize);
+      setUsers(updated.users ?? updated);
+      setTransactions(refreshed.transactions ?? refreshed);
+      setAuditLogs(logs.logs ?? logs);
+      setSelectedUser(null);
+    } catch {
+      setError(adjustMode === 'points' ? 'Cập nhật điểm thất bại' : 'Cập nhật lượt quay thất bại');
     }
   }
 
@@ -198,6 +230,14 @@ export function useAdminDashboard() {
     setAmount,
     reason,
     setReason,
+    selectedUser,
+    setSelectedUser,
+    adjustMode,
+    setAdjustMode,
+    adjustAmount,
+    setAdjustAmount,
+    adjustReason,
+    setAdjustReason,
     rewardName,
     setRewardName,
     rewardPointCost,
@@ -238,6 +278,8 @@ export function useAdminDashboard() {
     setEditCampaignActive,
     login,
     adjustPoints,
+    openUserAdjust,
+    submitUserAdjust,
     refreshDebug,
     createReward,
     createCampaign,

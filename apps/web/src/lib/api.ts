@@ -51,6 +51,11 @@ export function apiClient(token?: string | null) {
         method: 'POST',
         body: JSON.stringify(payload),
       }, token),
+    adjustSpins: (payload: { telegramId: string; amount: number; reason: string }) =>
+      request('/admin/spins/adjust', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }, token),
     getDebugEnv: () => request('/admin/debug/env', {}, token),
     getTelegramBotInfo: () => request('/admin/debug/telegram-bot', {}, token),
     getRewards: () => request('/api/rewards', {}, token),

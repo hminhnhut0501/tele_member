@@ -36,6 +36,7 @@ import {
   OverviewSection,
   RewardsSection,
   SettingsSection,
+  UserAdjustDialog,
   TransactionsSection,
   UsersSection,
   WheelSection,
@@ -164,6 +165,19 @@ export default function AdminPage() {
             {admin.activeSection === 'rewards' ? <RewardsSection {...admin} /> : null}
             {admin.activeSection === 'wheel' ? <WheelSection {...admin} /> : null}
             {admin.activeSection === 'settings' ? <SettingsSection debugEnv={admin.debugEnv} botInfo={admin.botInfo} debugLoading={admin.debugLoading} handleDebugEnv={admin.refreshDebug} /> : null}
+
+            <UserAdjustDialog
+              open={Boolean(admin.selectedUser)}
+              user={admin.selectedUser}
+              mode={admin.adjustMode}
+              amount={admin.adjustAmount}
+              setAmount={admin.setAdjustAmount}
+              reason={admin.adjustReason}
+              setReason={admin.setAdjustReason}
+              onModeChange={admin.setAdjustMode}
+              onClose={() => admin.setSelectedUser(null)}
+              onSubmit={admin.submitUserAdjust}
+            />
 
             <Box sx={{ py: 2 }}>
               <Typography variant="caption" color="text.secondary">

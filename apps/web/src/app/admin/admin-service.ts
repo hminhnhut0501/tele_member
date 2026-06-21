@@ -11,6 +11,7 @@ export function createAdminService(token: string | null) {
     getTransactions: client.getTransactions,
     getAuditLogs: client.getAuditLogs,
     adjust: client.adjust,
+    adjustSpins: client.adjustSpins,
     getDebugEnv: client.getDebugEnv,
     getTelegramBotInfo: client.getTelegramBotInfo,
     getRewards: client.adminGetRewards,

@@ -69,6 +69,8 @@ export function UsersTable({
   pageSize,
   onPageChange,
   onRowClick,
+  onAddPoints,
+  onAddSpins,
 }: {
   users: AdminUser[];
   search: string;
@@ -77,6 +79,8 @@ export function UsersTable({
   pageSize: number;
   onPageChange: (page: number) => void;
   onRowClick: (user: AdminUser) => void;
+  onAddPoints: (user: AdminUser) => void;
+  onAddSpins: (user: AdminUser) => void;
 }) {
   const filtered = useMemo(() => users, [users]);
 
@@ -119,7 +123,11 @@ export function UsersTable({
                   <TableCell><Chip label={user.balance} size="small" /></TableCell>
                   <TableCell>{user.lastCheckinDate ?? '-'}</TableCell>
                   <TableCell align="right">
-                    <Button size="small" variant="outlined" onClick={() => onRowClick(user)}>View</Button>
+                    <Stack direction="row" spacing={1} justifyContent="flex-end">
+                      <Button size="small" variant="outlined" onClick={() => onAddPoints(user)}>Add points</Button>
+                      <Button size="small" variant="outlined" onClick={() => onAddSpins(user)}>Add spins</Button>
+                      <Button size="small" variant="contained" onClick={() => onRowClick(user)}>View</Button>
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}

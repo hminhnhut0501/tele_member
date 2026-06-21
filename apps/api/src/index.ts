@@ -433,6 +433,54 @@ app.post('/admin/adjust', async (request) => {
   return result;
 });
 
+app.post('/admin/spins/adjust', async (request, reply) => {
+  const body = z.object({
+    telegramId: z.string().min(1),
+    amount: z.coerce.number().int(),
+    reason: z.string().min(1),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+    actorEmail: z.string().email().optional(),
+  }).parse(request.body);
+  const auth = (request.user as { email?: string } | undefined)?.email;
+  const user = await context.points.getUserByTelegramId(body.telegramId);
+  if (!user) {
+    return reply.code(404).send({ message: 'User not found' });
+  }
+
+  const result = body.amount >= 0
+    ? await context.supabase.rpc('add_spins', {
+        p_user_id: user.id,
+        p_amount: body.amount,
+        p_type: 'ADMIN_ADJUST',
+        p_reason: body.reason,
+        p_metadata: { ...(body.metadata ?? {}), actorEmail: auth ?? body.actorEmail ?? null },
+      })
+    : await context.supabase.rpc('subtract_spins', {
+        p_user_id: user.id,
+        p_amount: Math.abs(body.amount),
+        p_type: 'ADMIN_ADJUST',
+        p_reason: body.reason,
+        p_metadata: { ...(body.metadata ?? {}), actorEmail: auth ?? body.actorEmail ?? null },
+      });
+
+  if (result.error) {
+    return reply.code(400).send({ message: result.error.message ?? 'Unable to adjust spins' });
+  }
+
+  await context.supabase.from('admin_audit_logs').insert({
+    actor_email: auth ?? body.actorEmail ?? 'admin',
+    action: 'adjust_spins',
+    target_telegram_id: body.telegramId,
+    metadata: {
+      amount: body.amount,
+      reason: body.reason,
+      ...(body.metadata ?? {}),
+    },
+  });
+
+  return result.data;
+});
+
 app.get('/me/summary', async (request) => {
   const payload = request.user as { telegramId?: string } | undefined;
   const telegramId = payload?.telegramId;

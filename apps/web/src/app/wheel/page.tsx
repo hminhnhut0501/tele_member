@@ -4,36 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Chip, Container, Stack, Typography } from '@mui/material';
 import { apiClient } from '../../lib/api';
 import { PageShell } from '../shared-ui';
-import { LuckyWheelShowcase } from './lucky-wheel-showcase';
-
-type WheelPrize = {
-  id: string;
-  name: string;
-  type: string;
-  weight: number;
-  metadata?: Record<string, unknown> | null;
-};
-
-type WheelCampaign = {
-  id?: string;
-  name?: string;
-  description?: string;
-  is_active?: boolean;
-};
-
-const demoCampaign: WheelCampaign = {
-  name: 'Reveal Wheel',
-  description: 'Game UI tối giản theo branding xanh dương đậm - vàng đồng, được thiết kế để render ổn trên Telegram desktop lẫn mobile.',
-  is_active: true,
-};
-
-const demoPrizes: WheelPrize[] = [
-  { id: 'demo-point-10', name: '10đ', type: 'POINT', weight: 4, metadata: { points: 10 } },
-  { id: 'demo-spin-1', name: '+1 spin', type: 'SPIN_TICKET', weight: 3, metadata: {} },
-  { id: 'demo-point-25', name: '25đ', type: 'POINT', weight: 2, metadata: { points: 25 } },
-  { id: 'demo-voucher', name: 'Voucher', type: 'VOUCHER', weight: 1, metadata: {} },
-  { id: 'demo-lose', name: 'Không trúng', type: 'CUSTOM', weight: 1, metadata: {} },
-];
+import { WheelDial } from './wheel-dial';
+import { buildWheelSegments, getWheelDefaultOutcomeLabel, getWheelFallbackCampaign, type WheelCampaign, type WheelPrize } from './wheel-model';
 
 export default function WheelPage() {
   const [token, setToken] = useState<string | null>(null);
@@ -80,8 +52,8 @@ export default function WheelPage() {
     };
   }, [client, token]);
 
-  const displayCampaign = campaign ?? demoCampaign;
-  const displayPrizes = prizes.length ? prizes : demoPrizes;
+  const displayCampaign = campaign ?? getWheelFallbackCampaign();
+  const segments = buildWheelSegments(prizes);
 
   async function handleSpin() {
     if (spinning) return;
@@ -90,18 +62,18 @@ export default function WheelPage() {
       setResult(null);
       setSpinning(true);
 
-      const baseRotation = 1440 + Math.floor(Math.random() * 360);
-      setRotation((value) => value + baseRotation);
+      const spinStart = rotation + 1440 + Math.floor(Math.random() * 360);
+      setRotation(spinStart);
 
       const data = await client.spinWheel();
       setResult(data);
 
       const prizeId = data?.prize?.id;
-      const prizeIndex = displayPrizes.findIndex((prize) => prize.id === prizeId);
+      const prizeIndex = segments.findIndex((segment) => segment.id === prizeId);
       if (prizeIndex >= 0) {
-        const segmentAngle = 360 / displayPrizes.length;
-        const targetAngle = 360 - (prizeIndex * segmentAngle + segmentAngle / 2);
-        setRotation((value) => value + targetAngle);
+        const segmentAngle = 360 / Math.max(segments.length, 1);
+        const target = 360 - (prizeIndex * segmentAngle + segmentAngle / 2);
+        setRotation(spinStart + target);
       }
 
       const updatedSpins = await client.getMySpins();
@@ -115,13 +87,13 @@ export default function WheelPage() {
 
   return (
     <PageShell>
-      <Container maxWidth="xl" sx={{ py: { xs: 1.25, sm: 2.25 }, position: 'relative' }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 1.5, sm: 2.5 }, position: 'relative' }}>
         <Box
           sx={{
             position: 'absolute',
             inset: 0,
             pointerEvents: 'none',
-            opacity: 0.24,
+            opacity: 0.22,
             backgroundImage:
               'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)',
             backgroundSize: '56px 56px',
@@ -132,8 +104,6 @@ export default function WheelPage() {
         <Stack spacing={2} sx={{ position: 'relative' }}>
           <Box
             sx={{
-              position: 'relative',
-              overflow: 'hidden',
               px: { xs: 2, sm: 3 },
               py: { xs: 2, sm: 2.5 },
               borderRadius: { xs: 4, sm: 5 },
@@ -143,50 +113,23 @@ export default function WheelPage() {
               boxShadow: '0 24px 60px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.04)',
             }}
           >
-            <Box sx={{ position: 'absolute', inset: 0, opacity: 0.18, backgroundImage: 'linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
-
-            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'flex-end' }} spacing={2} sx={{ position: 'relative' }}>
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'flex-end' }} spacing={2}>
               <Box sx={{ minWidth: 0 }}>
                 <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 1 }}>
-                  <Chip label="Blue / bronze system" sx={{ bgcolor: 'rgba(63,116,235,0.14)', color: '#dfe9ff', border: '1px solid rgba(63,116,235,0.16)' }} />
+                  <Chip label="Blue / bronze" sx={{ bgcolor: 'rgba(63,116,235,0.14)', color: '#dfe9ff', border: '1px solid rgba(63,116,235,0.16)' }} />
                   <Chip label={loading ? 'Syncing' : 'Ready'} sx={{ bgcolor: 'rgba(255,255,255,0.04)', color: '#edf3ff', border: '1px solid rgba(255,255,255,0.08)' }} />
-                  <Chip label={`${displayPrizes.length} rewards`} sx={{ bgcolor: 'rgba(255,214,102,0.10)', color: '#f7e6b5', border: '1px solid rgba(255,214,102,0.16)' }} />
+                  <Chip label={`${segments.length} rewards`} sx={{ bgcolor: 'rgba(255,214,102,0.10)', color: '#f7e6b5', border: '1px solid rgba(255,214,102,0.16)' }} />
                 </Stack>
 
-                <Typography
-                  sx={{
-                    color: '#f7f2e7',
-                    fontWeight: 900,
-                    letterSpacing: '-0.06em',
-                    fontSize: { xs: '2rem', sm: '2.6rem', md: '3rem' },
-                    lineHeight: 0.92,
-                  }}
-                >
+                <Typography sx={{ color: '#f7f2e7', fontWeight: 900, letterSpacing: '-0.06em', fontSize: { xs: '2rem', sm: '2.6rem', md: '3rem' }, lineHeight: 0.92 }}>
                   {displayCampaign.name}
                 </Typography>
-                <Typography
-                  sx={{
-                    mt: 1,
-                    maxWidth: 760,
-                    color: 'rgba(231,238,255,0.72)',
-                    fontSize: { xs: '0.96rem', sm: '1.04rem' },
-                    lineHeight: 1.55,
-                  }}
-                >
+                <Typography sx={{ mt: 1, maxWidth: 760, color: 'rgba(231,238,255,0.72)', fontSize: { xs: '0.96rem', sm: '1.04rem' }, lineHeight: 1.55 }}>
                   {displayCampaign.description}
                 </Typography>
               </Box>
 
-              <Box
-                sx={{
-                  px: 2,
-                  py: 1.4,
-                  minWidth: { xs: '100%', sm: 180 },
-                  borderRadius: 4,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  bgcolor: 'rgba(255,255,255,0.04)',
-                }}
-              >
+              <Box sx={{ px: 2, py: 1.4, minWidth: { xs: '100%', sm: 180 }, borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', bgcolor: 'rgba(255,255,255,0.04)' }}>
                 <Typography sx={{ color: 'rgba(230,238,255,0.68)', fontSize: '0.74rem', letterSpacing: '0.18em', fontWeight: 800 }}>
                   SPINS
                 </Typography>
@@ -198,68 +141,35 @@ export default function WheelPage() {
           </Box>
 
           {error ? (
-            <Alert
-              severity="error"
-              sx={{
-                bgcolor: 'rgba(91, 26, 35, 0.70)',
-                color: '#fdeaea',
-                border: '1px solid rgba(248,113,113,0.18)',
-                '& .MuiAlert-icon': { color: '#fca5a5' },
-              }}
-            >
+            <Alert severity="error" sx={{ bgcolor: 'rgba(91, 26, 35, 0.70)', color: '#fdeaea', border: '1px solid rgba(248,113,113,0.18)' }}>
               {error}
             </Alert>
           ) : null}
 
           {result ? (
-            <Alert
-              severity="success"
-              sx={{
-                bgcolor: 'rgba(8, 67, 59, 0.66)',
-                color: '#dcfce7',
-                border: '1px solid rgba(74,222,128,0.18)',
-                '& .MuiAlert-icon': { color: '#86efac' },
-              }}
-            >
+            <Alert severity="success" sx={{ bgcolor: 'rgba(8, 67, 59, 0.66)', color: '#dcfce7', border: '1px solid rgba(74,222,128,0.18)' }}>
               Đã reveal: {result.prize?.name ?? 'Không trúng'}
             </Alert>
           ) : null}
 
-          <LuckyWheelShowcase
-            prizes={displayPrizes}
-            spins={spins}
-            spinning={spinning}
-            rotation={rotation}
-            resultName={result?.prize?.name}
-            campaignName={displayCampaign.name}
-            campaignDescription={displayCampaign.description}
-            onSpin={handleSpin}
-            disabled={loading}
-          />
-
           <Box
             sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
-              gap: 1.25,
+              borderRadius: { xs: 4, sm: 5 },
+              border: '1px solid rgba(103, 151, 255, 0.14)',
+              background: 'linear-gradient(180deg, rgba(11,20,41,0.82), rgba(8,13,26,0.94))',
+              overflow: 'hidden',
+              p: { xs: 2, sm: 2.5 },
             }}
           >
-            {displayPrizes.map((prize) => (
-              <Box
-                key={prize.id}
-                sx={{
-                  p: 1.5,
-                  borderRadius: 3,
-                  border: '1px solid rgba(255,255,255,0.06)',
-                  bgcolor: 'rgba(255,255,255,0.03)',
-                }}
-              >
-                <Typography sx={{ color: '#f7f2e7', fontWeight: 800, lineHeight: 1.1 }}>{prize.name}</Typography>
-                <Typography sx={{ mt: 0.45, color: 'rgba(230,238,255,0.60)', fontSize: '0.8rem' }}>
-                  {String(prize.type ?? 'CUSTOM').toUpperCase()} · weight {prize.weight}
-                </Typography>
-              </Box>
-            ))}
+            <WheelDial
+              segments={segments}
+              spins={spins}
+              spinning={spinning}
+              rotation={rotation}
+              resultName={getWheelDefaultOutcomeLabel(result?.prize?.name)}
+              onSpin={handleSpin}
+              disabled={loading}
+            />
           </Box>
         </Stack>
       </Container>

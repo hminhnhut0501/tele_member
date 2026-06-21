@@ -11,6 +11,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  ToggleButton,
+  ToggleButtonGroup,
   FormControl,
   InputLabel,
   MenuItem,
@@ -52,6 +54,8 @@ export function UsersSection(props: any) {
         props.setTelegramId(user.telegramId);
         props.setActiveSection('settings');
       }}
+      onAddPoints={(user) => props.openUserAdjust(user, 'points')}
+      onAddSpins={(user) => props.openUserAdjust(user, 'spins')}
     />
   );
 }
@@ -217,5 +221,42 @@ export function SettingsSection({ debugEnv, botInfo, debugLoading, handleDebugEn
         </Stack>
       </CardContent>
     </AppSection>
+  );
+}
+
+export function UserAdjustDialog({
+  open,
+  user,
+  mode,
+  amount,
+  setAmount,
+  reason,
+  setReason,
+  onModeChange,
+  onClose,
+  onSubmit,
+}: any) {
+  return (
+    <Dialog open={Boolean(open && user)} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>
+        {mode === 'points' ? 'Add points' : 'Add spins'} {user ? `• ${user.firstName ?? ''} ${user.lastName ?? ''}` : ''}
+      </DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ pt: 1 }}>
+          <ToggleButtonGroup exclusive value={mode} onChange={(_, value) => value && onModeChange(value)} size="small">
+            <ToggleButton value="points">Points</ToggleButton>
+            <ToggleButton value="spins">Spins</ToggleButton>
+          </ToggleButtonGroup>
+          <TextField label="Amount" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+          <TextField label="Reason" value={reason} onChange={(e) => setReason(e.target.value)} />
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" onClick={onSubmit}>
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }
