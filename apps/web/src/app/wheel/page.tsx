@@ -5,7 +5,8 @@ import { Alert, Box, Chip, Container, Stack, Typography } from '@mui/material';
 import { apiClient } from '../../lib/api';
 import { PageShell } from '../shared-ui';
 import { WheelDial } from './wheel-dial';
-import { buildWheelSegments, getWheelDefaultOutcomeLabel, getWheelFallbackCampaign, type WheelCampaign, type WheelPrize } from './wheel-model';
+import { getWheelDefaultOutcomeLabel, getWheelFallbackCampaign, type WheelCampaign, type WheelPrize } from './wheel-model';
+import { buildWheelRenderContract } from './wheel-contract';
 
 export default function WheelPage() {
   const [token, setToken] = useState<string | null>(null);
@@ -53,7 +54,8 @@ export default function WheelPage() {
   }, [client, token]);
 
   const displayCampaign = campaign ?? getWheelFallbackCampaign();
-  const segments = buildWheelSegments(prizes);
+  const renderContract = buildWheelRenderContract(prizes);
+  const segments = renderContract.segments;
 
   async function handleSpin() {
     if (spinning) return;
@@ -169,6 +171,9 @@ export default function WheelPage() {
               resultName={getWheelDefaultOutcomeLabel(result?.prize?.name)}
               onSpin={handleSpin}
               disabled={loading}
+              chipLabelLimit={renderContract.chipLabelLimit}
+              labelRadius={renderContract.labelRadius}
+              wheelLabelScale={renderContract.wheelLabelScale}
             />
           </Box>
         </Stack>
