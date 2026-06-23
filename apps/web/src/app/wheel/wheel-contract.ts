@@ -103,17 +103,17 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
   const decoratedSegments: WheelRenderSegment[] = segments.map((prize, index) => {
     const kind = getPrizeClass(prize);
     const wheelLabel = shortText(getPrizeWheelLabel(prize), kind === 'phrase' ? 11 : 12);
-      const railLabel = shortText(getPrizeRailLabel(prize, wheelLabel), 24);
-      const labelPolicy: WheelLabelPolicy = {
-        kind,
-        wheelLabel,
-        railLabel,
-        maxChars: kind === 'phrase' ? 11 : 12,
-        showOnWheel: kind !== 'hidden',
-        fontScale: kind === 'value' ? 1.03 : kind === 'badge' ? 0.95 : 0.88,
-        radiusShift: kind === 'value' ? 0.01 : kind === 'badge' ? -0.01 : 0.02,
-        tone: getTone(prize.type, index),
-        textTone: getTextTone(prize.type),
+    const railLabel = shortText(getPrizeRailLabel(prize, wheelLabel), 24);
+    const labelPolicy: WheelLabelPolicy = {
+      kind,
+      wheelLabel,
+      railLabel,
+      maxChars: kind === 'phrase' ? 11 : 12,
+      showOnWheel: kind !== 'hidden',
+      fontScale: kind === 'value' ? 1.03 : kind === 'badge' ? 0.95 : 0.88,
+      radiusShift: kind === 'value' ? 0.01 : kind === 'badge' ? -0.01 : 0.02,
+      tone: getTone(prize.type, index),
+      textTone: getTextTone(prize.type),
     };
 
     return {

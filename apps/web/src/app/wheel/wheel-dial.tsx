@@ -1,24 +1,25 @@
 'use client';
 
 import { Box, Button, Chip, Stack, Typography } from '@mui/material';
+import { useId } from 'react';
 import type { CSSProperties } from 'react';
 import { getWheelSegmentAngle } from './wheel-engine';
 import type { WheelRenderSegment } from './wheel-contract';
 
-function polarToPercent(angleDeg: number, radiusPercent: number) {
+function polarToViewBox(angleDeg: number, radius: number, center = 50) {
   const radians = (angleDeg * Math.PI) / 180;
-  const x = 50 + Math.cos(radians) * radiusPercent;
-  const y = 50 + Math.sin(radians) * radiusPercent;
+  const x = center + Math.cos(radians) * radius;
+  const y = center + Math.sin(radians) * radius;
   return { x, y };
 }
 
-function normalizedAngle(angle: number) {
-  return ((angle % 360) + 360) % 360;
-}
-
-function readableRotation(angle: number) {
-  const normalized = normalizedAngle(angle);
-  return normalized > 90 && normalized < 270 ? angle + 180 : angle;
+function svgArcPath(cx: number, cy: number, radius: number, startAngle: number, endAngle: number) {
+  const start = polarToViewBox(startAngle, radius, cx);
+  const end = polarToViewBox(endAngle, radius, cx);
+  const sweep = endAngle > startAngle ? 1 : 0;
+  const delta = Math.abs(endAngle - startAngle);
+  const largeArc = delta > 180 ? 1 : 0;
+  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} ${sweep} ${end.x} ${end.y}`;
 }
 
 export function WheelDial({
@@ -45,6 +46,7 @@ export function WheelDial({
   wheelLabelScale?: number;
 }) {
   const segmentAngle = getWheelSegmentAngle(segments.length);
+  const svgId = useId();
   const wheelStyle = {
     transform: `rotate(${rotation}deg)`,
     transition: spinning ? 'transform 6.6s cubic-bezier(0.16, 0.84, 0.18, 1)' : 'transform 0.48s cubic-bezier(0.22, 1, 0.36, 1)',
@@ -125,39 +127,41 @@ export function WheelDial({
           <Box sx={{ position: 'absolute', inset: 0, borderRadius: '50%', overflow: 'hidden' }}>
             {segments.map((segment, index) => {
               if (!segment.showLabelOnWheel) return null;
-              const angle = index * segmentAngle + segmentAngle / 2 - 90;
-              const { x, y } = polarToPercent(angle, labelRadius + segment.labelPolicy.radiusShift * 4);
-              const textAngle = readableRotation(angle);
+              const start = index * segmentAngle - 90 + 7;
+              const end = (index + 1) * segmentAngle - 90 - 7;
+              const pathId = `${svgId}-label-${segment.id}`;
               return (
                 <Box
                   key={`${segment.id}-label`}
                   sx={{
                     position: 'absolute',
-                    left: `${x}%`,
-                    top: `${y}%`,
-                    transform: 'translate(-50%, -50%)',
+                    inset: 0,
                     pointerEvents: 'none',
+                    display: 'grid',
+                    placeItems: 'center',
                   }}
                 >
-                  <Typography
-                    sx={{
-                      transform: `rotate(${textAngle}deg)`,
-                      transformOrigin: 'center',
-                      textAlign: 'center',
-                      width: segments.length <= 5 ? 108 : 96,
-                      color: segment.textTone,
-                      fontWeight: 900,
-                      fontSize: {
-                        xs: `${0.66 * segment.labelPolicy.fontScale * wheelLabelScale * 0.97}rem`,
-                        sm: `${0.8 * segment.labelPolicy.fontScale * wheelLabelScale}rem`,
-                      },
-                      lineHeight: 1.06,
-                      letterSpacing: '-0.01em',
-                      textShadow: '0 1px 5px rgba(0,0,0,0.24)',
-                    }}
-                  >
-                    {segment.displayLabel}
-                  </Typography>
+                  <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ overflow: 'visible' }} aria-hidden="true">
+                    <defs>
+                      <path id={pathId} d={svgArcPath(50, 50, labelRadius + segment.labelPolicy.radiusShift * 2, start, end)} />
+                    </defs>
+                    <text
+                      fill={segment.textTone}
+                      fontWeight={900}
+                      fontSize={`${0.62 * segment.labelPolicy.fontScale * wheelLabelScale}rem`}
+                      letterSpacing="-0.02em"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      paintOrder="stroke"
+                      stroke="rgba(0,0,0,0.15)"
+                      strokeWidth="1.25"
+                      style={{ textShadow: '0 1px 5px rgba(0,0,0,0.24)' }}
+                    >
+                      <textPath href={`#${pathId}`} startOffset="50%" textAnchor="middle">
+                        {segment.displayLabel}
+                      </textPath>
+                    </text>
+                  </svg>
                 </Box>
               );
             })}
