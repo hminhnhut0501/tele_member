@@ -5,13 +5,20 @@ import type { CSSProperties } from 'react';
 import { getWheelSegmentAngle } from './wheel-engine';
 import type { WheelSegment } from './wheel-model';
 
-function labelRotation(angle: number) {
-  const normalized = ((angle % 360) + 360) % 360;
-  return normalized > 90 && normalized < 270 ? angle + 180 : angle;
+function polarToPercent(angleDeg: number, radiusPercent: number) {
+  const radians = (angleDeg * Math.PI) / 180;
+  const x = 50 + Math.cos(radians) * radiusPercent;
+  const y = 50 + Math.sin(radians) * radiusPercent;
+  return { x, y };
 }
 
-function labelPositionAngle(index: number, segmentAngle: number) {
-  return index * segmentAngle + segmentAngle / 2 - 90;
+function normalizedAngle(angle: number) {
+  return ((angle % 360) + 360) % 360;
+}
+
+function readableRotation(angle: number) {
+  const normalized = normalizedAngle(angle);
+  return normalized > 90 && normalized < 270 ? angle + 180 : angle;
 }
 
 export function WheelDial({
@@ -39,6 +46,7 @@ export function WheelDial({
   } as CSSProperties;
 
   const arc = `conic-gradient(from -90deg, ${segments.map((segment, index) => `${segment.tone} ${index * segmentAngle}deg ${(index + 1) * segmentAngle}deg`).join(', ')})`;
+  const labelRadius = segments.length <= 5 ? 32 : segments.length <= 8 ? 30 : 28;
 
   return (
     <Box
@@ -112,34 +120,33 @@ export function WheelDial({
 
           <Box sx={{ position: 'absolute', inset: 0, borderRadius: '50%', overflow: 'hidden' }}>
             {segments.map((segment, index) => {
-              const angle = labelPositionAngle(index, segmentAngle);
-              const textAngle = labelRotation(angle);
+              const angle = index * segmentAngle + segmentAngle / 2 - 90;
+              const { x, y } = polarToPercent(angle, labelRadius);
+              const textAngle = readableRotation(angle);
+              const isDark = segment.textTone === '#f3f7ff' || segment.textTone === '#eef5ff';
               return (
                 <Box
                   key={`${segment.id}-label`}
                   sx={{
                     position: 'absolute',
-                    inset: 0,
-                    transform: `rotate(${index * segmentAngle}deg)`,
-                    transformOrigin: 'center',
+                    left: `${x}%`,
+                    top: `${y}%`,
+                    transform: 'translate(-50%, -50%)',
                     pointerEvents: 'none',
                   }}
                 >
                   <Typography
                     sx={{
-                      position: 'absolute',
-                      left: '50%',
-                      top: '17%',
-                      transform: `translateX(-50%) rotate(${textAngle}deg)`,
+                      transform: `rotate(${textAngle}deg)`,
                       transformOrigin: 'center',
                       textAlign: 'center',
-                      width: 96,
+                      width: segments.length <= 5 ? 108 : 96,
                       color: segment.textTone,
                       fontWeight: 900,
-                      fontSize: { xs: '0.7rem', sm: '0.84rem' },
-                      lineHeight: 1.03,
+                      fontSize: { xs: '0.68rem', sm: '0.82rem' },
+                      lineHeight: 1.06,
                       letterSpacing: '-0.01em',
-                      textShadow: segment.textTone === '#f3f7ff' ? '0 1px 6px rgba(0,0,0,0.26)' : '0 1px 0 rgba(255,255,255,0.18)',
+                      textShadow: isDark ? '0 1px 6px rgba(0,0,0,0.26)' : '0 1px 0 rgba(255,255,255,0.18)',
                     }}
                   >
                     {segment.compactName}
