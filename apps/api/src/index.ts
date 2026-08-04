@@ -531,7 +531,7 @@ app.post('/auth/telegram/webapp', async (request, reply) => {
   };
 
   await context.points.upsertUser(profile);
-  const token = await reply.jwtSign({ role: 'telegram', telegramId });
+  const token = await reply.jwtSign({ role: 'telegram', telegramId, telegram_id: telegramId });
   return { token, telegramId };
 });
 
