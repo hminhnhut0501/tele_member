@@ -17,6 +17,7 @@ export default function WheelPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
+  const [spinPhase, setSpinPhase] = useState<'idle' | 'spinning' | 'settling'>('idle');
   const [rotation, setRotation] = useState(0);
 
   const client = useMemo(() => apiClient(token), [token]);
@@ -63,6 +64,7 @@ export default function WheelPage() {
       setError('');
       setResult(null);
       setSpinning(true);
+      setSpinPhase('spinning');
 
       const spinStart = rotation + 1440 + Math.floor(Math.random() * 360);
       setRotation(spinStart);
@@ -75,13 +77,19 @@ export default function WheelPage() {
       if (prizeIndex >= 0) {
         const segmentAngle = 360 / Math.max(segments.length, 1);
         const target = 360 - (prizeIndex * segmentAngle + segmentAngle / 2);
-        setRotation(spinStart + target);
+        const finalRotation = spinStart + target;
+        setSpinPhase('settling');
+        setRotation(finalRotation + 10);
+        window.setTimeout(() => setRotation(finalRotation - 3), 180);
+        window.setTimeout(() => setRotation(finalRotation), 360);
+        window.setTimeout(() => setSpinPhase('idle'), 620);
       }
 
       const updatedSpins = await client.getMySpins();
       setSpins(Number(updatedSpins?.balance ?? 0));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+      setSpinPhase('idle');
     } finally {
       setSpinning(false);
     }
@@ -172,6 +180,7 @@ export default function WheelPage() {
                 segments={segments}
                 spins={spins}
                 spinning={spinning}
+                spinPhase={spinPhase}
                 rotation={rotation}
                 resultName={getWheelDefaultOutcomeLabel(result?.prize?.name)}
                 onSpin={handleSpin}
