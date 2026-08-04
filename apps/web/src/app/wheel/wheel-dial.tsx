@@ -285,31 +285,33 @@ export function WheelDial({
         {spinning ? 'ĐANG QUAY...' : spins > 0 ? 'QUAY NGAY' : 'HẾT LƯỢT QUAY'}
       </Button>
 
-      <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center" sx={{ mt: 1.75, maxWidth: 520 }}>
-        {segments.slice(0, chipLabelLimit).map((segment) => (
-          <Chip
-            key={segment.id}
-            label={segment.railLabel}
-            sx={{
-              bgcolor: 'rgba(255,255,255,0.04)',
-              color: '#ecf2ff',
-              border: '1px solid rgba(255,255,255,0.08)',
-              fontWeight: 700,
-            }}
-          />
-        ))}
-        {segments.length > chipLabelLimit ? (
-          <Chip
-            label={`+${segments.length - chipLabelLimit} more`}
-            sx={{
-              bgcolor: 'rgba(255,255,255,0.04)',
-              color: '#ecf2ff',
-              border: '1px solid rgba(255,255,255,0.08)',
-              fontWeight: 700,
-            }}
-          />
-        ) : null}
-      </Stack>
+      {chipLabelLimit > 0 ? (
+        <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center" sx={{ mt: 1.75, maxWidth: 520 }}>
+          {segments.slice(0, chipLabelLimit).map((segment) => (
+            <Chip
+              key={segment.id}
+              label={segment.railLabel}
+              sx={{
+                bgcolor: 'rgba(255,255,255,0.04)',
+                color: '#ecf2ff',
+                border: '1px solid rgba(255,255,255,0.08)',
+                fontWeight: 700,
+              }}
+            />
+          ))}
+          {segments.length > chipLabelLimit ? (
+            <Chip
+              label={`+${segments.length - chipLabelLimit} more`}
+              sx={{
+                bgcolor: 'rgba(255,255,255,0.04)',
+                color: '#ecf2ff',
+                border: '1px solid rgba(255,255,255,0.08)',
+                fontWeight: 700,
+              }}
+            />
+          ) : null}
+        </Stack>
+      ) : null}
     </Box>
   );
 }
