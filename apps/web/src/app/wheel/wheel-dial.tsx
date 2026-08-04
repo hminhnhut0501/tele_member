@@ -33,6 +33,7 @@ export function WheelDial({
   chipLabelLimit = segments.length,
   labelRadius = segments.length <= 5 ? 32 : segments.length <= 8 ? 30 : 28,
   wheelLabelScale = 1,
+  labelInset = 10,
 }: {
   segments: WheelRenderSegment[];
   spins: number;
@@ -44,6 +45,7 @@ export function WheelDial({
   chipLabelLimit?: number;
   labelRadius?: number;
   wheelLabelScale?: number;
+  labelInset?: number;
 }) {
   const segmentAngle = getWheelSegmentAngle(segments.length);
   const svgId = useId();
@@ -148,13 +150,15 @@ export function WheelDial({
                     <text
                       fill={segment.textTone}
                       fontWeight={900}
-                      fontSize={`${0.62 * segment.labelPolicy.fontScale * wheelLabelScale}rem`}
+                      fontSize={`${0.6 * segment.labelPolicy.fontScale * wheelLabelScale}rem`}
                       letterSpacing="-0.02em"
                       textAnchor="middle"
                       dominantBaseline="middle"
                       paintOrder="stroke"
                       stroke="rgba(0,0,0,0.15)"
                       strokeWidth="1.25"
+                      lengthAdjust="spacingAndGlyphs"
+                      textLength={Math.max(12, 32 - labelInset * 1.2)}
                       style={{ textShadow: '0 1px 5px rgba(0,0,0,0.24)' }}
                     >
                       <textPath href={`#${pathId}`} startOffset="50%" textAnchor="middle">

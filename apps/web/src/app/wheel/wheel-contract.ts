@@ -20,6 +20,7 @@ export type WheelRenderContract = {
   chipLabelLimit: number;
   wheelLabelScale: number;
   railLabelScale: number;
+  labelInset: number;
 };
 
 export type WheelRenderSegment = WheelSegment & {
@@ -95,23 +96,26 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
   const segmentAngle = 360 / segmentCount;
   const labelRadius = segmentCount <= 5 ? 32 : segmentCount <= 8 ? 30 : 28;
   const chipLabelLimit = segmentCount <= 6 ? 18 : segmentCount <= 8 ? 14 : 12;
-  const wheelLabelScale = segmentCount <= 5 ? 1 : segmentCount <= 8 ? 0.92 : 0.84;
+  const wheelLabelScale = segmentCount <= 5 ? 1 : segmentCount <= 8 ? 0.9 : 0.8;
   const railLabelScale = segmentCount <= 5 ? 1 : 0.95;
+  const labelInset = segmentAngle >= 72 ? 8 : segmentAngle >= 45 ? 10 : 12;
 
   const segments = prizes.length ? prizes : getDefaultWheelPrizes();
 
   const decoratedSegments: WheelRenderSegment[] = segments.map((prize, index) => {
     const kind = getPrizeClass(prize);
-    const wheelLabel = shortText(getPrizeWheelLabel(prize), kind === 'phrase' ? 11 : 12);
+    const wheelLabelBase = getPrizeWheelLabel(prize);
+    const wheelLabelBudget = segmentAngle >= 72 ? 12 : segmentAngle >= 45 ? 10 : 8;
+    const wheelLabel = shortText(wheelLabelBase, kind === 'phrase' ? Math.min(11, wheelLabelBudget) : wheelLabelBudget);
     const railLabel = shortText(getPrizeRailLabel(prize, wheelLabel), 24);
     const labelPolicy: WheelLabelPolicy = {
       kind,
       wheelLabel,
       railLabel,
-      maxChars: kind === 'phrase' ? 11 : 12,
+      maxChars: kind === 'phrase' ? Math.min(11, wheelLabelBudget) : wheelLabelBudget,
       showOnWheel: kind !== 'hidden',
-      fontScale: kind === 'value' ? 1.03 : kind === 'badge' ? 0.95 : 0.88,
-      radiusShift: kind === 'value' ? 0.01 : kind === 'badge' ? -0.01 : 0.02,
+      fontScale: kind === 'value' ? 1.06 : kind === 'badge' ? 0.98 : segmentAngle < 45 ? 0.78 : 0.88,
+      radiusShift: kind === 'value' ? 0.015 : kind === 'badge' ? -0.01 : 0.02,
       tone: getTone(prize.type, index),
       textTone: getTextTone(prize.type),
     };
@@ -138,6 +142,7 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
     chipLabelLimit,
     wheelLabelScale,
     railLabelScale,
+    labelInset,
     segments: decoratedSegments,
   };
 }
