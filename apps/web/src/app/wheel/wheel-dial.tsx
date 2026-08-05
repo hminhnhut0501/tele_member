@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button, Chip, Stack, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useId } from 'react';
 import type { CSSProperties } from 'react';
 import { getWheelSegmentAngle } from './wheel-engine';
@@ -24,27 +24,19 @@ function svgArcPath(cx: number, cy: number, radius: number, startAngle: number, 
 
 export function WheelDial({
   segments,
-  spins,
   spinning,
   spinPhase,
   rotation,
-  resultName,
-  onSpin,
-  disabled,
-  chipLabelLimit = segments.length,
+  centerLabel = 'GO',
   labelRadius = segments.length <= 5 ? 32 : segments.length <= 8 ? 30 : 28,
   wheelLabelScale = 1,
   labelInset = 10,
 }: {
   segments: WheelRenderSegment[];
-  spins: number;
   spinning: boolean;
   spinPhase: 'idle' | 'spinning' | 'settling';
   rotation: number;
-  resultName?: string | null;
-  onSpin: () => void;
-  disabled?: boolean;
-  chipLabelLimit?: number;
+  centerLabel?: string;
   labelRadius?: number;
   wheelLabelScale?: number;
   labelInset?: number;
@@ -63,6 +55,8 @@ export function WheelDial({
   } as CSSProperties;
 
   const arc = `conic-gradient(from -90deg, ${segments.map((segment, index) => `${segment.tone} ${index * segmentAngle}deg ${(index + 1) * segmentAngle}deg`).join(', ')})`;
+  const isSpinning = spinPhase === 'spinning';
+  const isSettling = spinPhase === 'settling';
   return (
     <Box
       sx={{
@@ -70,7 +64,7 @@ export function WheelDial({
         display: 'grid',
         placeItems: 'center',
         px: { xs: 0.5, sm: 1 },
-        py: { xs: 1, sm: 2 },
+        py: { xs: 0.5, sm: 1 },
       }}
     >
       <Box
@@ -83,9 +77,14 @@ export function WheelDial({
           height: 0,
           borderLeft: { xs: '18px solid transparent', sm: '23px solid transparent' },
           borderRight: { xs: '18px solid transparent', sm: '23px solid transparent' },
-          borderTop: { xs: '48px solid rgba(244, 209, 96, 0.98)', sm: '60px solid rgba(244, 209, 96, 0.98)' },
-          filter: 'drop-shadow(0 10px 14px rgba(0,0,0,0.24))',
+          borderTop: { xs: '48px solid rgba(102, 168, 255, 0.98)', sm: '60px solid rgba(102, 168, 255, 0.98)' },
+          filter: isSpinning ? 'drop-shadow(0 12px 16px rgba(53,103,255,0.30))' : 'drop-shadow(0 10px 14px rgba(0,0,0,0.24))',
           zIndex: 3,
+          animation: isSpinning ? 'pointerBounce 0.86s ease-in-out infinite' : 'none',
+          '@keyframes pointerBounce': {
+            '0%,100%': { transform: 'translateX(-50%) translateY(0) scale(1)' },
+            '50%': { transform: 'translateX(-50%) translateY(-4px) scale(1.04)' },
+          },
         }}
       />
 
@@ -97,6 +96,15 @@ export function WheelDial({
           aspectRatio: '1 / 1',
           display: 'grid',
           placeItems: 'center',
+          animation: isSpinning ? 'wheelFloat 1.8s ease-in-out infinite' : isSettling ? 'wheelFloat 2.4s ease-in-out infinite' : 'wheelRest 4.8s ease-in-out infinite',
+          '@keyframes wheelFloat': {
+            '0%,100%': { transform: 'translateY(0px) scale(1)' },
+            '50%': { transform: 'translateY(-3px) scale(1.004)' },
+          },
+          '@keyframes wheelRest': {
+            '0%,100%': { transform: 'translateY(0px) scale(1)' },
+            '50%': { transform: 'translateY(-1px) scale(1.002)' },
+          },
         }}
       >
         <Box
@@ -113,17 +121,32 @@ export function WheelDial({
         <Box
           sx={{
             position: 'absolute',
+            inset: { xs: 4, sm: 8 },
+            borderRadius: '50%',
+            background:
+              'radial-gradient(circle at 50% 42%, rgba(147,190,255,0.18) 0%, rgba(96,139,255,0.08) 32%, transparent 64%)',
+            opacity: isSpinning ? 0.92 : 0.6,
+            filter: 'blur(8px)',
+            transform: 'scale(1.01)',
+            pointerEvents: 'none',
+          }}
+        />
+
+        <Box
+          sx={{
+            position: 'absolute',
             inset: { xs: 8, sm: 14 },
             borderRadius: '50%',
             ...wheelStyle,
             overflow: 'hidden',
             background: arc,
+            transform: `rotate(${rotation}deg) ${isSpinning ? 'scale(1.014)' : isSettling ? 'scale(1.01)' : 'scale(1)'}`,
             boxShadow:
-              spinPhase === 'spinning'
-                ? 'inset 0 0 0 8px rgba(255, 214, 107, 0.86), inset 0 0 0 18px rgba(5,10,22,0.52), 0 0 0 1px rgba(255,214,107,0.14), 0 22px 58px rgba(0,0,0,0.36)'
-                : spinPhase === 'settling'
-                  ? 'inset 0 0 0 8px rgba(255, 214, 107, 0.90), inset 0 0 0 18px rgba(5,10,22,0.50), 0 0 34px rgba(255,214,107,0.22), 0 18px 42px rgba(0,0,0,0.30)'
-                  : 'inset 0 0 0 8px rgba(255, 214, 107, 0.80), inset 0 0 0 18px rgba(5,10,22,0.52), 0 18px 42px rgba(0,0,0,0.30)',
+              isSpinning
+                ? 'inset 0 0 0 8px rgba(114, 172, 255, 0.78), inset 0 0 0 18px rgba(5,10,22,0.52), 0 0 0 1px rgba(114,172,255,0.18), 0 22px 58px rgba(0,0,0,0.36)'
+                : isSettling
+                  ? 'inset 0 0 0 8px rgba(114, 172, 255, 0.88), inset 0 0 0 18px rgba(5,10,22,0.50), 0 0 34px rgba(114,172,255,0.22), 0 18px 42px rgba(0,0,0,0.30)'
+                  : 'inset 0 0 0 8px rgba(114, 172, 255, 0.74), inset 0 0 0 18px rgba(5,10,22,0.52), 0 18px 42px rgba(0,0,0,0.30)',
           }}
         >
           <Box
@@ -131,9 +154,11 @@ export function WheelDial({
               position: 'absolute',
               inset: 0,
               borderRadius: '50%',
+              pointerEvents: 'none',
               background:
-                'repeating-conic-gradient(from -90deg, rgba(255,255,255,0.10) 0 0.5deg, transparent 0.5deg 30deg)',
-              opacity: spinPhase === 'spinning' ? 0.55 : 0.45,
+                'linear-gradient(140deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.03) 20%, transparent 40%, transparent 60%, rgba(255,255,255,0.05) 74%, rgba(255,255,255,0.12) 100%)',
+              mixBlendMode: 'screen',
+              opacity: isSpinning ? 0.42 : 0.24,
             }}
           />
 
@@ -144,13 +169,13 @@ export function WheelDial({
               borderRadius: '50%',
               pointerEvents: 'none',
               background:
-                spinPhase === 'spinning'
-                  ? 'radial-gradient(circle at 50% 50%, rgba(109,156,255,0.14) 0%, rgba(109,156,255,0.06) 38%, transparent 68%)'
-                  : spinPhase === 'settling'
-                    ? 'radial-gradient(circle at 50% 50%, rgba(255,214,107,0.18) 0%, rgba(255,214,107,0.08) 40%, transparent 70%)'
+                isSpinning
+                  ? 'radial-gradient(circle at 50% 50%, rgba(109,156,255,0.20) 0%, rgba(109,156,255,0.08) 38%, transparent 68%)'
+                  : isSettling
+                    ? 'radial-gradient(circle at 50% 50%, rgba(109,156,255,0.14) 0%, rgba(109,156,255,0.05) 40%, transparent 70%)'
                     : 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02) 0%, transparent 72%)',
               filter: 'blur(2px)',
-              animation: spinPhase === 'spinning' ? 'wheelGlowPulse 1.1s ease-in-out infinite' : 'none',
+              animation: isSpinning ? 'wheelGlowPulse 1.1s ease-in-out infinite' : 'none',
               '@keyframes wheelGlowPulse': {
                 '0%,100%': { transform: 'scale(0.98)', opacity: 0.55 },
                 '50%': { transform: 'scale(1.03)', opacity: 1 },
@@ -187,13 +212,13 @@ export function WheelDial({
                       textAnchor="middle"
                       dominantBaseline="middle"
                       paintOrder="stroke"
-                      stroke="rgba(0,0,0,0.15)"
-                      strokeWidth="1.25"
+                      stroke="rgba(0,0,0,0.28)"
+                      strokeWidth="1.5"
                       lengthAdjust="spacingAndGlyphs"
                       textLength={Math.max(12, 32 - labelInset * 1.2)}
                       style={{
-                        textShadow: '0 1px 5px rgba(0,0,0,0.24)',
-                        filter: spinPhase === 'spinning' ? 'drop-shadow(0 0 4px rgba(255,255,255,0.12))' : 'none',
+                        textShadow: '0 1px 4px rgba(0,0,0,0.18)',
+                        filter: isSpinning ? 'drop-shadow(0 0 6px rgba(255,255,255,0.16))' : 'none',
                       }}
                     >
                       <textPath href={`#${pathId}`} startOffset="50%" textAnchor="middle">
@@ -209,30 +234,29 @@ export function WheelDial({
           <Box
             sx={{
               position: 'absolute',
-              inset: { xs: '34%', sm: '35%' },
+              inset: { xs: '36%', sm: '37%' },
               borderRadius: '50%',
               background:
-                'radial-gradient(circle at 32% 28%, #fffefb 0%, #f7e6b8 36%, #d7b95f 72%, #af8836 100%)',
-              border: '1px solid rgba(255,255,255,0.26)',
+                isSpinning
+                  ? 'radial-gradient(circle at 32% 28%, #f5fbff 0%, #d6e9ff 32%, #7eb0ff 68%, #2b5cd9 100%)'
+                  : 'radial-gradient(circle at 32% 28%, #f8fbff 0%, #e0ecff 36%, #90bcff 74%, #305ee0 100%)',
+              border: '1px solid rgba(255,255,255,0.14)',
               boxShadow:
-                spinPhase === 'spinning'
-                  ? '0 0 0 1px rgba(255,255,255,0.16), 0 0 34px rgba(255,214,107,0.22), 0 14px 26px rgba(0,0,0,0.22)'
-                  : spinPhase === 'settling'
-                    ? '0 0 0 1px rgba(255,255,255,0.20), 0 0 42px rgba(255,214,107,0.34), 0 14px 26px rgba(0,0,0,0.22)'
+                isSpinning
+                  ? '0 0 0 1px rgba(255,255,255,0.12), 0 0 34px rgba(95,145,255,0.22), 0 14px 26px rgba(0,0,0,0.22)'
+                  : isSettling
+                    ? '0 0 0 1px rgba(255,255,255,0.14), 0 0 42px rgba(95,145,255,0.30), 0 14px 26px rgba(0,0,0,0.22)'
                     : '0 12px 24px rgba(0,0,0,0.22)',
               display: 'grid',
               placeItems: 'center',
               textAlign: 'center',
+              animation: isSpinning ? 'centerPulse 1.05s ease-in-out infinite' : 'none',
+              '@keyframes centerPulse': {
+                '0%,100%': { transform: 'scale(1)' },
+                '50%': { transform: 'scale(1.025)' },
+              },
             }}
           >
-            <Stack spacing={0.15} alignItems="center" sx={{ px: 1 }}>
-              <Typography sx={{ color: '#7a4910', fontWeight: 900, letterSpacing: '0.24em', fontSize: { xs: '0.55rem', sm: '0.66rem' } }}>
-                REVEAL
-              </Typography>
-              <Typography sx={{ color: '#2a1704', fontWeight: 900, letterSpacing: '-0.04em', fontSize: { xs: '0.9rem', sm: '1.04rem' }, lineHeight: 1 }}>
-                {spinning ? 'Đang quay' : resultName ?? 'Sẵn sàng'}
-              </Typography>
-            </Stack>
           </Box>
 
           <Box
@@ -244,14 +268,14 @@ export function WheelDial({
               width: { xs: 28, sm: 36 },
               height: { xs: 28, sm: 36 },
               borderRadius: '50%',
-              bgcolor: spinPhase === 'settling' ? 'rgba(255,214,107,0.98)' : 'rgba(255,214,107,0.88)',
+              bgcolor: isSettling ? 'rgba(102, 168, 255,0.98)' : 'rgba(102, 168, 255,0.88)',
               boxShadow:
-                spinPhase === 'spinning'
-                  ? '0 0 0 8px rgba(255,214,107,0.10), 0 0 24px rgba(255,214,107,0.42)'
-                  : '0 0 0 8px rgba(255,214,107,0.08), 0 0 16px rgba(255,214,107,0.30)',
+                isSpinning
+                  ? '0 0 0 8px rgba(102,168,255,0.10), 0 0 24px rgba(102,168,255,0.40)'
+                  : '0 0 0 8px rgba(102,168,255,0.08), 0 0 16px rgba(102,168,255,0.28)',
               zIndex: 4,
               clipPath: 'polygon(50% 0%, 100% 55%, 50% 100%, 0% 55%)',
-              animation: spinPhase === 'spinning' ? 'pointerPulse 0.9s ease-in-out infinite' : 'none',
+              animation: isSpinning ? 'pointerPulse 0.9s ease-in-out infinite' : 'none',
               '@keyframes pointerPulse': {
                 '0%,100%': { transform: 'translateX(-50%) translateY(0) scale(1)' },
                 '50%': { transform: 'translateX(-50%) translateY(-2px) scale(1.08)' },
@@ -260,58 +284,6 @@ export function WheelDial({
           />
         </Box>
       </Box>
-
-      <Button
-        onClick={onSpin}
-        disabled={disabled || spinning || spins <= 0}
-        variant="contained"
-        sx={{
-          mt: 2,
-          minWidth: { xs: 220, sm: 280 },
-          px: { xs: 4, sm: 6 },
-          py: { xs: 1.25, sm: 1.5 },
-          borderRadius: 999,
-          fontWeight: 900,
-          fontSize: { xs: '0.95rem', sm: '1rem' },
-          letterSpacing: '0.08em',
-          color: '#f7fbff',
-          background: 'linear-gradient(180deg, rgba(63,105,236,1) 0%, rgba(28,56,168,1) 100%)',
-          boxShadow: '0 14px 28px rgba(33,69,191,0.24)',
-          '&:hover': {
-            background: 'linear-gradient(180deg, rgba(88,131,255,1) 0%, rgba(28,56,168,1) 100%)',
-          },
-        }}
-      >
-        {spinning ? 'ĐANG QUAY...' : spins > 0 ? 'QUAY NGAY' : 'HẾT LƯỢT QUAY'}
-      </Button>
-
-      {chipLabelLimit > 0 ? (
-        <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center" sx={{ mt: 1.75, maxWidth: 520 }}>
-          {segments.slice(0, chipLabelLimit).map((segment) => (
-            <Chip
-              key={segment.id}
-              label={segment.railLabel}
-              sx={{
-                bgcolor: 'rgba(255,255,255,0.04)',
-                color: '#ecf2ff',
-                border: '1px solid rgba(255,255,255,0.08)',
-                fontWeight: 700,
-              }}
-            />
-          ))}
-          {segments.length > chipLabelLimit ? (
-            <Chip
-              label={`+${segments.length - chipLabelLimit} more`}
-              sx={{
-                bgcolor: 'rgba(255,255,255,0.04)',
-                color: '#ecf2ff',
-                border: '1px solid rgba(255,255,255,0.08)',
-                fontWeight: 700,
-              }}
-            />
-          ) : null}
-        </Stack>
-      ) : null}
     </Box>
   );
 }

@@ -21,6 +21,7 @@ export type WheelRenderContract = {
   wheelLabelScale: number;
   railLabelScale: number;
   labelInset: number;
+  centerLabel: string;
 };
 
 export type WheelRenderSegment = WheelSegment & {
@@ -54,41 +55,40 @@ function getPrizeWheelLabel(prize: WheelPrize) {
   const type = String(prize.type ?? '').toUpperCase();
   if (type === 'POINT') {
     const amount = prize.metadata?.points ?? prize.metadata?.point_amount ?? prize.metadata?.value;
-    return amount ? `+${amount}đ` : 'Điểm';
+    return amount ? `✦${amount}` : '✦';
   }
-  if (type === 'SPIN_TICKET') return '+1 spin';
-  if (type === 'VOUCHER') return 'Voucher';
-  if (type === 'VIP_CODE') return 'VIP';
-  if (type === 'NOTHING') return 'Không trúng';
-  return prize.name || type || 'Prize';
+  if (type === 'SPIN_TICKET') return '⟲1';
+  if (type === 'VOUCHER') return '✉';
+  if (type === 'VIP_CODE') return '⛭';
+  if (type === 'NOTHING') return '·';
+  return prize.name || '•';
 }
 
 function getPrizeRailLabel(prize: WheelPrize, fallbackWheelLabel: string) {
   const type = String(prize.type ?? '').toUpperCase();
   if (type === 'POINT') {
     const amount = prize.metadata?.points ?? prize.metadata?.point_amount ?? prize.metadata?.value;
-    return amount ? `${amount} điểm` : prize.name || fallbackWheelLabel;
+    return amount ? `${amount} điểm` : 'Điểm';
   }
-  if (type === 'SPIN_TICKET') return 'Cộng 1 lượt quay';
+  if (type === 'SPIN_TICKET') return '1 lượt quay';
   if (type === 'VOUCHER') return prize.name || 'Voucher';
-  if (type === 'VIP_CODE') return prize.name || 'Mã VIP';
+  if (type === 'VIP_CODE') return prize.name || 'VIP';
   if (type === 'NOTHING') return 'Không trúng';
   return prize.name || fallbackWheelLabel;
 }
 
 function getTone(type: string, index: number) {
   const t = String(type ?? '').toUpperCase();
-  if (t === 'POINT') return index % 2 === 0 ? '#f3d86d' : '#f7e08c';
-  if (t === 'SPIN_TICKET') return index % 2 === 0 ? '#8eb3f7' : '#74a4ff';
-  if (t === 'VOUCHER' || t === 'VIP_CODE') return index % 2 === 0 ? '#1a2644' : '#111b31';
-  return index % 2 === 0 ? '#294fc2' : '#2f64e4';
+  const palette = ['#cfe4ff', '#a9ccff', '#7fb0ff', '#5f93ff', '#3d73ef', '#264fbf'];
+  const base = palette[index % palette.length];
+  if (t === 'NOTHING') return '#182a58';
+  return base;
 }
 
 function getTextTone(type: string) {
   const t = String(type ?? '').toUpperCase();
-  if (t === 'POINT' || t === 'SPIN_TICKET') return '#13203e';
-  if (t === 'VOUCHER' || t === 'VIP_CODE') return '#f3f7ff';
-  return '#eef5ff';
+  if (t === 'NOTHING') return '#eaf2ff';
+  return '#f8fbff';
 }
 
 export function buildWheelRenderContract(prizes: WheelPrize[]) {
@@ -96,7 +96,7 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
   const segmentAngle = 360 / segmentCount;
   const labelRadius = segmentCount <= 5 ? 32 : segmentCount <= 8 ? 30 : 28;
   const chipLabelLimit = segmentCount <= 6 ? 18 : segmentCount <= 8 ? 14 : 12;
-  const wheelLabelScale = segmentCount <= 5 ? 1 : segmentCount <= 8 ? 0.9 : 0.8;
+  const wheelLabelScale = segmentCount <= 5 ? 0.86 : segmentCount <= 8 ? 0.8 : 0.72;
   const railLabelScale = segmentCount <= 5 ? 1 : 0.95;
   const labelInset = segmentAngle >= 72 ? 8 : segmentAngle >= 45 ? 10 : 12;
 
@@ -112,10 +112,10 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
       kind,
       wheelLabel,
       railLabel,
-      maxChars: kind === 'phrase' ? Math.min(11, wheelLabelBudget) : wheelLabelBudget,
+      maxChars: kind === 'phrase' ? Math.min(8, wheelLabelBudget) : wheelLabelBudget,
       showOnWheel: kind !== 'hidden',
-      fontScale: kind === 'value' ? 1.06 : kind === 'badge' ? 0.98 : segmentAngle < 45 ? 0.78 : 0.88,
-      radiusShift: kind === 'value' ? 0.015 : kind === 'badge' ? -0.01 : 0.02,
+      fontScale: kind === 'value' ? 0.9 : kind === 'badge' ? 0.84 : segmentAngle < 45 ? 0.68 : 0.76,
+      radiusShift: kind === 'value' ? 0.008 : kind === 'badge' ? -0.004 : 0.012,
       tone: getTone(prize.type, index),
       textTone: getTextTone(prize.type),
     };
@@ -143,6 +143,7 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
     wheelLabelScale,
     railLabelScale,
     labelInset,
+    centerLabel: '',
     segments: decoratedSegments,
   };
 }

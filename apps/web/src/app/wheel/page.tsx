@@ -1,20 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Chip, Container, Stack, Typography } from '@mui/material';
+import { Box, Button, Container, Stack } from '@mui/material';
 import { apiClient } from '../../lib/api';
 import { PageShell } from '../shared-ui';
 import { WheelDial } from './wheel-dial';
 import { buildWheelRenderContract } from './wheel-contract';
-import { getWheelDefaultOutcomeLabel, getWheelFallbackCampaign, type WheelCampaign, type WheelPrize } from './wheel-model';
+import type { WheelPrize } from './wheel-model';
 
 export default function WheelPage() {
   const [token, setToken] = useState<string | null>(null);
-  const [campaign, setCampaign] = useState<WheelCampaign | null>(null);
   const [prizes, setPrizes] = useState<WheelPrize[]>([]);
   const [spins, setSpins] = useState(0);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
   const [spinPhase, setSpinPhase] = useState<'idle' | 'spinning' | 'settling'>('idle');
@@ -38,12 +35,8 @@ export default function WheelPage() {
     Promise.all([client.getWheelCurrent(), client.getMySpins()])
       .then(([wheel, spinData]) => {
         if (cancelled) return;
-        setCampaign((wheel?.campaign ?? null) as WheelCampaign | null);
         setPrizes(((wheel?.prizes ?? []) as WheelPrize[]) ?? []);
         setSpins(Number(spinData?.balance ?? 0));
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -54,15 +47,12 @@ export default function WheelPage() {
     };
   }, [client, token]);
 
-  const displayCampaign = campaign ?? getWheelFallbackCampaign();
   const renderContract = buildWheelRenderContract(prizes);
   const segments = renderContract.segments;
 
   async function handleSpin() {
     if (spinning) return;
     try {
-      setError('');
-      setResult(null);
       setSpinning(true);
       setSpinPhase('spinning');
 
@@ -70,7 +60,6 @@ export default function WheelPage() {
       setRotation(spinStart);
 
       const data = await client.spinWheel();
-      setResult(data);
 
       const prizeId = data?.prize?.id;
       const prizeIndex = segments.findIndex((segment) => segment.id === prizeId);
@@ -88,7 +77,6 @@ export default function WheelPage() {
       const updatedSpins = await client.getMySpins();
       setSpins(Number(updatedSpins?.balance ?? 0));
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
       setSpinPhase('idle');
     } finally {
       setSpinning(false);
@@ -97,100 +85,54 @@ export default function WheelPage() {
 
   return (
     <PageShell>
-      <Container maxWidth="md" sx={{ py: { xs: 1.5, sm: 2.5 }, position: 'relative' }}>
+      <Container maxWidth="md" sx={{ py: { xs: 1, sm: 1.5 }, position: 'relative' }}>
         <Box
           sx={{
             position: 'absolute',
-            inset: 0,
+            inset: { xs: -20, sm: -32 },
             pointerEvents: 'none',
             opacity: 0.18,
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)',
-            backgroundSize: '56px 56px',
-            maskImage: 'radial-gradient(circle at center, black 0%, black 68%, transparent 100%)',
+            background:
+              'radial-gradient(circle at 18% 18%, rgba(123,174,255,0.18), transparent 24%), radial-gradient(circle at 82% 16%, rgba(86,135,255,0.14), transparent 20%), radial-gradient(circle at 50% 50%, rgba(23,56,178,0.10), transparent 44%)',
+            filter: 'blur(6px)',
           }}
         />
 
-        <Stack spacing={1.5} sx={{ position: 'relative' }}>
-          <Box
+        <Stack spacing={1.5} sx={{ position: 'relative', alignItems: 'center' }}>
+          <WheelDial
+            segments={segments}
+            spinning={spinning}
+            spinPhase={spinPhase}
+            rotation={rotation}
+            centerLabel=""
+            labelRadius={renderContract.labelRadius}
+            wheelLabelScale={renderContract.wheelLabelScale}
+            labelInset={renderContract.labelInset}
+          />
+
+          <Button
+            onClick={handleSpin}
+            disabled={loading || spinning || spins <= 0}
+            variant="contained"
             sx={{
-              px: { xs: 2, sm: 2.5 },
-              py: { xs: 1.75, sm: 2 },
-              borderRadius: { xs: 4, sm: 5 },
-              border: '1px solid rgba(105, 147, 255, 0.14)',
-              background:
-                'radial-gradient(circle at 18% 20%, rgba(47,84,183,0.22), transparent 18%), radial-gradient(circle at 82% 18%, rgba(255,212,111,0.10), transparent 20%), linear-gradient(180deg, rgba(10,18,36,0.94) 0%, rgba(7,11,21,0.98) 100%)',
-              boxShadow: '0 24px 60px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.04)',
+              minWidth: { xs: 240, sm: 300 },
+              mt: 0.5,
+              px: { xs: 4.5, sm: 6 },
+              py: { xs: 1.35, sm: 1.55 },
+              borderRadius: 999,
+              fontWeight: 900,
+              fontSize: { xs: '1rem', sm: '1.04rem' },
+              letterSpacing: '0.04em',
+              color: '#f7fbff',
+              background: 'linear-gradient(180deg, rgba(58,111,255,1) 0%, rgba(18,45,154,1) 100%)',
+              boxShadow: '0 16px 30px rgba(33,69,191,0.26)',
+              '&:hover': {
+                background: 'linear-gradient(180deg, rgba(82,133,255,1) 0%, rgba(18,45,154,1) 100%)',
+              },
             }}
           >
-            <Stack direction="row" justifyContent="space-between" alignItems="flex-end" spacing={2}>
-              <Box sx={{ minWidth: 0 }}>
-                <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 1 }}>
-                  <Chip size="small" label={loading ? 'Syncing' : 'Ready'} sx={{ bgcolor: 'rgba(255,255,255,0.04)', color: '#edf3ff', border: '1px solid rgba(255,255,255,0.08)' }} />
-                  <Chip size="small" label={`${segments.length} prizes`} sx={{ bgcolor: 'rgba(255,208,101,0.10)', color: '#f7e6b5', border: '1px solid rgba(255,208,101,0.16)' }} />
-                </Stack>
-                <Typography sx={{ color: '#f7f2e7', fontWeight: 900, letterSpacing: '-0.06em', fontSize: { xs: '2rem', sm: '2.5rem' }, lineHeight: 0.94 }}>
-                  {displayCampaign.name}
-                </Typography>
-              </Box>
-
-              <Box
-                sx={{
-                  px: 1.75,
-                  py: 1.2,
-                  minWidth: { xs: 92, sm: 120 },
-                  borderRadius: 3,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  bgcolor: 'rgba(255,255,255,0.04)',
-                  textAlign: 'right',
-                }}
-              >
-                <Typography sx={{ color: 'rgba(230,238,255,0.68)', fontSize: '0.72rem', letterSpacing: '0.18em', fontWeight: 800 }}>
-                  SPINS
-                </Typography>
-                <Typography sx={{ color: '#f8f3e6', fontWeight: 900, letterSpacing: '-0.05em', fontSize: { xs: '1.6rem', sm: '1.9rem' }, lineHeight: 1 }}>
-                  {spins}
-                </Typography>
-              </Box>
-            </Stack>
-          </Box>
-
-          {error ? (
-            <Alert severity="error" sx={{ bgcolor: 'rgba(91, 26, 35, 0.70)', color: '#fdeaea', border: '1px solid rgba(248,113,113,0.18)' }}>
-              {error}
-            </Alert>
-          ) : null}
-
-          {result ? (
-            <Alert severity="success" sx={{ bgcolor: 'rgba(8, 67, 59, 0.66)', color: '#dcfce7', border: '1px solid rgba(74,222,128,0.18)' }}>
-              {result.prize?.name ?? 'Không trúng'}
-            </Alert>
-          ) : null}
-
-          <Box
-            sx={{
-              borderRadius: { xs: 4, sm: 5 },
-              border: '1px solid rgba(103, 151, 255, 0.14)',
-              background: 'linear-gradient(180deg, rgba(11,20,41,0.82), rgba(8,13,26,0.94))',
-              overflow: 'hidden',
-              p: { xs: 1.5, sm: 2 },
-            }}
-          >
-            <WheelDial
-              segments={segments}
-              spins={spins}
-              spinning={spinning}
-              spinPhase={spinPhase}
-              rotation={rotation}
-              resultName={getWheelDefaultOutcomeLabel(result?.prize?.name)}
-              onSpin={handleSpin}
-              disabled={loading}
-              chipLabelLimit={0}
-              labelRadius={renderContract.labelRadius}
-              wheelLabelScale={renderContract.wheelLabelScale}
-              labelInset={renderContract.labelInset}
-            />
-          </Box>
+            {spinning ? 'ĐANG QUAY...' : spins > 0 ? 'QUAY NGAY' : 'HẾT LƯỢT QUAY'}
+          </Button>
         </Stack>
       </Container>
     </PageShell>
