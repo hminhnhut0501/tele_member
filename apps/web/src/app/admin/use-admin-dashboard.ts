@@ -11,6 +11,7 @@ export function useAdminDashboard() {
   const [email, setEmail] = useState('admin@example.com');
   const [password, setPassword] = useState('admin123');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [activeSection, setActiveSection] = useState<SectionKey>('overview');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -32,7 +33,10 @@ export function useAdminDashboard() {
   const [rewardName, setRewardName] = useState('');
   const [rewardPointCost, setRewardPointCost] = useState(0);
   const [rewardType, setRewardType] = useState('VOUCHER');
+  const [createRewardOpen, setCreateRewardOpen] = useState(false);
+  const [importCodesOpen, setImportCodesOpen] = useState(false);
   const [campaignName, setCampaignName] = useState('');
+  const [createCampaignOpen, setCreateCampaignOpen] = useState(false);
   const [importRewardId, setImportRewardId] = useState('');
   const [importCodesText, setImportCodesText] = useState('');
   const [prizeCampaignId, setPrizeCampaignId] = useState('');
@@ -47,6 +51,7 @@ export function useAdminDashboard() {
   const [prizeRailLabel, setPrizeRailLabel] = useState('');
   const [prizeDescription, setPrizeDescription] = useState('');
   const [prizeRenderMode, setPrizeRenderMode] = useState<'emoji-only' | 'label-only' | 'mixed'>('emoji-only');
+  const [createPrizeOpen, setCreatePrizeOpen] = useState(false);
   const [selectedWheelCampaignId, setSelectedWheelCampaignId] = useState('');
   const [wheelPrizes, setWheelPrizes] = useState<any[]>([]);
   const [wheelSpins, setWheelSpins] = useState<any[]>([]);
@@ -120,16 +125,20 @@ export function useAdminDashboard() {
   async function login() {
     try {
       setError('');
+      setNotice('');
       const data = await service.login(email, password);
       setToken(data.token);
       window.localStorage.setItem('tele-member-admin-token', data.token);
+      setNotice('Đăng nhập thành công');
     } catch {
-      setError('Đăng nhập thất bại');
+      setError('Đăng nhập không thành công');
     }
   }
 
   async function adjustPoints() {
     try {
+      setError('');
+      setNotice('');
       await service.adjust({ telegramId, amount: Number(amount), reason });
       const updated = await service.getUsers(search, page * pageSize, pageSize);
       const refreshed = await service.getTransactions(search, page * pageSize, pageSize);
@@ -137,7 +146,7 @@ export function useAdminDashboard() {
       setUsers(updated.users ?? updated);
       setTransactions(refreshed.transactions ?? refreshed);
       setAuditLogs(logs.logs ?? logs);
-      setError('');
+      setNotice('Cập nhật 🍑 thành công');
     } catch {
       setError('Cập nhật 🍑 thất bại');
     }
@@ -154,6 +163,7 @@ export function useAdminDashboard() {
     if (!selectedUser) return;
     try {
       setError('');
+      setNotice('');
       if (adjustMode === 'points') {
         await service.adjust({ telegramId: selectedUser.telegramId, amount: Number(adjustAmount), reason: adjustReason });
       } else {
@@ -166,8 +176,9 @@ export function useAdminDashboard() {
       setTransactions(refreshed.transactions ?? refreshed);
       setAuditLogs(logs.logs ?? logs);
       setSelectedUser(null);
+      setNotice(adjustMode === 'points' ? 'Đã cộng 🍑 cho người dùng' : 'Đã cộng lượt quay cho người dùng');
     } catch {
-      setError(adjustMode === 'points' ? 'Cập nhật 🍑 thất bại' : 'Cập nhật lượt quay thất bại');
+      setError(adjustMode === 'points' ? 'Cập nhật 🍑 thất bại' : 'Cập nhật lượt quay không thành công');
     }
   }
 
@@ -176,53 +187,81 @@ export function useAdminDashboard() {
     try {
       setDebugLoading(true);
       setError('');
+      setNotice('');
       const [envData, botData] = await Promise.all([service.getDebugEnv(), service.getTelegramBotInfo()]);
       setDebugEnv(envData);
       setBotInfo(botData);
     } catch {
-      setError('Không thể tải debug env');
+      setError('Không thể tải debug biến môi trường');
     } finally {
       setDebugLoading(false);
     }
   }
 
   async function createReward() {
-    await service.createReward({
-      name: rewardName,
-      type: rewardType,
-      pointCost: rewardPointCost,
-      description: '',
-      stock: null,
-      isActive: true,
-      metadata: {},
-    });
-    const data = await service.getRewards();
-    setRewards(data.rewards ?? []);
+    try {
+      setError('');
+      setNotice('');
+      await service.createReward({
+        name: rewardName,
+        type: rewardType,
+        pointCost: rewardPointCost,
+        description: '',
+        stock: null,
+        isActive: true,
+        metadata: {},
+      });
+      const data = await service.getRewards();
+      setRewards(data.rewards ?? []);
+      setCreateRewardOpen(false);
+      setNotice('Đã tạo quà');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể tạo quà');
+    }
   }
 
   async function createCampaign() {
-    await service.createWheelCampaign({
-      name: campaignName,
-      isActive: false,
-      metadata: {},
-    });
-    const data = await service.getWheelCampaigns();
-    setCampaigns(data.campaigns ?? []);
+    try {
+      setError('');
+      setNotice('');
+      await service.createWheelCampaign({
+        name: campaignName,
+        isActive: false,
+        metadata: {},
+      });
+      const data = await service.getWheelCampaigns();
+      setCampaigns(data.campaigns ?? []);
+      setCreateCampaignOpen(false);
+      setNotice('Đã tạo chiến dịch');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể tạo chiến dịch');
+    }
   }
 
   async function importCodes() {
-    const codes = importCodesText.split('\n').map((line) => line.trim()).filter(Boolean);
-    await service.importRewardCodes(importRewardId, codes);
+    try {
+      setError('');
+      setNotice('');
+      const codes = importCodesText.split('\n').map((line) => line.trim()).filter(Boolean);
+      await service.importRewardCodes(importRewardId, codes);
+      setImportCodesOpen(false);
+      setNotice(`Đã nhập ${codes.length} code`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể nhập mã');
+    }
   }
 
   async function createPrize() {
-    if (!prizeCampaignId) throw new Error('Missing campaign');
-    await service.createWheelPrize(prizeCampaignId, {
-      name: prizeName,
-      type: prizeType,
-      weight: prizeWeight,
-      stock: null,
-      isActive: true,
+    try {
+      setError('');
+      setNotice('');
+      if (!prizeCampaignId) throw new Error('Missing campaign');
+      await service.createWheelPrize(prizeCampaignId, {
+        name: prizeName,
+        type: prizeType,
+        weight: prizeWeight,
+        stock: null,
+        isActive: true,
         metadata: {
           glyph: prizeGlyph,
           emojiCount: prizeEmojiCount,
@@ -233,21 +272,29 @@ export function useAdminDashboard() {
           railLabel: prizeRailLabel || null,
           description: prizeDescription || null,
         },
-    });
-    const data = await service.getWheelPrizes(prizeCampaignId);
-    setWheelPrizes(data.prizes ?? []);
-    const preview = await service.getWheelPreview(prizeCampaignId);
-    setWheelPreview(preview ?? null);
+      });
+      const data = await service.getWheelPrizes(prizeCampaignId);
+      setWheelPrizes(data.prizes ?? []);
+      const preview = await service.getWheelPreview(prizeCampaignId);
+      setWheelPreview(preview ?? null);
+      setCreatePrizeOpen(false);
+      setNotice('Đã tạo phần thưởng');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể tạo phần thưởng');
+    }
   }
 
   async function updatePrize() {
     if (!editingPrize) return;
-    await service.updateWheelPrize(editingPrize.id, {
-      name: editPrizeName,
-      type: editPrizeType,
-      weight: editPrizeWeight,
-      stock: editPrizeStock === '' ? null : Number(editPrizeStock),
-      isActive: editPrizeActive,
+    try {
+      setError('');
+      setNotice('');
+      await service.updateWheelPrize(editingPrize.id, {
+        name: editPrizeName,
+        type: editPrizeType,
+        weight: editPrizeWeight,
+        stock: editPrizeStock === '' ? null : Number(editPrizeStock),
+        isActive: editPrizeActive,
         metadata: {
           ...(editingPrize.metadata ?? {}),
           glyph: editPrizeGlyph,
@@ -259,37 +306,55 @@ export function useAdminDashboard() {
           railLabel: editPrizeRailLabel || null,
           description: editPrizeDescription || null,
         },
-    });
-    const data = await service.getWheelPrizes(selectedWheelCampaignId || editingPrize.campaign_id);
-    setWheelPrizes(data.prizes ?? []);
-    const preview = await service.getWheelPreview(selectedWheelCampaignId || editingPrize.campaign_id);
-    setWheelPreview(preview ?? null);
-    setEditingPrize(null);
+      });
+      const data = await service.getWheelPrizes(selectedWheelCampaignId || editingPrize.campaign_id);
+      setWheelPrizes(data.prizes ?? []);
+      const preview = await service.getWheelPreview(selectedWheelCampaignId || editingPrize.campaign_id);
+      setWheelPreview(preview ?? null);
+      setEditingPrize(null);
+      setNotice('Đã lưu phần thưởng');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể lưu phần thưởng');
+    }
   }
 
   async function updateReward() {
     if (!editingReward) return;
-    await service.updateReward(editingReward.id, {
-      name: editRewardName,
-      type: editRewardType,
-      pointCost: editRewardPointCost,
-      stock: editRewardStock === '' ? null : Number(editRewardStock),
-    });
-    const data = await service.getRewards();
-    setRewards(data.rewards ?? []);
-    setEditingReward(null);
+    try {
+      setError('');
+      setNotice('');
+      await service.updateReward(editingReward.id, {
+        name: editRewardName,
+        type: editRewardType,
+        pointCost: editRewardPointCost,
+        stock: editRewardStock === '' ? null : Number(editRewardStock),
+      });
+      const data = await service.getRewards();
+      setRewards(data.rewards ?? []);
+      setEditingReward(null);
+      setNotice('Đã lưu quà');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể lưu quà');
+    }
   }
 
   async function updateCampaign() {
     if (!editingCampaign) return;
-    await service.updateWheelCampaign(editingCampaign.id, {
-      name: editCampaignName,
-      description: editCampaignDescription,
-      isActive: editCampaignActive,
-    });
-    const data = await service.getWheelCampaigns();
-    setCampaigns(data.campaigns ?? []);
-    setEditingCampaign(null);
+    try {
+      setError('');
+      setNotice('');
+      await service.updateWheelCampaign(editingCampaign.id, {
+        name: editCampaignName,
+        description: editCampaignDescription,
+        isActive: editCampaignActive,
+      });
+      const data = await service.getWheelCampaigns();
+      setCampaigns(data.campaigns ?? []);
+      setEditingCampaign(null);
+      setNotice('Đã lưu chiến dịch');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể lưu chiến dịch');
+    }
   }
 
   return {
@@ -300,6 +365,8 @@ export function useAdminDashboard() {
     setPassword,
     error,
     setError,
+    notice,
+    setNotice,
     activeSection,
     setActiveSection,
     search,
@@ -335,8 +402,14 @@ export function useAdminDashboard() {
     setRewardPointCost,
     rewardType,
     setRewardType,
+    createRewardOpen,
+    setCreateRewardOpen,
+    importCodesOpen,
+    setImportCodesOpen,
     campaignName,
     setCampaignName,
+    createCampaignOpen,
+    setCreateCampaignOpen,
     importRewardId,
     setImportRewardId,
     importCodesText,
@@ -365,6 +438,8 @@ export function useAdminDashboard() {
     setPrizeDescription,
     prizeRenderMode,
     setPrizeRenderMode,
+    createPrizeOpen,
+    setCreatePrizeOpen,
     selectedWheelCampaignId,
     setSelectedWheelCampaignId,
     wheelPrizes,

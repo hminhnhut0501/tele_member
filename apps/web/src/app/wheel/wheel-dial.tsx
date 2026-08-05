@@ -34,15 +34,15 @@ function getWheelLayout(segmentCount: number, isMobile: boolean) {
         : 'min(72vw, 520px)',
     labelRadius: isMobile
       ? dense
-        ? 22
+        ? 332
         : compact
-          ? 24
-          : 26
+          ? 352
+          : 368
       : dense
-        ? 28
+        ? 320
         : compact
-          ? 30
-          : 32,
+          ? 340
+          : 384,
     labelInset: isMobile
       ? dense
         ? 4
@@ -57,8 +57,8 @@ function getWheelLayout(segmentCount: number, isMobile: boolean) {
     maxEmojiTokens: isMobile ? 1 : dense ? 1 : compact ? 1 : 2,
     labelChipSize: isMobile ? (dense ? 30 : compact ? 34 : 38) : (dense ? 36 : compact ? 42 : 46),
     maxLabelWidth: isMobile ? (dense ? 38 : compact ? 42 : 46) : (dense ? 44 : compact ? 50 : 56),
-    labelArcRadius: isMobile ? (dense ? 118 : compact ? 132 : 144) : (dense ? 154 : compact ? 164 : 176),
-    labelArcFontSize: isMobile ? (dense ? 16 : compact ? 18 : 20) : (dense ? 19 : compact ? 21 : 23),
+    labelArcRadius: isMobile ? (dense ? 334 : compact ? 352 : 372) : (dense ? 332 : compact ? 354 : 390),
+    labelArcFontSize: isMobile ? (dense ? 20 : compact ? 22 : 24) : (dense ? 22 : compact ? 24 : 28),
     emojiBaseSize: isMobile
       ? dense
         ? 0.86
@@ -272,7 +272,7 @@ export function WheelDial({
                   <path
                     key={pathId}
                     id={pathId}
-                    d={describeArc(500, 500, arcRadius, startAngle + 8, endAngle - 8)}
+                    d={describeArc(500, 500, arcRadius, startAngle + 10, endAngle - 10)}
                     fill="none"
                   />
                 );
@@ -286,7 +286,7 @@ export function WheelDial({
               const tokenCount = Math.max(
                 1,
                 Math.min(
-                  Number((segment.metadata as any)?.emojiCount ?? segment.emojiCount ?? (segment.metadata as any)?.tokenCount ?? segment.labelPolicy.maxChars ?? 1),
+                  Number((segment.metadata as any)?.emojiCount ?? segment.emojiCount ?? (segment.metadata as any)?.tokenCount ?? 1),
                   layout.maxEmojiTokens,
                 ),
               );
@@ -302,21 +302,21 @@ export function WheelDial({
                       ? 0.88
                       : 0.84
                   : segment.labelPolicy.kind === 'value'
-                    ? 1.08
+                    ? 1.16
                     : segment.labelPolicy.kind === 'badge'
-                      ? 1.0
-                      : 0.94);
+                      ? 1.08
+                      : 1.0);
               const labelDy = isPortraitCompact
                 ? segment.labelPolicy.kind === 'value'
-                  ? '-0.16em'
+                  ? '-0.04em'
                   : segment.labelPolicy.kind === 'badge'
-                    ? '-0.10em'
+                    ? '-0.03em'
                     : '0.00em'
                 : segment.labelPolicy.kind === 'value'
-                  ? '-0.12em'
+                  ? '-0.02em'
                   : segment.labelPolicy.kind === 'badge'
-                    ? '-0.08em'
-                    : '0.02em';
+                    ? '-0.01em'
+                    : '0.01em';
               return (
                 <text
                   key={`${segment.id}-svg-label`}

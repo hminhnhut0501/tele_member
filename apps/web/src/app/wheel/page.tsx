@@ -6,7 +6,7 @@ import { apiClient } from '../../lib/api';
 import { PageShell } from '../shared-ui';
 import { WheelDial } from './wheel-dial';
 import { buildWheelRenderContract } from './wheel-contract';
-import type { WheelPrize } from './wheel-model';
+import { getDefaultWheelPrizes, type WheelPrize } from './wheel-model';
 import { WheelHistoryRail, WheelRewardRail } from './wheel-rail';
 
 export default function WheelPage() {
@@ -51,7 +51,10 @@ export default function WheelPage() {
   }, [client, token]);
 
   const renderContract = buildWheelRenderContract(prizes);
-  const segments = renderContract.segments;
+  const demoFallbackPrizes = getDefaultWheelPrizes();
+  const effectivePrizes = prizes.length ? prizes : demoFallbackPrizes;
+  const renderContractWithFallback = buildWheelRenderContract(effectivePrizes);
+  const segments = renderContractWithFallback.segments;
 
   async function handleSpin() {
     if (spinning) return;
@@ -132,9 +135,9 @@ export default function WheelPage() {
             spinPhase={spinPhase}
             rotation={rotation}
             centerLabel=""
-            labelRadius={renderContract.labelRadius}
-            wheelLabelScale={renderContract.wheelLabelScale}
-            labelInset={renderContract.labelInset}
+            labelRadius={renderContractWithFallback.labelRadius}
+            wheelLabelScale={renderContractWithFallback.wheelLabelScale}
+            labelInset={renderContractWithFallback.labelInset}
           />
 
           <Button
@@ -162,7 +165,7 @@ export default function WheelPage() {
           </Button>
 
           <Box sx={{ width: 'min(92vw, 560px)', display: 'grid', gap: 1.5, mt: 1.5 }}>
-            <WheelRewardRail prizes={prizes} />
+            <WheelRewardRail prizes={effectivePrizes} />
             <WheelHistoryRail items={history} />
           </Box>
         </Stack>

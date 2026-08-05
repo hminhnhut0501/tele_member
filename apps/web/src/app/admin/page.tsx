@@ -17,8 +17,6 @@ import {
   ListItemIcon,
   ListItemText,
   Stack,
-  Tab,
-  Tabs,
   TextField,
   Toolbar,
   Typography,
@@ -41,18 +39,18 @@ import {
   UsersSection,
   WheelSection,
 } from './components/admin-sections';
-import { MetricCard, PageShell } from '../shared-ui';
+import { MetricCard } from '../shared-ui';
 
 type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'settings';
 
 const NAV_ITEMS: Array<{ key: SectionKey; label: string; icon: React.ReactNode }> = [
-  { key: 'overview', label: 'Overview', icon: <DashboardRoundedIcon /> },
-  { key: 'users', label: 'Users', icon: <PeopleAltRoundedIcon /> },
-  { key: 'transactions', label: 'Transactions', icon: <ReceiptLongRoundedIcon /> },
-  { key: 'audit', label: 'Audit Logs', icon: <FactCheckRoundedIcon /> },
-  { key: 'rewards', label: 'Rewards', icon: <Inventory2RoundedIcon /> },
-  { key: 'wheel', label: 'Lucky Wheel', icon: <CasinoRoundedIcon /> },
-  { key: 'settings', label: 'Settings', icon: <SettingsRoundedIcon /> },
+  { key: 'overview', label: 'Tổng quan', icon: <DashboardRoundedIcon /> },
+  { key: 'users', label: 'Người dùng', icon: <PeopleAltRoundedIcon /> },
+  { key: 'transactions', label: 'Giao dịch', icon: <ReceiptLongRoundedIcon /> },
+  { key: 'audit', label: 'Nhật ký', icon: <FactCheckRoundedIcon /> },
+  { key: 'rewards', label: 'Quà đổi', icon: <Inventory2RoundedIcon /> },
+  { key: 'wheel', label: 'Vòng quay', icon: <CasinoRoundedIcon /> },
+  { key: 'settings', label: 'Cài đặt', icon: <SettingsRoundedIcon /> },
 ];
 
 const DRAWER_WIDTH = 280;
@@ -66,15 +64,15 @@ export default function AdminPage() {
         <Card sx={{ borderRadius: 2, boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)' }}>
           <CardContent>
             <Stack spacing={2}>
-              <Chip label="Admin Login" color="primary" sx={{ alignSelf: 'flex-start' }} />
-              <Typography variant="h4" fontWeight={900}>Sign in to Admin CP</Typography>
+              <Chip label="Đăng nhập quản trị" color="primary" sx={{ alignSelf: 'flex-start' }} />
+              <Typography variant="h4" fontWeight={900}>Đăng nhập vào bảng quản trị</Typography>
               <Typography color="text.secondary">
-                Quản lý users, reward store, code import, wheel campaign và audit logs trong một khung dashboard thống nhất.
+                Quản lý người dùng, quà đổi, nhập mã, chiến dịch vòng quay và nhật ký trong một khung dashboard thống nhất.
               </Typography>
               {admin.error ? <Alert severity="error">{admin.error}</Alert> : null}
-              <TextField label="Email" value={admin.email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => admin.setEmail(e.target.value)} />
-              <TextField label="Password" type="password" value={admin.password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => admin.setPassword(e.target.value)} />
-              <Button variant="contained" onClick={admin.login} sx={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)' }}>Login</Button>
+              <TextField label="Email quản trị" value={admin.email} onChange={(e: React.ChangeEvent<HTMLInputElement>) => admin.setEmail(e.target.value)} />
+              <TextField label="Mật khẩu" type="password" value={admin.password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => admin.setPassword(e.target.value)} />
+              <Button variant="contained" onClick={admin.login} sx={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)' }}>Đăng nhập</Button>
             </Stack>
           </CardContent>
         </Card>
@@ -83,32 +81,39 @@ export default function AdminPage() {
   }
 
   return (
-    <PageShell>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        bgcolor: '#f6f8fc',
+        backgroundImage:
+          'radial-gradient(circle at top left, rgba(37,99,235,0.08) 0%, transparent 28%), radial-gradient(circle at top right, rgba(124,58,237,0.06) 0%, transparent 24%), linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)',
+      }}
+    >
       <CssBaseline />
-      <AppBar position="fixed" elevation={0} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, background: 'rgba(10, 20, 35, 0.88)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+      <AppBar position="fixed" elevation={0} sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, bgcolor: 'rgba(255,255,255,0.94)', color: 'text.primary', backdropFilter: 'blur(16px)', borderBottom: '1px solid', borderColor: 'divider' }}>
         <Toolbar sx={{ gap: 2 }}>
-          <Avatar sx={{ bgcolor: '#14B8A6', fontWeight: 900 }}>TM</Avatar>
+          <Avatar sx={{ bgcolor: '#2563eb', fontWeight: 900 }}>TM</Avatar>
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography variant="subtitle1" fontWeight={800} color="common.white" noWrap>Tele Member Admin CP</Typography>
-            <Typography variant="caption" color="rgba(255,255,255,0.72)" noWrap>Rewards, Wheel, Wallet, Audit and more</Typography>
+            <Typography variant="subtitle1" fontWeight={800} color="text.primary" noWrap>Tele Member - Quản trị</Typography>
+            <Typography variant="caption" color="text.secondary" noWrap>Quà đổi, vòng quay, ví, nhật ký và nhiều hơn nữa</Typography>
           </Box>
-          <Chip label={admin.token ? 'Online' : 'Offline'} color="success" size="small" />
+          <Chip label={admin.token ? 'Đang hoạt động' : 'Ngoại tuyến'} color="success" size="small" />
         </Toolbar>
       </AppBar>
 
-      <Drawer variant="permanent" sx={{ width: DRAWER_WIDTH, flexShrink: 0, '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box', borderRight: '1px solid rgba(15,23,42,0.08)', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,247,251,0.98))' } }}>
+      <Drawer variant="permanent" sx={{ width: DRAWER_WIDTH, flexShrink: 0, '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box', borderRight: '1px solid rgba(15,23,42,0.08)', background: 'linear-gradient(180deg, #0c1222 0%, #162032 60%, #1a2744 100%)', color: '#cbd5e1' } }}>
         <Toolbar />
         <Box sx={{ px: 2, py: 2 }}>
-          <Card sx={{ borderRadius: 2, mb: 2, boxShadow: '0 12px 36px rgba(15, 23, 42, 0.06)' }}>
+          <Card sx={{ borderRadius: 2, mb: 2, boxShadow: '0 12px 36px rgba(15, 23, 42, 0.18)', bgcolor: 'rgba(255,255,255,0.06)', color: 'inherit', border: '1px solid rgba(255,255,255,0.08)' }}>
             <CardContent>
-              <Typography variant="overline" color="text.secondary">Workspace</Typography>
-              <Typography variant="h6" fontWeight={900}>Control Center</Typography>
-              <Typography variant="body2" color="text.secondary">Chuẩn bị sẵn để mở rộng thêm module sau này.</Typography>
+              <Typography variant="overline" sx={{ color: 'rgba(148,163,184,0.8)' }}>Khu vực làm việc</Typography>
+              <Typography variant="h6" fontWeight={900} sx={{ color: '#f8fafc' }}>Trung tâm điều khiển</Typography>
+              <Typography variant="body2" sx={{ color: 'rgba(203,213,225,0.78)' }}>Đã chuẩn bị sẵn để mở rộng thêm module sau này.</Typography>
             </CardContent>
           </Card>
           <List disablePadding>
             {NAV_ITEMS.map((item) => (
-              <ListItemButton key={item.key} selected={admin.activeSection === item.key} onClick={() => admin.setActiveSection(item.key)} sx={{ borderRadius: 1, mb: 0.5, '&.Mui-selected': { bgcolor: 'rgba(20,184,166,0.12)', color: '#0F766E', '& .MuiListItemIcon-root': { color: '#0F766E' } } }}>
+              <ListItemButton key={item.key} selected={admin.activeSection === item.key} onClick={() => admin.setActiveSection(item.key)} sx={{ borderRadius: 1.5, mb: 0.5, color: 'inherit', '& .MuiListItemIcon-root': { color: 'rgba(203,213,225,0.72)' }, '&.Mui-selected': { bgcolor: 'rgba(0,102,255,0.18)', color: '#eff6ff', '& .MuiListItemIcon-root': { color: '#60a5fa' } }, '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' } }}>
                 <ListItemIcon sx={{ minWidth: 38 }}>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.label} />
               </ListItemButton>
@@ -121,40 +126,33 @@ export default function AdminPage() {
         <Container maxWidth="xl">
           <Stack spacing={3}>
             {admin.error ? <Alert severity="warning">{admin.error}</Alert> : null}
-            <Card sx={{ borderRadius: 2, boxShadow: '0 20px 60px rgba(15,23,42,0.08)' }}>
+            {admin.notice ? <Alert severity="success">{admin.notice}</Alert> : null}
+            <Card sx={{ borderRadius: 2, boxShadow: '0 20px 60px rgba(15,23,42,0.08)', border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
               <CardContent>
                 <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
                   <Box>
-                    <Chip label="Admin Dashboard" color="primary" sx={{ mb: 1 }} />
+                    <Chip label="Bảng quản trị" color="primary" sx={{ mb: 1, fontWeight: 800 }} />
                     <Typography variant="h4" fontWeight={900}>Khung quản trị chuyên nghiệp</Typography>
                     <Typography color="text.secondary" sx={{ maxWidth: 720, mt: 0.5 }}>
-                      Sidebar điều hướng, tabs theo module, và các khối quản lý tách riêng để dễ mở rộng về sau.
+                      Thanh điều hướng, khối quản lý tách riêng, popup thêm/sửa gọn gàng để thao tác nhanh và dễ mở rộng về sau.
                     </Typography>
                   </Box>
                   <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="start" justifyContent="flex-end">
-                    <Button variant="outlined" onClick={admin.refreshDebug} disabled={admin.debugLoading}>{admin.debugLoading ? 'Loading...' : 'Debug Env'}</Button>
-                    <Chip label={`Users ${admin.users.length}`} />
-                    <Chip label={`Rewards ${admin.rewards.length}`} />
-                    <Chip label={`Campaigns ${admin.campaigns.length}`} />
+                    <Button variant="outlined" onClick={admin.refreshDebug} disabled={admin.debugLoading}>{admin.debugLoading ? 'Đang tải...' : 'Debug biến môi trường'}</Button>
+                    <Chip label={`Người dùng ${admin.users.length}`} />
+                    <Chip label={`Quà đổi ${admin.rewards.length}`} />
+                    <Chip label={`Chiến dịch ${admin.campaigns.length}`} />
                   </Stack>
                 </Stack>
               </CardContent>
             </Card>
 
-            <Card sx={{ borderRadius: 2, boxShadow: '0 18px 50px rgba(15,23,42,0.06)' }}>
-              <CardContent sx={{ pb: 1 }}>
-                <Tabs value={admin.activeSection} onChange={(_, value) => admin.setActiveSection(value)} variant="scrollable" scrollButtons="auto">
-                  {NAV_ITEMS.map((item) => <Tab key={item.key} value={item.key} label={item.label} />)}
-                </Tabs>
-              </CardContent>
-            </Card>
-
             {admin.activeSection === 'overview' ? (
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 2 }}>
-                <MetricCard label="Users" value={String(admin.users.length)} note="Tài khoản đang quản lý" accent="blue" />
-                <MetricCard label="Transactions" value={String(admin.transactions.length)} note="Lịch sử giao dịch" accent="cyan" />
-                <MetricCard label="Rewards" value={String(admin.rewards.length)} note="Phần thưởng đã tạo" accent="emerald" />
-                <MetricCard label="Campaigns" value={String(admin.campaigns.length)} note="Lucky wheel campaigns" accent="violet" />
+                <MetricCard label="Người dùng" value={String(admin.users.length)} note="Tài khoản đang quản lý" accent="blue" />
+                <MetricCard label="Giao dịch" value={String(admin.transactions.length)} note="Lịch sử giao dịch" accent="cyan" />
+                <MetricCard label="Quà đổi" value={String(admin.rewards.length)} note="Phần thưởng đã tạo" accent="emerald" />
+                <MetricCard label="Chiến dịch" value={String(admin.campaigns.length)} note="Chiến dịch vòng quay" accent="violet" />
               </Box>
             ) : null}
 
@@ -181,12 +179,12 @@ export default function AdminPage() {
 
             <Box sx={{ py: 2 }}>
               <Typography variant="caption" color="text.secondary">
-                Designed to scale: sidebar + tabs + section cards make it easy to add new modules later.
+                Thiết kế để mở rộng: sidebar + thẻ nội dung + popup thao tác giúp thêm module mới rất dễ.
               </Typography>
             </Box>
           </Stack>
         </Container>
       </Box>
-    </PageShell>
+    </Box>
   );
 }

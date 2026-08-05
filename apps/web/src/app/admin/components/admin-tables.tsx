@@ -6,15 +6,7 @@ import {
   Card,
   CardContent,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
   Table,
   TableBody,
@@ -25,7 +17,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 export type AdminUser = {
   id: string;
@@ -90,24 +82,20 @@ export function UsersTable({
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'start', md: 'center' }}>
             <Box>
-              <Typography variant="h6" fontWeight={900}>
-                Users
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Bảng có pagination, search và hành động nhanh.
-              </Typography>
+              <Typography variant="h6" fontWeight={900}>Người dùng</Typography>
+              <Typography variant="body2" color="text.secondary">Bảng có phân trang, tìm kiếm và thao tác nhanh.</Typography>
             </Box>
-            <TextField size="small" label="Filter users" value={search} onChange={(e) => onSearchChange(e.target.value)} />
+            <TextField size="small" label="Lọc người dùng" value={search} onChange={(e) => onSearchChange(e.target.value)} />
           </Stack>
           <Divider />
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>User</TableCell>
+                <TableCell>Người dùng</TableCell>
                 <TableCell>Telegram ID</TableCell>
-                <TableCell>Balance</TableCell>
-                <TableCell>Last Check-in</TableCell>
-                <TableCell align="right">Action</TableCell>
+                <TableCell>Số dư</TableCell>
+                <TableCell>Check-in gần nhất</TableCell>
+                <TableCell align="right">Hành động</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -124,9 +112,9 @@ export function UsersTable({
                   <TableCell>{user.lastCheckinDate ?? '-'}</TableCell>
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      <Button size="small" variant="outlined" onClick={() => onAddPoints(user)}>Add 🍑</Button>
-                      <Button size="small" variant="outlined" onClick={() => onAddSpins(user)}>Add spins</Button>
-                      <Button size="small" variant="contained" onClick={() => onRowClick(user)}>View</Button>
+                      <Button size="small" variant="outlined" onClick={() => onAddPoints(user)}>Cộng 🍑</Button>
+                      <Button size="small" variant="outlined" onClick={() => onAddSpins(user)}>Cộng lượt quay</Button>
+                      <Button size="small" variant="contained" onClick={() => onRowClick(user)}>Xem</Button>
                     </Stack>
                   </TableCell>
                 </TableRow>
@@ -168,24 +156,20 @@ export function TransactionsTable({
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'start', md: 'center' }}>
             <Box>
-              <Typography variant="h6" fontWeight={900}>
-                Transactions
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Lọc theo reason/type và phân trang.
-              </Typography>
+              <Typography variant="h6" fontWeight={900}>Giao dịch</Typography>
+              <Typography variant="body2" color="text.secondary">Lọc theo lý do/loại và phân trang.</Typography>
             </Box>
-            <TextField size="small" label="Search transactions" value={search} onChange={(e) => onSearchChange(e.target.value)} />
+            <TextField size="small" label="Tìm giao dịch" value={search} onChange={(e) => onSearchChange(e.target.value)} />
           </Stack>
           <Divider />
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>User</TableCell>
-                <TableCell>Amount</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Reason</TableCell>
-                <TableCell>Time</TableCell>
+                <TableCell>Người dùng</TableCell>
+                <TableCell>Số lượng</TableCell>
+                <TableCell>Loại</TableCell>
+                <TableCell>Lý do</TableCell>
+                <TableCell>Thời gian</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -230,23 +214,19 @@ export function AuditTable({
         <Stack spacing={2}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Box>
-              <Typography variant="h6" fontWeight={900}>
-                Audit Logs
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Ghi nhận các hành động quản trị.
-              </Typography>
+              <Typography variant="h6" fontWeight={900}>Nhật ký</Typography>
+              <Typography variant="body2" color="text.secondary">Ghi nhận các hành động quản trị.</Typography>
             </Box>
-            {onRefresh ? <Button variant="outlined" onClick={onRefresh}>Refresh</Button> : null}
+            {onRefresh ? <Button variant="outlined" onClick={onRefresh}>Làm mới</Button> : null}
           </Stack>
           <Divider />
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Action</TableCell>
-                <TableCell>Actor</TableCell>
-                <TableCell>Target</TableCell>
-                <TableCell>Time</TableCell>
+                <TableCell>Hành động</TableCell>
+                <TableCell>Người thực hiện</TableCell>
+                <TableCell>Đối tượng</TableCell>
+                <TableCell>Thời gian</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

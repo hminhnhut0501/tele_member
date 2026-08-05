@@ -113,9 +113,9 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
   const preset: WheelRenderContract['preset'] =
     segmentCount === 5 ? 'five' : segmentCount === 6 ? 'six' : segmentCount === 8 ? 'eight' : segmentCount >= 10 ? 'tenPlus' : 'custom';
 
-  const labelRadius = preset === 'five' ? 122 : preset === 'six' ? 118 : preset === 'eight' ? 112 : preset === 'tenPlus' ? 104 : 114;
+  const labelRadius = preset === 'five' ? 392 : preset === 'six' ? 370 : preset === 'eight' ? 350 : preset === 'tenPlus' ? 318 : 336;
   const chipLabelLimit = preset === 'five' ? 18 : preset === 'six' ? 16 : preset === 'eight' ? 14 : preset === 'tenPlus' ? 12 : 14;
-  const wheelLabelScale = preset === 'five' ? 0.9 : preset === 'six' ? 0.86 : preset === 'eight' ? 0.8 : preset === 'tenPlus' ? 0.72 : 0.82;
+  const wheelLabelScale = preset === 'five' ? 1.1 : preset === 'six' ? 0.96 : preset === 'eight' ? 0.88 : preset === 'tenPlus' ? 0.78 : 0.9;
   const railLabelScale = preset === 'five' ? 1 : preset === 'six' ? 0.98 : 0.96;
   const labelInset = preset === 'five' ? 6 : preset === 'six' ? 8 : segmentAngle >= 45 ? 10 : 12;
 
@@ -148,10 +148,10 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
       fontScale:
         renderMode === 'emoji-only'
           ? kind === 'value'
-            ? 0.98
+            ? 1.12
             : kind === 'badge'
-              ? 0.94
-              : 0.9
+              ? 1.08
+              : 1.0
           : kind === 'value'
             ? 0.92
             : kind === 'badge'
@@ -162,16 +162,16 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
       radiusShift:
         kind === 'value'
           ? renderMode === 'emoji-only'
-            ? 14
-            : 10
+            ? 18
+            : 12
           : kind === 'badge'
             ? renderMode === 'emoji-only'
-              ? 10
-              : 6
+              ? 14
+              : 8
             : kind === 'phrase'
               ? renderMode === 'label-only'
-                ? -2
-                : 0
+                ? -8
+                : -2
               : 0,
       tone: getTone(prize.type, index),
       textTone: getTextTone(prize.type),
