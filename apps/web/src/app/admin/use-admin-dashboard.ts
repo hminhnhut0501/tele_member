@@ -14,6 +14,9 @@ export function useAdminDashboard() {
   const [notice, setNotice] = useState('');
   const [activeSection, setActiveSection] = useState<SectionKey>('overview');
   const [search, setSearch] = useState('');
+  const [userFilter, setUserFilter] = useState<'all' | 'has_username' | 'high_balance' | 'missing_checkin'>('all');
+  const [transactionFilter, setTransactionFilter] = useState<'all' | 'points' | 'spins' | 'negative'>('all');
+  const [auditFilter, setAuditFilter] = useState<'all' | 'create' | 'update' | 'import' | 'debug'>('all');
   const [page, setPage] = useState(0);
   const [debugEnv, setDebugEnv] = useState<any>(null);
   const [botInfo, setBotInfo] = useState<any>(null);
@@ -371,6 +374,12 @@ export function useAdminDashboard() {
     setActiveSection,
     search,
     setSearch,
+    userFilter,
+    setUserFilter,
+    transactionFilter,
+    setTransactionFilter,
+    auditFilter,
+    setAuditFilter,
     page,
     setPage,
     pageSize,

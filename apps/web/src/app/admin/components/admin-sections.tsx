@@ -23,12 +23,111 @@ import {
 import { AuditTable, TransactionsTable, UsersTable } from './admin-tables';
 import { AppSection, MetricCard } from '../../shared-ui';
 
+const dialogPaperSx = {
+  borderRadius: 3,
+  border: '1px solid',
+  borderColor: 'divider',
+  boxShadow: '0 24px 64px rgba(15,23,42,0.14)',
+  overflow: 'hidden',
+  '& .MuiDialogTitle-root': {
+    px: 2.5,
+    py: 2,
+    fontWeight: 900,
+    letterSpacing: '-0.02em',
+    borderBottom: '1px solid',
+    borderColor: 'divider',
+    bgcolor: '#f8fafc',
+  },
+  '& .MuiDialogContent-root': {
+    p: 2.5,
+    bgcolor: '#ffffff',
+  },
+  '& .MuiDialogActions-root': {
+    px: 2.5,
+    py: 2,
+    bgcolor: '#f8fafc',
+    borderTop: '1px solid',
+    borderColor: 'divider',
+  },
+} as const;
+
+function AdminDialog({
+  open,
+  onClose,
+  title,
+  subtitle,
+  badge,
+  primaryAction,
+  secondaryAction,
+  maxWidth = 'sm',
+  children,
+  actions,
+  ...rest
+}: any) {
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth={maxWidth}
+      PaperProps={{ sx: { ...dialogPaperSx, ...(rest.PaperProps?.sx ?? {}) } }}
+      {...rest}
+    >
+      <Box sx={{ px: 2.5, py: 2, bgcolor: '#f8fafc', borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Stack spacing={1}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+            <Box sx={{ minWidth: 0 }}>
+              {badge ? <Chip label={badge} size="small" color="primary" sx={{ mb: 1 }} /> : null}
+              <Typography variant="h6" fontWeight={900} sx={{ letterSpacing: '-0.02em', lineHeight: 1.1 }}>{title}</Typography>
+              {subtitle ? <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{subtitle}</Typography> : null}
+            </Box>
+            {secondaryAction || primaryAction ? (
+              <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end" alignItems="center">
+                {secondaryAction ? <Box>{secondaryAction}</Box> : null}
+                {primaryAction ? <Box>{primaryAction}</Box> : null}
+              </Stack>
+            ) : null}
+          </Stack>
+        </Stack>
+      </Box>
+      <DialogContent sx={{ p: 2.5, bgcolor: '#ffffff' }}>{children}</DialogContent>
+      <DialogActions sx={{ px: 2.5, py: 2, bgcolor: '#f8fafc', borderTop: '1px solid', borderColor: 'divider' }}>
+        {actions}
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 function getWheelPreset(count: number) {
   if (count === 5) return '5 ô';
   if (count === 6) return '6 ô';
   if (count === 8) return '8 ô';
   if (count >= 10) return '10+ ô';
   return 'tùy chỉnh';
+}
+
+function renderModeLabel(value: string) {
+  if (value === 'emoji-only') return 'Chỉ biểu tượng';
+  if (value === 'label-only') return 'Chỉ nhãn';
+  if (value === 'mixed') return 'Kết hợp';
+  return value;
+}
+
+function deliveryModeLabel(value: string) {
+  if (value === 'immediate') return 'Giao ngay';
+  if (value === 'inbox') return 'Đưa vào hộp quà';
+  if (value === 'claim_required') return 'Cần nhận thủ công';
+  if (value === 'external_code') return 'Mã bên ngoài';
+  return value;
+}
+
+function deliveryTargetLabel(value: string) {
+  if (value === 'point_wallet') return 'Ví 🍑';
+  if (value === 'spin_wallet') return 'Ví lượt quay';
+  if (value === 'reward_inbox') return 'Hộp quà';
+  if (value === 'code_pool') return 'Kho mã';
+  if (value === 'manual') return 'Thủ công';
+  return value;
 }
 
 export function OverviewSection({ users, transactions, rewards, campaigns }: any) {
@@ -48,6 +147,8 @@ export function UsersSection(props: any) {
       users={props.users}
       search={props.search}
       onSearchChange={props.setSearch}
+      filter={props.userFilter}
+      onFilterChange={props.setUserFilter}
       page={props.page}
       pageSize={props.pageSize}
       onPageChange={props.setPage}
@@ -67,6 +168,8 @@ export function TransactionsSection(props: any) {
       transactions={props.transactions}
       search={props.search}
       onSearchChange={props.setSearch}
+      filter={props.transactionFilter}
+      onFilterChange={props.setTransactionFilter}
       page={props.page}
       pageSize={props.pageSize}
       onPageChange={props.setPage}
@@ -74,8 +177,8 @@ export function TransactionsSection(props: any) {
   );
 }
 
-export function AuditSection({ auditLogs, handleDebugEnv }: any) {
-  return <AuditTable logs={auditLogs} onRefresh={handleDebugEnv} />;
+export function AuditSection({ auditLogs, handleDebugEnv, auditFilter, setAuditFilter }: any) {
+  return <AuditTable logs={auditLogs} onRefresh={handleDebugEnv} filter={auditFilter} onFilterChange={setAuditFilter} />;
 }
 
 export function RewardsSection(props: any) {
@@ -96,14 +199,23 @@ export function RewardsSection(props: any) {
           </Stack>
         }
       >
-        <CardContent>
-          <Stack spacing={2}>
-            <Stack spacing={1}>
-              {props.rewards.map((reward: any) => (
-                <Box key={reward.id} sx={{ p: 1.75, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+        <CardContent sx={{ pt: 0 }}>
+          <Stack spacing={1.25}>
+            {props.rewards.map((reward: any) => (
+              <Box
+                key={reward.id}
+                sx={{
+                  p: 1.75,
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: '#fff',
+                  boxShadow: '0 4px 14px rgba(15, 23, 42, 0.03)',
+                }}
+              >
                   <Typography fontWeight={800}>{reward.name}</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {reward.type} | cost {reward.point_cost} | tồn kho {reward.stock ?? '∞'} | {reward.is_active ? 'Đang bật' : 'Đang tắt'}
+                    {reward.type} | giá {reward.point_cost} 🍑 | tồn kho {reward.stock ?? '∞'} | {reward.is_active ? 'Đang bật' : 'Đang tắt'}
                   </Typography>
                   <Button
                     size="small"
@@ -120,56 +232,70 @@ export function RewardsSection(props: any) {
                     Sửa
                   </Button>
                 </Box>
-              ))}
-            </Stack>
+            ))}
           </Stack>
         </CardContent>
       </AppSection>
 
-      <Dialog open={Boolean(props.editingReward)} onClose={() => props.setEditingReward(null)} fullWidth maxWidth="sm">
-        <DialogTitle>Sửa quà</DialogTitle>
-        <DialogContent>
+      <AdminDialog
+        open={Boolean(props.editingReward)}
+        onClose={() => props.setEditingReward(null)}
+        title="Sửa quà đổi"
+        subtitle="Cập nhật tên, loại, giá 🍑 và tồn kho."
+        badge="Quà đổi"
+        actions={
+          <>
+            <Button onClick={() => props.setEditingReward(null)}>Hủy</Button>
+            <Button variant="contained" onClick={props.handleUpdateReward}>Lưu</Button>
+          </>
+        }
+      >
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField label="Tên" value={props.editRewardName} onChange={(e) => props.setEditRewardName(e.target.value)} />
-            <TextField label="Loại" value={props.editRewardType} onChange={(e) => props.setEditRewardType(e.target.value)} />
-            <TextField label="Chi phí 🍑" type="number" value={props.editRewardPointCost} onChange={(e) => props.setEditRewardPointCost(Number(e.target.value))} />
+            <TextField label="Tên quà" value={props.editRewardName} onChange={(e) => props.setEditRewardName(e.target.value)} />
+            <TextField label="Loại quà" value={props.editRewardType} onChange={(e) => props.setEditRewardType(e.target.value)} />
+            <TextField label="Giá 🍑" type="number" value={props.editRewardPointCost} onChange={(e) => props.setEditRewardPointCost(Number(e.target.value))} />
             <TextField label="Tồn kho" value={props.editRewardStock} onChange={(e) => props.setEditRewardStock(e.target.value)} />
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => props.setEditingReward(null)}>Hủy</Button>
-          <Button variant="contained" onClick={props.handleUpdateReward}>Lưu</Button>
-        </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
-      <Dialog open={Boolean(props.createRewardOpen)} onClose={() => props.setCreateRewardOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Thêm quà đổi</DialogTitle>
-        <DialogContent>
+      <AdminDialog
+        open={Boolean(props.createRewardOpen)}
+        onClose={() => props.setCreateRewardOpen(false)}
+        title="Thêm quà đổi"
+        subtitle="Tạo quà mới cho mini app và admin đổi đào."
+        badge="Quà đổi"
+        actions={
+          <>
+            <Button onClick={() => props.setCreateRewardOpen(false)}>Hủy</Button>
+            <Button variant="contained" onClick={props.handleCreateReward}>Tạo mới</Button>
+          </>
+        }
+      >
           <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField label="Tên quà" value={props.rewardName} onChange={(e) => props.setRewardName(e.target.value)} />
-            <TextField label="Loại" value={props.rewardType} onChange={(e) => props.setRewardType(e.target.value)} />
-            <TextField label="Chi phí 🍑" type="number" value={props.rewardPointCost} onChange={(e) => props.setRewardPointCost(Number(e.target.value))} />
+            <TextField label="Loại quà" value={props.rewardType} onChange={(e) => props.setRewardType(e.target.value)} />
+            <TextField label="Giá 🍑" type="number" value={props.rewardPointCost} onChange={(e) => props.setRewardPointCost(Number(e.target.value))} />
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => props.setCreateRewardOpen(false)}>Hủy</Button>
-          <Button variant="contained" onClick={props.handleCreateReward}>Tạo mới</Button>
-        </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
-      <Dialog open={Boolean(props.importCodesOpen)} onClose={() => props.setImportCodesOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Nhập mã quà</DialogTitle>
-        <DialogContent>
+      <AdminDialog
+        open={Boolean(props.importCodesOpen)}
+        onClose={() => props.setImportCodesOpen(false)}
+        title="Nhập mã quà"
+        subtitle="Dán danh sách mã theo từng dòng để nạp nhanh vào kho."
+        badge="Kho mã"
+        actions={
+          <>
+            <Button onClick={() => props.setImportCodesOpen(false)}>Hủy</Button>
+            <Button variant="contained" onClick={props.handleImportCodes}>Nhập mã</Button>
+          </>
+        }
+      >
           <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField label="ID quà" value={props.importRewardId} onChange={(e) => props.setImportRewardId(e.target.value)} />
-            <TextField label="Danh sách mã" value={props.importCodesText} onChange={(e) => props.setImportCodesText(e.target.value)} multiline minRows={5} />
+            <TextField label="Danh sách mã" placeholder="Mỗi dòng một mã" value={props.importCodesText} onChange={(e) => props.setImportCodesText(e.target.value)} multiline minRows={5} />
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => props.setImportCodesOpen(false)}>Hủy</Button>
-          <Button variant="contained" onClick={props.handleImportCodes}>Nhập mã</Button>
-        </DialogActions>
-      </Dialog>
+      </AdminDialog>
     </Stack>
   );
 }
@@ -182,7 +308,7 @@ export function WheelSection(props: any) {
     <Stack spacing={2}>
       <AppSection
         title="Chiến dịch vòng quay"
-        subtitle="Quản lý campaign và danh sách phần thưởng."
+        subtitle="Quản lý chiến dịch và danh sách phần thưởng."
         accent="violet"
         action={
           <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
@@ -204,13 +330,13 @@ export function WheelSection(props: any) {
           </Stack>
         }
       >
-        <CardContent>
+        <CardContent sx={{ pt: 0 }}>
           <Stack spacing={2}>
             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
               {props.campaigns.map((campaign: any) => (
                 <Chip
                   key={campaign.id}
-                  label={campaign.name}
+                label={campaign.name}
                   clickable
                   onClick={() => {
                     props.setSelectedWheelCampaignId(campaign.id);
@@ -223,11 +349,21 @@ export function WheelSection(props: any) {
             </Stack>
             <Stack spacing={1}>
               {props.campaigns.map((campaign: any) => (
-                <Box key={campaign.id} sx={{ p: 1.75, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+                <Box
+                  key={campaign.id}
+                  sx={{
+                    p: 1.75,
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: '#fff',
+                    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.03)',
+                  }}
+                >
                   <Stack direction="row" justifyContent="space-between" spacing={2} alignItems="center">
                     <Box>
                       <Typography fontWeight={800}>{campaign.name}</Typography>
-                      <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary">
                         {campaign.description ?? 'Chưa có mô tả'} • {campaign.is_active ? 'Đang bật' : 'Đang tắt'}
                       </Typography>
                     </Box>
@@ -256,7 +392,7 @@ export function WheelSection(props: any) {
           <Stack spacing={1.25}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="body2" color="text.secondary">
-                Campaign hiện tại: <b>{props.selectedWheelCampaignId || '—'}</b>
+                Chiến dịch hiện tại: <b>{props.selectedWheelCampaignId || '—'}</b>
               </Typography>
               <Chip label={`${props.wheelPrizes.length} quà`} size="small" />
             </Stack>
@@ -275,7 +411,7 @@ export function WheelSection(props: any) {
                         {prize.type} • trọng số {prize.weight} • tồn kho {prize.stock ?? '∞'} • {prize.is_active ? 'Đang bật' : 'Đang tắt'}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {String(prize.metadata?.wheelLabel ?? prize.name)} / {String(prize.metadata?.railLabel ?? prize.name)} / {String(prize.metadata?.deliveryMode ?? 'immediate')} / {String(prize.metadata?.deliveryTarget ?? 'reward_inbox')} / {String(prize.metadata?.wheelRenderMode ?? prize.metadata?.renderMode ?? prize.metadata?.labelMode ?? 'emoji-only')}
+                        {String(prize.metadata?.wheelLabel ?? prize.name)} / {String(prize.metadata?.railLabel ?? prize.name)} / {deliveryModeLabel(String(prize.metadata?.deliveryMode ?? 'immediate'))} / {deliveryTargetLabel(String(prize.metadata?.deliveryTarget ?? 'reward_inbox'))} / {renderModeLabel(String(prize.metadata?.wheelRenderMode ?? prize.metadata?.renderMode ?? prize.metadata?.labelMode ?? 'emoji-only'))}
                       </Typography>
                     </Box>
                     <Button
@@ -323,7 +459,7 @@ export function WheelSection(props: any) {
         </CardContent>
       </AppSection>
 
-      <AppSection title="Xem trước xác suất" subtitle="Xác suất theo trọng số và trạng thái đang bật của campaign đang chọn." accent="violet">
+      <AppSection title="Xem trước xác suất" subtitle="Xác suất theo trọng số và trạng thái đang bật của chiến dịch đang chọn." accent="violet">
         <CardContent>
           <Stack spacing={1.5}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -369,12 +505,22 @@ export function WheelSection(props: any) {
         </CardContent>
       </AppSection>
 
-      <Dialog open={Boolean(props.editingCampaign)} onClose={() => props.setEditingCampaign(null)} fullWidth maxWidth="sm">
-        <DialogTitle>Sửa chiến dịch vòng quay</DialogTitle>
-        <DialogContent>
+      <AdminDialog
+        open={Boolean(props.editingCampaign)}
+        onClose={() => props.setEditingCampaign(null)}
+        title="Sửa chiến dịch vòng quay"
+        subtitle="Đổi tên, mô tả và trạng thái chiến dịch đang chọn."
+        badge="Chiến dịch"
+        actions={
+          <>
+            <Button onClick={() => props.setEditingCampaign(null)}>Hủy</Button>
+            <Button variant="contained" onClick={props.handleUpdateCampaign}>Lưu</Button>
+          </>
+        }
+      >
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField label="Tên" value={props.editCampaignName} onChange={(e) => props.setEditCampaignName(e.target.value)} />
-            <TextField label="Mô tả" value={props.editCampaignDescription} onChange={(e) => props.setEditCampaignDescription(e.target.value)} />
+            <TextField label="Tên chiến dịch" value={props.editCampaignName} onChange={(e) => props.setEditCampaignName(e.target.value)} />
+            <TextField label="Mô tả chiến dịch" value={props.editCampaignDescription} onChange={(e) => props.setEditCampaignDescription(e.target.value)} />
             <FormControl fullWidth>
               <InputLabel>Trạng thái</InputLabel>
               <Select label="Trạng thái" value={props.editCampaignActive ? 'true' : 'false'} onChange={(e) => props.setEditCampaignActive(e.target.value === 'true')}>
@@ -383,43 +529,53 @@ export function WheelSection(props: any) {
               </Select>
             </FormControl>
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => props.setEditingCampaign(null)}>Hủy</Button>
-          <Button variant="contained" onClick={props.handleUpdateCampaign}>Lưu</Button>
-        </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
-      <Dialog open={Boolean(props.createCampaignOpen)} onClose={() => props.setCreateCampaignOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Thêm chiến dịch</DialogTitle>
-        <DialogContent>
+      <AdminDialog
+        open={Boolean(props.createCampaignOpen)}
+        onClose={() => props.setCreateCampaignOpen(false)}
+        title="Thêm chiến dịch"
+        subtitle="Tạo chiến dịch vòng quay mới."
+        badge="Chiến dịch"
+        actions={
+          <>
+            <Button onClick={() => props.setCreateCampaignOpen(false)}>Hủy</Button>
+            <Button variant="contained" onClick={props.handleCreateCampaign}>Tạo chiến dịch</Button>
+          </>
+        }
+      >
           <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField label="Tên chiến dịch" value={props.campaignName} onChange={(e) => props.setCampaignName(e.target.value)} />
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => props.setCreateCampaignOpen(false)}>Hủy</Button>
-          <Button variant="contained" onClick={props.handleCreateCampaign}>Tạo chiến dịch</Button>
-        </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
-      <Dialog open={Boolean(props.createPrizeOpen)} onClose={() => props.setCreatePrizeOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Thêm phần thưởng</DialogTitle>
-        <DialogContent>
+      <AdminDialog
+        open={Boolean(props.createPrizeOpen)}
+        onClose={() => props.setCreatePrizeOpen(false)}
+        title="Thêm phần thưởng"
+        subtitle="Thiết lập emoji, nhãn, hiển thị và cách giao quà."
+        badge="Phần thưởng"
+        actions={
+          <>
+            <Button onClick={() => props.setCreatePrizeOpen(false)}>Hủy</Button>
+            <Button variant="contained" onClick={props.handleCreatePrize}>Tạo phần thưởng</Button>
+          </>
+        }
+      >
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField label="ID chiến dịch" value={props.prizeCampaignId} onChange={(e) => props.setPrizeCampaignId(e.target.value)} />
+            <TextField label="Mã chiến dịch" value={props.prizeCampaignId} onChange={(e) => props.setPrizeCampaignId(e.target.value)} />
             <TextField label="Tên phần thưởng" value={props.prizeName} onChange={(e) => props.setPrizeName(e.target.value)} />
             <TextField label="Loại phần thưởng" value={props.prizeType} onChange={(e) => props.setPrizeType(e.target.value)} />
             <TextField label="Trọng số" type="number" value={props.prizeWeight} onChange={(e) => props.setPrizeWeight(Number(e.target.value))} />
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
-              <TextField fullWidth label="Emoji / biểu tượng" value={props.prizeGlyph} onChange={(e) => props.setPrizeGlyph(e.target.value)} />
+              <TextField fullWidth label="Emoji / biểu tượng" placeholder="Ví dụ: 🍑" value={props.prizeGlyph} onChange={(e) => props.setPrizeGlyph(e.target.value)} />
               <TextField fullWidth label="Số emoji" type="number" value={props.prizeEmojiCount} onChange={(e) => props.setPrizeEmojiCount(Number(e.target.value))} />
-              <TextField fullWidth label="Nhãn vòng quay" value={props.prizeWheelLabel} onChange={(e) => props.setPrizeWheelLabel(e.target.value)} />
+              <TextField fullWidth label="Nhãn vòng quay" placeholder="Hiển thị trên vòng" value={props.prizeWheelLabel} onChange={(e) => props.setPrizeWheelLabel(e.target.value)} />
             </Stack>
             <FormControl fullWidth>
               <InputLabel>Chế độ hiển thị</InputLabel>
               <Select label="Chế độ hiển thị" value={props.prizeRenderMode} onChange={(e) => props.setPrizeRenderMode(e.target.value)}>
-                <MenuItem value="emoji-only">Chỉ emoji</MenuItem>
+                <MenuItem value="emoji-only">Chỉ biểu tượng</MenuItem>
                 <MenuItem value="label-only">Chỉ nhãn</MenuItem>
                 <MenuItem value="mixed">Kết hợp</MenuItem>
               </Select>
@@ -428,8 +584,8 @@ export function WheelSection(props: any) {
               <FormControl fullWidth>
                 <InputLabel>Cách giao quà</InputLabel>
                 <Select label="Cách giao quà" value={props.prizeDeliveryMode} onChange={(e) => props.setPrizeDeliveryMode(e.target.value)}>
-                  <MenuItem value="immediate">Ngay lập tức</MenuItem>
-                  <MenuItem value="inbox">Hộp quà</MenuItem>
+                  <MenuItem value="immediate">Giao ngay</MenuItem>
+                  <MenuItem value="inbox">Đưa vào hộp quà</MenuItem>
                   <MenuItem value="claim_required">Cần nhận thủ công</MenuItem>
                   <MenuItem value="external_code">Mã bên ngoài</MenuItem>
                 </Select>
@@ -445,30 +601,35 @@ export function WheelSection(props: any) {
                 </Select>
               </FormControl>
             </Stack>
-            <TextField label="Nhãn danh sách" value={props.prizeRailLabel} onChange={(e) => props.setPrizeRailLabel(e.target.value)} />
-            <TextField label="Mô tả" value={props.prizeDescription} onChange={(e) => props.setPrizeDescription(e.target.value)} multiline minRows={2} />
+            <TextField label="Nhãn danh sách" placeholder="Hiển thị ở rail bên dưới" value={props.prizeRailLabel} onChange={(e) => props.setPrizeRailLabel(e.target.value)} />
+            <TextField label="Mô tả" placeholder="Mô tả ngắn cho admin" value={props.prizeDescription} onChange={(e) => props.setPrizeDescription(e.target.value)} multiline minRows={2} />
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => props.setCreatePrizeOpen(false)}>Hủy</Button>
-          <Button variant="contained" onClick={props.handleCreatePrize}>Tạo phần thưởng</Button>
-        </DialogActions>
-      </Dialog>
+      </AdminDialog>
 
-      <Dialog open={Boolean(props.editingPrize)} onClose={() => props.setEditingPrize(null)} fullWidth maxWidth="sm">
-        <DialogTitle>Sửa phần thưởng</DialogTitle>
-        <DialogContent>
+      <AdminDialog
+        open={Boolean(props.editingPrize)}
+        onClose={() => props.setEditingPrize(null)}
+        title="Sửa phần thưởng"
+        subtitle="Chỉnh emoji, nhãn, cách giao và trạng thái phần thưởng."
+        badge="Phần thưởng"
+        actions={
+          <>
+            <Button onClick={() => props.setEditingPrize(null)}>Hủy</Button>
+            <Button variant="contained" onClick={props.handleUpdatePrize}>Lưu</Button>
+          </>
+        }
+      >
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField label="Tên" value={props.editPrizeName} onChange={(e) => props.setEditPrizeName(e.target.value)} />
-            <TextField label="Loại" value={props.editPrizeType} onChange={(e) => props.setEditPrizeType(e.target.value)} />
+            <TextField label="Tên phần thưởng" value={props.editPrizeName} onChange={(e) => props.setEditPrizeName(e.target.value)} />
+            <TextField label="Loại phần thưởng" value={props.editPrizeType} onChange={(e) => props.setEditPrizeType(e.target.value)} />
             <TextField label="Trọng số" type="number" value={props.editPrizeWeight} onChange={(e) => props.setEditPrizeWeight(Number(e.target.value))} />
             <TextField label="Tồn kho" value={props.editPrizeStock} onChange={(e) => props.setEditPrizeStock(e.target.value)} />
-            <TextField label="Emoji / biểu tượng" value={props.editPrizeGlyph} onChange={(e) => props.setEditPrizeGlyph(e.target.value)} />
+            <TextField label="Emoji / biểu tượng" placeholder="Ví dụ: 🍑" value={props.editPrizeGlyph} onChange={(e) => props.setEditPrizeGlyph(e.target.value)} />
             <TextField label="Số emoji" type="number" value={props.editPrizeEmojiCount} onChange={(e) => props.setEditPrizeEmojiCount(Number(e.target.value))} />
             <FormControl fullWidth>
               <InputLabel>Chế độ hiển thị</InputLabel>
-              <Select label="Chế độ hiển thị" value={props.editPrizeRenderMode} onChange={(e) => props.setEditPrizeRenderMode(e.target.value)}>
-                <MenuItem value="emoji-only">Chỉ emoji</MenuItem>
+                <Select label="Chế độ hiển thị" value={props.editPrizeRenderMode} onChange={(e) => props.setEditPrizeRenderMode(e.target.value)}>
+                <MenuItem value="emoji-only">Chỉ biểu tượng</MenuItem>
                 <MenuItem value="label-only">Chỉ nhãn</MenuItem>
                 <MenuItem value="mixed">Kết hợp</MenuItem>
               </Select>
@@ -477,8 +638,8 @@ export function WheelSection(props: any) {
               <FormControl fullWidth>
                 <InputLabel>Cách giao quà</InputLabel>
                 <Select label="Cách giao quà" value={props.editPrizeDeliveryMode} onChange={(e) => props.setEditPrizeDeliveryMode(e.target.value)}>
-                  <MenuItem value="immediate">Ngay lập tức</MenuItem>
-                  <MenuItem value="inbox">Hộp quà</MenuItem>
+                  <MenuItem value="immediate">Giao ngay</MenuItem>
+                  <MenuItem value="inbox">Đưa vào hộp quà</MenuItem>
                   <MenuItem value="claim_required">Cần nhận thủ công</MenuItem>
                   <MenuItem value="external_code">Mã bên ngoài</MenuItem>
                 </Select>
@@ -494,9 +655,9 @@ export function WheelSection(props: any) {
                 </Select>
               </FormControl>
             </Stack>
-            <TextField label="Nhãn vòng quay" value={props.editPrizeWheelLabel} onChange={(e) => props.setEditPrizeWheelLabel(e.target.value)} />
-            <TextField label="Nhãn danh sách" value={props.editPrizeRailLabel} onChange={(e) => props.setEditPrizeRailLabel(e.target.value)} />
-            <TextField label="Mô tả" value={props.editPrizeDescription} onChange={(e) => props.setEditPrizeDescription(e.target.value)} multiline minRows={2} />
+            <TextField label="Nhãn vòng quay" placeholder="Hiển thị trên vòng quay" value={props.editPrizeWheelLabel} onChange={(e) => props.setEditPrizeWheelLabel(e.target.value)} />
+            <TextField label="Nhãn danh sách" placeholder="Hiển thị ở rail bên dưới" value={props.editPrizeRailLabel} onChange={(e) => props.setEditPrizeRailLabel(e.target.value)} />
+            <TextField label="Mô tả" placeholder="Mô tả ngắn cho admin" value={props.editPrizeDescription} onChange={(e) => props.setEditPrizeDescription(e.target.value)} multiline minRows={2} />
             <FormControl fullWidth>
               <InputLabel>Trạng thái</InputLabel>
               <Select label="Trạng thái" value={props.editPrizeActive ? 'true' : 'false'} onChange={(e) => props.setEditPrizeActive(e.target.value === 'true')}>
@@ -505,23 +666,18 @@ export function WheelSection(props: any) {
               </Select>
             </FormControl>
           </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => props.setEditingPrize(null)}>Hủy</Button>
-          <Button variant="contained" onClick={props.handleUpdatePrize}>Lưu</Button>
-        </DialogActions>
-      </Dialog>
+      </AdminDialog>
     </Stack>
   );
 }
 
 export function SettingsSection({ debugEnv, botInfo, debugLoading, handleDebugEnv }: any) {
   return (
-    <AppSection title="Cài đặt & chẩn đoán" subtitle="Debug biến môi trường và định danh bot Telegram." accent="blue">
-      <CardContent>
+    <AppSection title="Cài đặt & chẩn đoán" subtitle="Xem cấu hình hệ thống và định danh bot Telegram." accent="blue">
+      <CardContent sx={{ pt: 0 }}>
         <Stack spacing={2}>
           <Button variant="outlined" onClick={handleDebugEnv} disabled={debugLoading} sx={{ alignSelf: 'flex-start' }}>
-            {debugLoading ? 'Đang tải...' : 'Debug biến môi trường'}
+            {debugLoading ? 'Đang tải...' : 'Chẩn đoán biến môi trường'}
           </Button>
           {debugEnv ? (
             <Box component="pre" sx={{ m: 0, p: 2, borderRadius: 1, bgcolor: 'rgba(2,6,23,0.04)', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
@@ -552,7 +708,7 @@ export function UserAdjustDialog({
   onSubmit,
 }: any) {
   return (
-    <Dialog open={Boolean(open && user)} onClose={onClose} fullWidth maxWidth="sm">
+    <AdminDialog open={Boolean(open && user)} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>
         {mode === 'points' ? 'Cộng 🍑' : 'Cộng lượt quay'} {user ? `• ${user.firstName ?? ''} ${user.lastName ?? ''}` : ''}
       </DialogTitle>
@@ -570,6 +726,6 @@ export function UserAdjustDialog({
         <Button onClick={onClose}>Hủy</Button>
         <Button variant="contained" onClick={onSubmit}>Lưu</Button>
       </DialogActions>
-    </Dialog>
+    </AdminDialog>
   );
 }

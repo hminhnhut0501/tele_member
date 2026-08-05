@@ -35,10 +35,58 @@ const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 4,
+    borderRadius: 10,
   },
   typography: {
     fontFamily: ['Inter', 'system-ui', 'sans-serif'].join(','),
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 999,
+          textTransform: 'none',
+          fontWeight: 700,
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 999,
+          fontWeight: 700,
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          border: '1px solid #e5e7eb',
+          boxShadow: '0 8px 24px rgba(15, 23, 42, 0.05)',
+        },
+      },
+    },
+    MuiTextField: {
+      defaultProps: {
+        variant: 'outlined',
+        size: 'small',
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          borderColor: '#e5e7eb',
+          paddingTop: 12,
+          paddingBottom: 12,
+        },
+        head: {
+          fontWeight: 800,
+          color: '#475569',
+          backgroundColor: '#f8fafc',
+        },
+      },
+    },
   },
 });
 
