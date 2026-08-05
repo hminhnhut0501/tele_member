@@ -60,7 +60,7 @@ export function createBotRouter(deps: {
         chatId,
         [
           'Chào mừng bạn đến với Tele Member.',
-          'Bấm nút bên dưới để mở mini app và xem dashboard của bạn.',
+          'Bấm nút bên dưới để mở mini app, xem 🍑 và thử Lucky Wheel.',
         ].join('\n'),
       );
       if (token) {
@@ -70,26 +70,26 @@ export function createBotRouter(deps: {
           body: JSON.stringify({
             chat_id: chatId,
             text: 'Open App',
-              reply_markup: {
-                inline_keyboard: [
-                  [
-                    {
-                      text: 'Open App',
-                      web_app: {
-                        url: webAppUrl,
-                      },
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: 'Open App',
+                    web_app: {
+                      url: webAppUrl,
                     },
-                    {
-                      text: 'Lucky Wheel',
-                      web_app: {
-                        url: `${webAppUrl}/wheel`,
-                      },
+                  },
+                  {
+                    text: 'Lucky Wheel',
+                    web_app: {
+                      url: `${webAppUrl}/wheel`,
                     },
-                  ],
-                  [
-                    { text: 'Điểm danh', callback_data: 'checkin' },
-                    { text: 'Xem điểm', callback_data: 'points' },
-                  ],
+                  },
+                ],
+                [
+                  { text: 'Điểm danh', callback_data: 'checkin' },
+                  { text: 'Xem 🍑', callback_data: 'points' },
+                ],
               ],
             },
           }),
@@ -124,7 +124,7 @@ export function createBotRouter(deps: {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             callback_query_id: callbackQuery.id,
-            text: `Bạn đang có ${summary.balance} điểm.`,
+            text: `Bạn đang có ${summary.balance} 🍑.`,
             show_alert: false,
           }),
         });
@@ -149,7 +149,7 @@ export function createBotRouter(deps: {
     if (text.startsWith('/diem')) {
       await deps.points.upsertUser(profile);
       const summary = await deps.points.getSummary(profile.telegramId);
-      await deps.sendTelegramMessage(chatId, `Số điểm hiện tại của bạn: ${summary.balance}`);
+      await deps.sendTelegramMessage(chatId, `Số 🍑 hiện tại của bạn: ${summary.balance}`);
       return { ok: true, summary };
     }
 

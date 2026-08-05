@@ -91,7 +91,7 @@ export function RewardsSection(props: any) {
               <Stack direction="row" spacing={1} flexWrap="wrap">
                 <TextField size="small" label="Reward name" value={props.rewardName} onChange={(e) => props.setRewardName(e.target.value)} />
                 <TextField size="small" label="Type" value={props.rewardType} onChange={(e) => props.setRewardType(e.target.value)} />
-                <TextField size="small" label="Point cost" type="number" value={props.rewardPointCost} onChange={(e) => props.setRewardPointCost(Number(e.target.value))} />
+                <TextField size="small" label="🍑 cost" type="number" value={props.rewardPointCost} onChange={(e) => props.setRewardPointCost(Number(e.target.value))} />
                 <Button variant="contained" onClick={props.handleCreateReward}>Create</Button>
               </Stack>
             </Stack>
@@ -131,7 +131,7 @@ export function RewardsSection(props: any) {
           <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField label="Name" value={props.editRewardName} onChange={(e) => props.setEditRewardName(e.target.value)} />
             <TextField label="Type" value={props.editRewardType} onChange={(e) => props.setEditRewardType(e.target.value)} />
-            <TextField label="Point cost" type="number" value={props.editRewardPointCost} onChange={(e) => props.setEditRewardPointCost(Number(e.target.value))} />
+            <TextField label="🍑 cost" type="number" value={props.editRewardPointCost} onChange={(e) => props.setEditRewardPointCost(Number(e.target.value))} />
             <TextField label="Stock" value={props.editRewardStock} onChange={(e) => props.setEditRewardStock(e.target.value)} />
           </Stack>
         </DialogContent>
@@ -216,7 +216,7 @@ export function WheelSection(props: any) {
               <FormControl fullWidth>
                 <InputLabel>Delivery target</InputLabel>
                 <Select label="Delivery target" value={props.prizeDeliveryTarget} onChange={(e) => props.setPrizeDeliveryTarget(e.target.value)}>
-                  <MenuItem value="point_wallet">Point wallet</MenuItem>
+                  <MenuItem value="point_wallet">Peach wallet</MenuItem>
                   <MenuItem value="spin_wallet">Spin wallet</MenuItem>
                   <MenuItem value="reward_inbox">Reward inbox</MenuItem>
                   <MenuItem value="code_pool">Code pool</MenuItem>
@@ -383,7 +383,7 @@ export function WheelSection(props: any) {
               <FormControl fullWidth>
                 <InputLabel>Delivery target</InputLabel>
                 <Select label="Delivery target" value={props.editPrizeDeliveryTarget} onChange={(e) => props.setEditPrizeDeliveryTarget(e.target.value)}>
-                  <MenuItem value="point_wallet">Point wallet</MenuItem>
+                  <MenuItem value="point_wallet">Peach wallet</MenuItem>
                   <MenuItem value="spin_wallet">Spin wallet</MenuItem>
                   <MenuItem value="reward_inbox">Reward inbox</MenuItem>
                   <MenuItem value="code_pool">Code pool</MenuItem>
@@ -443,12 +443,12 @@ export function UserAdjustDialog({
   return (
     <Dialog open={Boolean(open && user)} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>
-        {mode === 'points' ? 'Add points' : 'Add spins'} {user ? `• ${user.firstName ?? ''} ${user.lastName ?? ''}` : ''}
+        {mode === 'points' ? 'Add 🍑' : 'Add spins'} {user ? `• ${user.firstName ?? ''} ${user.lastName ?? ''}` : ''}
       </DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <ToggleButtonGroup exclusive value={mode} onChange={(_, value) => value && onModeChange(value)} size="small">
-            <ToggleButton value="points">Points</ToggleButton>
+            <ToggleButton value="points">🍑</ToggleButton>
             <ToggleButton value="spins">Spins</ToggleButton>
           </ToggleButtonGroup>
           <TextField label="Amount" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />

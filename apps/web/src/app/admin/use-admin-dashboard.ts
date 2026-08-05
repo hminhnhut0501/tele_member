@@ -137,7 +137,7 @@ export function useAdminDashboard() {
       setAuditLogs(logs.logs ?? logs);
       setError('');
     } catch {
-      setError('Cập nhật điểm thất bại');
+      setError('Cập nhật 🍑 thất bại');
     }
   }
 
@@ -165,7 +165,7 @@ export function useAdminDashboard() {
       setAuditLogs(logs.logs ?? logs);
       setSelectedUser(null);
     } catch {
-      setError(adjustMode === 'points' ? 'Cập nhật điểm thất bại' : 'Cập nhật lượt quay thất bại');
+      setError(adjustMode === 'points' ? 'Cập nhật 🍑 thất bại' : 'Cập nhật lượt quay thất bại');
     }
   }
 

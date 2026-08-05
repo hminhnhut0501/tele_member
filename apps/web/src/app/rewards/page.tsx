@@ -86,7 +86,7 @@ export default function RewardsPage() {
       <Container maxWidth="sm" sx={{ py: 3, position: 'relative' }}>
         <Stack spacing={2}>
           <GameSection
-            title="Đổi điểm lấy quà"
+            title="Đổi 🍑 lấy quà"
             subtitle="Chọn phần thưởng phù hợp, kiểm tra tồn kho và đổi ngay trong một chạm."
             action={<HeroChip label="Reward Store" color="success" />}
           >
@@ -133,7 +133,7 @@ export default function RewardsPage() {
                       </Stack>
 
                       <Stack direction="row" spacing={1} flexWrap="wrap">
-                        <Chip label={`${reward.point_cost} điểm`} sx={{ bgcolor: 'rgba(255,214,102,0.15)', color: '#fff1bf', border: '1px solid rgba(255,214,102,0.18)' }} />
+                        <Chip label={`${reward.point_cost} 🍑`} sx={{ bgcolor: 'rgba(255,214,102,0.15)', color: '#fff1bf', border: '1px solid rgba(255,214,102,0.18)' }} />
                         <Chip label={stockLabel(reward.stock)} sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#d7e3d8', border: '1px solid rgba(255,255,255,0.08)' }} />
                       </Stack>
 

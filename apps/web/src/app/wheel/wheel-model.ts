@@ -53,7 +53,7 @@ export function getWheelPrizeShortLabel(prize: Pick<WheelPrize, 'name' | 'type' 
   const type = String(prize.type ?? '').toUpperCase();
   if (type === 'POINT') {
     const amount = meta.points ?? meta.point_amount ?? meta.value;
-    return amount ? `${glyph} ${amount}` : glyph;
+    return amount ? `${glyph} ${amount}🍑` : glyph;
   }
   return normalizeText(prize.name || glyph);
 }
@@ -90,9 +90,9 @@ export function getWheelDefaultOutcomeLabel(name?: string | null) {
 
 export function getDefaultWheelPrizes() {
   return [
-    { id: 'demo-point-10', name: '10 điểm', type: 'POINT', weight: 4, metadata: { points: 10, glyph: '⭐' } },
+    { id: 'demo-point-10', name: '10🍑', type: 'POINT', weight: 4, metadata: { points: 10, glyph: '🍑' } },
     { id: 'demo-spin-1', name: '+1 lượt quay', type: 'SPIN_TICKET', weight: 3, metadata: { glyph: '🎞' } },
-    { id: 'demo-point-25', name: '25 điểm', type: 'POINT', weight: 2, metadata: { points: 25, glyph: '⭐' } },
+    { id: 'demo-point-25', name: '25🍑', type: 'POINT', weight: 2, metadata: { points: 25, glyph: '🍑' } },
     { id: 'demo-voucher', name: 'Voucher', type: 'VOUCHER', weight: 1, metadata: { glyph: '🎁' } },
     { id: 'demo-lose', name: 'Không trúng', type: 'CUSTOM', weight: 1, metadata: { glyph: '😢' } },
   ];

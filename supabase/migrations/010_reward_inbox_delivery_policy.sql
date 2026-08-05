@@ -649,12 +649,10 @@ as $$
     select coalesce(sum(weight), 0) as total_weight
     from prizes
     where is_active = true and coalesce(stock, 1) > 0
-  )
-  select jsonb_build_object(
-    'campaignId', p_campaign_id,
-    'totalWeight', totals.total_weight,
-      'prizes', coalesce(jsonb_agg(
-        jsonb_build_object(
+  ),
+  prize_rows as (
+    select coalesce(jsonb_agg(
+      jsonb_build_object(
         'id', prizes.id,
         'name', prizes.name,
         'type', prizes.type,
@@ -684,9 +682,15 @@ as $$
         'wheelLabel', coalesce(prizes.metadata ->> 'wheelLabel', prizes.name),
         'railLabel', coalesce(prizes.metadata ->> 'railLabel', prizes.name)
       ) order by prizes.created_at asc, prizes.id asc
-    ) filter (where prizes.id is not null), '[]'::jsonb)
+    ) filter (where prizes.id is not null), '[]'::jsonb) as prizes
+    from totals, prizes
   )
-  from totals, prizes;
+  select jsonb_build_object(
+    'campaignId', p_campaign_id,
+    'totalWeight', totals.total_weight,
+    'prizes', prize_rows.prizes
+  )
+  from totals, prize_rows;
 $$;
 
 grant execute on function public.add_reward_inbox_item(uuid, text, uuid, text, text, boolean, text, text, jsonb, text, timestamptz) to service_role;

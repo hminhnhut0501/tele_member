@@ -107,7 +107,7 @@ export default function MyRewardsPage() {
                   >
                     <Stack spacing={1.5}>
                       <Stack direction="row" spacing={1} flexWrap="wrap">
-                        <Chip label={`${item.point_cost} điểm`} sx={{ bgcolor: 'rgba(255,214,102,0.15)', color: '#fff2c0', border: '1px solid rgba(255,214,102,0.18)' }} />
+                        <Chip label={`${item.point_cost} 🍑`} sx={{ bgcolor: 'rgba(255,214,102,0.15)', color: '#fff2c0', border: '1px solid rgba(255,214,102,0.18)' }} />
                         <Chip label={new Date(item.created_at).toLocaleString('vi-VN')} sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#d7e3d8', border: '1px solid rgba(255,255,255,0.08)' }} />
                       </Stack>
 
@@ -132,12 +132,12 @@ export default function MyRewardsPage() {
                   </GameSection>
                 ))
               ) : (
-                <GameSection title="Chưa có quà nào" subtitle="Khi bạn đổi điểm lấy reward, lịch sử và code sẽ xuất hiện ở đây.">
+                <GameSection title="Chưa có quà nào" subtitle="Khi bạn đổi 🍑 lấy reward, lịch sử và code sẽ xuất hiện ở đây.">
                   <Stack spacing={1} alignItems="center" textAlign="center" sx={{ py: 3 }}>
                     <Typography variant="h6" fontWeight={900} sx={{ color: '#fff6db' }}>
                       Chưa có quà nào
                     </Typography>
-                    <Typography sx={{ color: 'rgba(247,245,235,0.72)' }}>Khi bạn đổi điểm lấy reward, lịch sử và code sẽ xuất hiện ở đây.</Typography>
+                    <Typography sx={{ color: 'rgba(247,245,235,0.72)' }}>Khi bạn đổi 🍑 lấy reward, lịch sử và code sẽ xuất hiện ở đây.</Typography>
                   </Stack>
                 </GameSection>
               )}

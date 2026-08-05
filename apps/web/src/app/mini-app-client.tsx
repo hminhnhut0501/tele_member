@@ -16,6 +16,11 @@ type Summary = {
   lastCheckinAt: string | null;
   todayStatus: 'checked_in' | 'not_checked_in' | 'already_checked_in';
   pointsGainedToday: number;
+  peachesGainedToday?: number;
+  currencyEmoji?: string;
+  currencyLabel?: string;
+  spinExchangeRate?: number;
+  spinExchangeCost?: number;
   transactions: Array<{ id: string; amount: number; reason: string; type: 'credit' | 'debit'; createdAt: string }>;
 };
 
@@ -120,6 +125,7 @@ export default function MiniAppClient() {
   const [token, setToken] = useState<string | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [checkinMessage, setCheckinMessage] = useState('');
+  const [convertMessage, setConvertMessage] = useState('');
   const [pulse, setPulse] = useState(false);
   const debugEnabled = process.env.NEXT_PUBLIC_DEBUG_WEBAPP === 'true';
   const bridgeReady = Boolean(debugInfo?.hasTelegram && debugInfo?.hasWebApp && (debugInfo?.initDataLength ?? 0) > 0);
@@ -243,7 +249,23 @@ export default function MiniAppClient() {
       const refreshed = await fetchSummary(token);
       setSummary(refreshed);
     } catch {
-      setError('Không thể điểm danh.');
+      setError('Không thể nhận 🍑.');
+    }
+  }
+
+  async function handleConvertSpin() {
+    if (!token) return;
+    try {
+      setError('');
+      setConvertMessage('');
+      const response = await client.convertPeachesToSpin(1);
+      const peachesSpent = Number((response as any)?.peachesSpent ?? summary?.spinExchangeCost ?? 3);
+      const spinsGranted = Number((response as any)?.spinsGranted ?? 1);
+      setConvertMessage(`Đã đổi ${peachesSpent} 🍑 lấy ${spinsGranted} lượt quay.`);
+      const refreshed = await fetchSummary(token);
+      setSummary(refreshed);
+    } catch {
+      setError('Không thể đổi đào sang lượt quay.');
     }
   }
 
@@ -380,19 +402,54 @@ export default function MiniAppClient() {
             </AppSection>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
-            <MetricCard label="Điểm hiện tại" value={String(summary?.balance ?? 0)} note="Số điểm đang có trong ví" accent="emerald" />
-            <MetricCard label="Streak" value={String(summary?.streak ?? 0)} note={`Lần điểm danh gần nhất: ${summary?.lastCheckinAt ? new Date(summary.lastCheckinAt).toLocaleString('vi-VN') : 'Chưa có'}`} accent="blue" />
+            <MetricCard label="🍑 hiện tại" value={String(summary?.balance ?? 0)} note="Số đào đang có trong ví" accent="emerald" />
+            <MetricCard label="Streak" value={String(summary?.streak ?? 0)} note={`Lần nhận gần nhất: ${summary?.lastCheckinAt ? new Date(summary.lastCheckinAt).toLocaleString('vi-VN') : 'Chưa có'}`} accent="blue" />
           </Box>
 
-          <AppSection title="Today status" subtitle={`Trạng thái hôm nay: ${summary?.todayStatus === 'checked_in' ? 'Đã điểm danh' : summary?.todayStatus === 'already_checked_in' ? 'Đã nhận điểm rồi' : 'Chưa điểm danh'}`} accent="cyan">
-            <Typography variant="body2" color="text.secondary">Điểm nhận hôm nay: {summary?.pointsGainedToday ?? 0}</Typography>
+          <AppSection title="Today status" subtitle={`Trạng thái hôm nay: ${summary?.todayStatus === 'checked_in' ? 'Đã nhận 🍑' : summary?.todayStatus === 'already_checked_in' ? 'Đã nhận rồi' : 'Chưa nhận'}`} accent="cyan">
+            <Typography variant="body2" color="text.secondary">Đào nhận hôm nay: {summary?.peachesGainedToday ?? summary?.pointsGainedToday ?? 0}</Typography>
           </AppSection>
 
           <SectionButton variant="contained" size="large" onClick={handleCheckin} sx={{ py: 1.2 }}>
-            Điểm danh hôm nay
+            Nhận 1 🍑 hôm nay
           </SectionButton>
 
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+            <SectionButton
+              variant="outlined"
+              onClick={() => {
+                window.location.href = '/my-rewards';
+              }}
+            >
+              Quà đã nhận
+            </SectionButton>
+            <SectionButton
+              variant="outlined"
+              onClick={() => {
+                window.location.href = '/rewards';
+              }}
+            >
+              Đổi đào
+            </SectionButton>
+          </Stack>
+
+          <AppSection
+            title="Đổi lượt quay"
+            subtitle={`Cứ ${summary?.spinExchangeCost ?? 3} 🍑 đổi 1 lượt quay.`}
+            accent="amber"
+          >
+            <Stack spacing={1.5}>
+              <Typography variant="body2" color="text.secondary">
+                {summary?.balance ?? 0} 🍑 hiện có có thể đổi sang lượt quay ngay trong mini app.
+              </Typography>
+              <SectionButton variant="outlined" onClick={handleConvertSpin} disabled={(summary?.balance ?? 0) < (summary?.spinExchangeCost ?? 3)}>
+                Đổi 1 lượt quay
+              </SectionButton>
+            </Stack>
+          </AppSection>
+
           {checkinMessage ? <Alert severity="success">{checkinMessage}</Alert> : null}
+          {convertMessage ? <Alert severity="success">{convertMessage}</Alert> : null}
           {error ? <Alert severity="error">{error}</Alert> : null}
 
           <AppSection title="Lịch sử giao dịch" subtitle="Các phát sinh credit/debit gần nhất." accent="violet">
@@ -402,7 +459,7 @@ export default function MiniAppClient() {
                   <Box key={tx.id} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'rgba(255,255,255,0.8)' }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
                       <Box>
-                        <Typography fontWeight={700}>{tx.type.toUpperCase()} {tx.amount}</Typography>
+                        <Typography fontWeight={700}>{tx.type.toUpperCase()} {tx.amount} 🍑</Typography>
                         <Typography variant="body2" color="text.secondary">{tx.reason}</Typography>
                       </Box>
                       <Typography variant="body2" color="text.secondary">{new Date(tx.createdAt).toLocaleString('vi-VN')}</Typography>

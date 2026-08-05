@@ -57,7 +57,7 @@ function getPrizeWheelLabel(prize: WheelPrize) {
   const glyph = getWheelPrizeGlyph(prize);
   if (type === 'POINT') {
     const amount = prize.metadata?.points ?? prize.metadata?.point_amount ?? prize.metadata?.value;
-    return amount ? `${glyph}${amount}` : glyph;
+    return amount ? `${glyph}${amount}🍑` : glyph;
   }
   if (type === 'SPIN_TICKET') return glyph || '⟲';
   if (type === 'VOUCHER') return glyph || '🎁';
@@ -71,7 +71,7 @@ function getPrizeRailLabel(prize: WheelPrize, fallbackWheelLabel: string) {
   const glyph = getWheelPrizeGlyph(prize);
   if (type === 'POINT') {
     const amount = prize.metadata?.points ?? prize.metadata?.point_amount ?? prize.metadata?.value;
-    return amount ? `${glyph} ${amount} điểm` : `${glyph} Điểm`;
+    return amount ? `${glyph} ${amount}🍑` : `${glyph} 🍑`;
   }
   if (type === 'SPIN_TICKET') return prize.name || `${glyph} 1 lượt quay`;
   if (type === 'VOUCHER') return prize.name || `${glyph} Voucher`;
@@ -156,9 +156,9 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
 
 export function getDefaultWheelPrizes(): WheelPrize[] {
   return [
-    { id: 'demo-point-10', name: '10đ', type: 'POINT', weight: 4, metadata: { points: 10 } },
+    { id: 'demo-point-10', name: '10🍑', type: 'POINT', weight: 4, metadata: { points: 10, glyph: '🍑' } },
     { id: 'demo-spin-1', name: '+1 spin', type: 'SPIN_TICKET', weight: 3, metadata: {} },
-    { id: 'demo-point-25', name: '25đ', type: 'POINT', weight: 2, metadata: { points: 25 } },
+    { id: 'demo-point-25', name: '25🍑', type: 'POINT', weight: 2, metadata: { points: 25, glyph: '🍑' } },
     { id: 'demo-voucher', name: 'Voucher', type: 'VOUCHER', weight: 1, metadata: {} },
     { id: 'demo-lose', name: 'Không trúng', type: 'CUSTOM', weight: 1, metadata: {} },
   ];

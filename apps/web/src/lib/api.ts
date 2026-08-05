@@ -65,6 +65,11 @@ export function apiClient(token?: string | null) {
     getMyInbox: () => request('/api/me/inbox', {}, token),
     getMySpins: () => request('/api/me/spins', {}, token),
     getSpinTransactions: () => request('/api/me/spin-transactions', {}, token),
+    convertPeachesToSpin: (amount = 1) =>
+      request('/api/me/spins/convert', {
+        method: 'POST',
+        body: JSON.stringify({ amount }),
+      }, token),
     getWheelCurrent: () => request('/api/wheel/current', {}, token),
     spinWheel: () => request('/api/wheel/spin', { method: 'POST' }, token),
     getWheelHistory: () => request('/api/wheel/history', {}, token),

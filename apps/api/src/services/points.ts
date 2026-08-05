@@ -1,7 +1,8 @@
 import { getAsiaHoChiMinhDate } from '../lib/date.js';
 import { createRepositories } from './repositories.js';
 
-const CHECKIN_POINTS = Number(process.env.CHECKIN_POINTS ?? 10);
+const CHECKIN_PEACHES = Number(process.env.CHECKIN_PEACHES ?? process.env.CHECKIN_POINTS ?? 1);
+const PEACHES_PER_SPIN = Number(process.env.PEACHES_PER_SPIN ?? 3);
 
 export function createPointService(supabase: any) {
   const repos = createRepositories(supabase);
@@ -80,7 +81,7 @@ export function createPointService(supabase: any) {
       p_first_name: profile.firstName,
       p_last_name: profile.lastName,
       p_avatar_url: profile.avatarUrl,
-      p_points: CHECKIN_POINTS,
+      p_points: CHECKIN_PEACHES,
       p_checkin_date: getAsiaHoChiMinhDate(),
     });
 
@@ -125,8 +126,44 @@ export function createPointService(supabase: any) {
       lastCheckinAt: latestCheckin?.created_at ?? null,
       todayStatus: deriveTodayStatus({ streak: latestCheckin?.streak ?? 0 }),
       pointsGainedToday: 0,
+      peachesGainedToday: 0,
+      currencyEmoji: '🍑',
+      currencyLabel: 'đào',
+      spinExchangeRate: PEACHES_PER_SPIN,
+      spinExchangeCost: PEACHES_PER_SPIN,
       transactions: transactions,
     };
+  }
+
+  async function convertPeachesToSpin(input: {
+    telegramId: string;
+    amount?: number;
+    reason?: string;
+    metadata?: Record<string, unknown>;
+    actorEmail?: string;
+  }) {
+    const user = await upsertUser({
+      telegramId: input.telegramId,
+      username: null,
+      firstName: null,
+      lastName: null,
+      avatarUrl: null,
+    });
+
+    const amount = Math.max(1, Math.floor(input.amount ?? 1));
+    const response = await supabase.rpc('convert_point_wallet_to_spin', {
+      p_user_id: user.id,
+      p_spins: amount,
+      p_peaches_per_spin: PEACHES_PER_SPIN,
+      p_reason: input.reason ?? 'peach_to_spin_exchange',
+      p_metadata: {
+        ...(input.metadata ?? {}),
+        actorEmail: input.actorEmail ?? null,
+      },
+    });
+
+    if (response.error) throw response.error;
+    return response.data;
   }
 
   async function adjustBalance(input: {
@@ -158,5 +195,5 @@ export function createPointService(supabase: any) {
     return { ok: true, transaction };
   }
 
-  return { upsertUser, getUserByTelegramId, getBalance, checkIn, getSummary, adjustBalance };
+  return { upsertUser, getUserByTelegramId, getBalance, checkIn, getSummary, adjustBalance, convertPeachesToSpin };
 }

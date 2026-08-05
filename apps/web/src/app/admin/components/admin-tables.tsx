@@ -124,7 +124,7 @@ export function UsersTable({
                   <TableCell>{user.lastCheckinDate ?? '-'}</TableCell>
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      <Button size="small" variant="outlined" onClick={() => onAddPoints(user)}>Add points</Button>
+                      <Button size="small" variant="outlined" onClick={() => onAddPoints(user)}>Add 🍑</Button>
                       <Button size="small" variant="outlined" onClick={() => onAddSpins(user)}>Add spins</Button>
                       <Button size="small" variant="contained" onClick={() => onRowClick(user)}>View</Button>
                     </Stack>

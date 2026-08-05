@@ -258,6 +258,25 @@ app.get('/api/me/spin-transactions', async (request, reply) => {
   return { transactions: data };
 });
 
+app.post('/api/me/spins/convert', async (request, reply) => {
+  const payload = request.user as { telegramId?: string } | undefined;
+  const telegramId = payload?.telegramId;
+  if (!telegramId) return reply.code(401).send({ message: 'Unauthorized' });
+
+  const body = z.object({
+    amount: z.coerce.number().int().min(1).max(100).default(1),
+  }).parse(request.body ?? {});
+
+  const user = await context.points.getUserByTelegramId(telegramId);
+  if (!user) return reply.code(404).send({ message: 'User not found' });
+
+  return context.points.convertPeachesToSpin({
+    telegramId,
+    amount: body.amount,
+    reason: 'peach_to_spin_exchange',
+  });
+});
+
 app.get('/api/wheel/current', async () => {
   const campaign = await context.wheel.getCurrentCampaign();
   if (!campaign) return { campaign: null, prizes: [] };
@@ -578,6 +597,17 @@ app.post('/bot/checkin', async (request) => {
 });
 
 app.get('/bot/points/:telegramId', async (request) => {
+  const params = z
+    .object({
+      telegramId: z.string().min(1),
+    })
+    .parse(request.params);
+
+  const summary = await context.points.getSummary(params.telegramId);
+  return pointSummarySchema.parse(summary);
+});
+
+app.get('/bot/peaches/:telegramId', async (request) => {
   const params = z
     .object({
       telegramId: z.string().min(1),

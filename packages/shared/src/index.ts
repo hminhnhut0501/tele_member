@@ -33,6 +33,11 @@ export const pointSummarySchema = z.object({
   todayStatus: z.enum(['checked_in', 'not_checked_in', 'already_checked_in']),
   pointsGainedToday: z.number().int(),
   transactions: z.array(pointTransactionSchema),
+  peachesGainedToday: z.number().int().optional(),
+  currencyEmoji: z.string().optional(),
+  currencyLabel: z.string().optional(),
+  spinExchangeRate: z.number().int().optional(),
+  spinExchangeCost: z.number().int().optional(),
 });
 
 export const checkinResponseSchema = z.object({
@@ -43,6 +48,8 @@ export const checkinResponseSchema = z.object({
   totalPoints: z.number().int(),
   streak: z.number().int(),
   message: z.string(),
+  peachesGained: z.number().int().optional(),
+  totalPeaches: z.number().int().optional(),
 });
 
 export const adminUserRowSchema = userSchema.extend({
