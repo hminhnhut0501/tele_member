@@ -24,6 +24,14 @@ import {
 import { AuditTable, TransactionsTable, UsersTable } from './admin-tables';
 import { MetricCard, AppSection } from '../../shared-ui';
 
+function getWheelPreset(count: number) {
+  if (count === 5) return 'five';
+  if (count === 6) return 'six';
+  if (count === 8) return 'eight';
+  if (count >= 10) return 'tenPlus';
+  return 'custom';
+}
+
 export function OverviewSection({ users, transactions, rewards, campaigns }: any) {
   return (
     <Box
@@ -145,6 +153,8 @@ export function RewardsSection(props: any) {
 }
 
 export function WheelSection(props: any) {
+  const previewPrizes = props.wheelPreview?.prizes ?? props.wheelPrizes;
+  const previewPreset = getWheelPreset(previewPrizes.length);
   return (
     <Stack spacing={2}>
       <AppSection title="Wheel Campaigns" subtitle="Quản lý campaign và danh sách prize." accent="violet">
@@ -203,6 +213,14 @@ export function WheelSection(props: any) {
               <TextField fullWidth label="Emoji count" type="number" value={props.prizeEmojiCount} onChange={(e) => props.setPrizeEmojiCount(Number(e.target.value))} />
               <TextField fullWidth label="Wheel label" value={props.prizeWheelLabel} onChange={(e) => props.setPrizeWheelLabel(e.target.value)} />
             </Stack>
+            <FormControl fullWidth>
+              <InputLabel>Wheel render mode</InputLabel>
+              <Select label="Wheel render mode" value={props.prizeRenderMode} onChange={(e) => props.setPrizeRenderMode(e.target.value)}>
+                <MenuItem value="emoji-only">Emoji only</MenuItem>
+                <MenuItem value="label-only">Label only</MenuItem>
+                <MenuItem value="mixed">Mixed</MenuItem>
+              </Select>
+            </FormControl>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
               <FormControl fullWidth>
                 <InputLabel>Delivery mode</InputLabel>
@@ -251,7 +269,7 @@ export function WheelSection(props: any) {
                       {prize.type} • weight {prize.weight} • stock {prize.stock ?? '∞'} • {prize.is_active ? 'Active' : 'Inactive'}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {String(prize.metadata?.wheelLabel ?? prize.name)} / {String(prize.metadata?.railLabel ?? prize.name)} / {String(prize.metadata?.deliveryMode ?? 'immediate')} / {String(prize.metadata?.deliveryTarget ?? 'reward_inbox')}
+                      {String(prize.metadata?.wheelLabel ?? prize.name)} / {String(prize.metadata?.railLabel ?? prize.name)} / {String(prize.metadata?.deliveryMode ?? 'immediate')} / {String(prize.metadata?.deliveryTarget ?? 'reward_inbox')} / {String(prize.metadata?.wheelRenderMode ?? prize.metadata?.renderMode ?? prize.metadata?.labelMode ?? 'emoji-only')}
                     </Typography>
                   </Box>
                   <Button
@@ -265,6 +283,7 @@ export function WheelSection(props: any) {
                       props.setEditPrizeStock(prize.stock === null ? '' : String(prize.stock));
                       props.setEditPrizeGlyph(String(prize.metadata?.glyph ?? prize.metadata?.wheelGlyph ?? prize.metadata?.icon ?? prize.metadata?.emoji ?? '⭐'));
                       props.setEditPrizeEmojiCount(Number(prize.metadata?.emojiCount ?? 1));
+                      props.setEditPrizeRenderMode(String(prize.metadata?.wheelRenderMode ?? prize.metadata?.renderMode ?? prize.metadata?.labelMode ?? 'emoji-only'));
                       props.setEditPrizeDeliveryMode(String(prize.metadata?.deliveryMode ?? 'immediate'));
                       props.setEditPrizeDeliveryTarget(String(prize.metadata?.deliveryTarget ?? 'point_wallet'));
                       props.setEditPrizeWheelLabel(String(prize.metadata?.wheelLabel ?? ''));
@@ -304,36 +323,66 @@ export function WheelSection(props: any) {
               <Typography variant="body2" color="text.secondary">
                 Total weight: <b>{props.wheelPreview?.totalWeight ?? 0}</b>
               </Typography>
-              <Chip label={`${props.wheelPreview?.prizes?.length ?? 0} prizes`} size="small" />
+              <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
+                <Chip label={`${previewPrizes.length} prizes`} size="small" />
+                <Chip label={`preset: ${previewPreset}`} size="small" variant="outlined" />
+              </Stack>
             </Stack>
             <Stack spacing={1}>
-              {(props.wheelPreview?.prizes ?? props.wheelPrizes).map((prize: any) => (
-                <Box
-                  key={prize.id}
-                  sx={{
-                    p: 1.25,
-                    borderRadius: 2,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: '#fff',
-                  }}
-                >
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
-                    <Box>
-                      <Typography fontWeight={800}>
-                        {String(prize.glyph ?? prize.metadata?.glyph ?? '✦')} {prize.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {prize.type} • weight {prize.weight} • chance {Number(prize.chance ?? 0).toFixed(2)}%
-                      </Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 1 }}>
+                {previewPrizes.map((prize: any, index: number) => {
+                  const renderMode = String(prize.renderMode ?? prize.metadata?.wheelRenderMode ?? prize.metadata?.renderMode ?? prize.metadata?.labelMode ?? 'emoji-only');
+                  const glyph = String(prize.glyph ?? prize.metadata?.glyph ?? '✦');
+                  const slotTone = ['#2f64e4', '#4b7bff', '#7aaaff', '#1f3d9b'][index % 4];
+                  return (
+                    <Box
+                      key={prize.id}
+                      sx={{
+                        p: 1.25,
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        bgcolor: '#fff',
+                      }}
+                    >
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+                        <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
+                          <Box
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: '50%',
+                              display: 'grid',
+                              placeItems: 'center',
+                              bgcolor: slotTone,
+                              color: '#fff',
+                              fontSize: '1rem',
+                              fontWeight: 900,
+                              flex: '0 0 auto',
+                            }}
+                          >
+                            {glyph}
+                          </Box>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography fontWeight={800} noWrap>
+                              {prize.name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" noWrap>
+                              {prize.type} • weight {prize.weight} • chance {Number(prize.chance ?? 0).toFixed(2)}%
+                            </Typography>
+                          </Box>
+                        </Stack>
+                        <Chip label={renderMode} size="small" variant="outlined" />
+                      </Stack>
+                      <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
+                        <Chip label={String(prize.deliveryMode ?? prize.metadata?.deliveryMode ?? 'immediate')} size="small" variant="outlined" />
+                        <Chip label={String(prize.deliveryTarget ?? prize.metadata?.deliveryTarget ?? 'reward_inbox')} size="small" variant="outlined" />
+                        <Chip label={`slot ${index + 1}`} size="small" variant="outlined" />
+                      </Stack>
                     </Box>
-                    <Stack direction="row" spacing={1}>
-                      <Chip label={String(prize.deliveryMode ?? prize.metadata?.deliveryMode ?? 'immediate')} size="small" variant="outlined" />
-                      <Chip label={String(prize.deliveryTarget ?? prize.metadata?.deliveryTarget ?? 'reward_inbox')} size="small" variant="outlined" />
-                    </Stack>
-                  </Stack>
-                </Box>
-              ))}
+                  );
+                })}
+              </Box>
             </Stack>
           </Stack>
         </CardContent>
@@ -370,6 +419,14 @@ export function WheelSection(props: any) {
             <TextField label="Stock" value={props.editPrizeStock} onChange={(e) => props.setEditPrizeStock(e.target.value)} />
             <TextField label="Glyph / Emoji" value={props.editPrizeGlyph} onChange={(e) => props.setEditPrizeGlyph(e.target.value)} />
             <TextField label="Emoji count" type="number" value={props.editPrizeEmojiCount} onChange={(e) => props.setEditPrizeEmojiCount(Number(e.target.value))} />
+            <FormControl fullWidth>
+              <InputLabel>Wheel render mode</InputLabel>
+              <Select label="Wheel render mode" value={props.editPrizeRenderMode} onChange={(e) => props.setEditPrizeRenderMode(e.target.value)}>
+                <MenuItem value="emoji-only">Emoji only</MenuItem>
+                <MenuItem value="label-only">Label only</MenuItem>
+                <MenuItem value="mixed">Mixed</MenuItem>
+              </Select>
+            </FormControl>
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
               <FormControl fullWidth>
                 <InputLabel>Delivery mode</InputLabel>

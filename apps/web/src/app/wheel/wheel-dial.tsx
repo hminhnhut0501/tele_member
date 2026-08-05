@@ -1,9 +1,77 @@
 'use client';
 
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import type { CSSProperties } from 'react';
 import { getWheelSegmentAngle } from './wheel-engine';
 import type { WheelRenderSegment } from './wheel-contract';
+
+function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {
+  const angleRad = ((angleDeg - 90) * Math.PI) / 180;
+  return {
+    x: cx + radius * Math.cos(angleRad),
+    y: cy + radius * Math.sin(angleRad),
+  };
+}
+
+function describeArc(cx: number, cy: number, radius: number, startAngle: number, endAngle: number) {
+  const start = polarToCartesian(cx, cy, radius, endAngle);
+  const end = polarToCartesian(cx, cy, radius, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
+  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+}
+
+function getWheelLayout(segmentCount: number, isMobile: boolean) {
+  const compact = segmentCount >= 8;
+  const dense = segmentCount >= 10;
+
+  return {
+    wheelSize: isMobile
+      ? compact
+        ? 'min(82vw, 370px)'
+        : 'min(80vw, 400px)'
+      : compact
+        ? 'min(76vw, 560px)'
+        : 'min(72vw, 520px)',
+    labelRadius: isMobile
+      ? dense
+        ? 22
+        : compact
+          ? 24
+          : 26
+      : dense
+        ? 28
+        : compact
+          ? 30
+          : 32,
+    labelInset: isMobile
+      ? dense
+        ? 4
+        : compact
+          ? 6
+          : 8
+      : dense
+        ? 8
+        : compact
+          ? 10
+          : 12,
+    maxEmojiTokens: isMobile ? 1 : dense ? 1 : compact ? 1 : 2,
+    labelChipSize: isMobile ? (dense ? 30 : compact ? 34 : 38) : (dense ? 36 : compact ? 42 : 46),
+    maxLabelWidth: isMobile ? (dense ? 38 : compact ? 42 : 46) : (dense ? 44 : compact ? 50 : 56),
+    labelArcRadius: isMobile ? (dense ? 118 : compact ? 132 : 144) : (dense ? 154 : compact ? 164 : 176),
+    labelArcFontSize: isMobile ? (dense ? 16 : compact ? 18 : 20) : (dense ? 19 : compact ? 21 : 23),
+    emojiBaseSize: isMobile
+      ? dense
+        ? 0.86
+        : compact
+          ? 0.96
+          : 1.02
+      : dense
+        ? 0.98
+        : compact
+          ? 1.04
+          : 1.12,
+  };
+}
 
 export function WheelDial({
   segments,
@@ -24,7 +92,14 @@ export function WheelDial({
   wheelLabelScale?: number;
   labelInset?: number;
 }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isShortPortrait = useMediaQuery('(max-height: 780px)');
+  const isPortraitCompact = isMobile && isShortPortrait;
   const segmentAngle = getWheelSegmentAngle(segments.length);
+  const layout = getWheelLayout(segments.length, isMobile);
+  const resolvedLabelRadius = labelRadius ?? layout.labelRadius;
+  const resolvedLabelInset = Math.max(labelInset, layout.labelInset);
   const wheelStyle = {
     transform: `rotate(${rotation}deg)`,
     transition:
@@ -73,7 +148,7 @@ export function WheelDial({
       <Box
         sx={{
           position: 'relative',
-          width: 'min(84vw, 520px)',
+          width: layout.wheelSize,
           maxWidth: '100%',
           aspectRatio: '1 / 1',
           display: 'grid',
@@ -165,80 +240,99 @@ export function WheelDial({
             }}
           />
 
-          <Box sx={{ position: 'absolute', inset: 0, borderRadius: '50%', overflow: 'hidden' }}>
+          <Box
+            component="svg"
+            viewBox="0 0 1000 1000"
+            preserveAspectRatio="xMidYMid meet"
+            aria-hidden
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              overflow: 'visible',
+              pointerEvents: 'none',
+            }}
+          >
+            <defs>
+              {segments.map((segment, index) => {
+                const startAngle = index * segmentAngle;
+                const endAngle = (index + 1) * segmentAngle;
+                const kindBias =
+                  segment.labelPolicy.kind === 'value'
+                    ? 8
+                    : segment.labelPolicy.kind === 'badge'
+                      ? 4
+                      : segment.labelPolicy.kind === 'phrase'
+                        ? -2
+                        : 0;
+                const arcRadius = layout.labelArcRadius + segment.labelPolicy.radiusShift + kindBias + segment.slotBias;
+                const pathId = `wheel-label-${segment.id.replace(/[^a-z0-9_-]/gi, '-')}`;
+                return (
+                  <path
+                    key={pathId}
+                    id={pathId}
+                    d={describeArc(500, 500, arcRadius, startAngle + 8, endAngle - 8)}
+                    fill="none"
+                  />
+                );
+              })}
+            </defs>
+
             {segments.map((segment, index) => {
               if (!segment.showLabelOnWheel) return null;
-              const centerAngle = index * segmentAngle + segmentAngle / 2 - 90;
               const glyph = segment.glyph || segment.labelPolicy.glyph || '✦';
+              const mode = segment.labelPolicy.renderMode;
               const tokenCount = Math.max(
                 1,
                 Math.min(
                   Number((segment.metadata as any)?.emojiCount ?? segment.emojiCount ?? (segment.metadata as any)?.tokenCount ?? segment.labelPolicy.maxChars ?? 1),
-                  3,
+                  layout.maxEmojiTokens,
                 ),
               );
-              const tokenRow = Array.from({ length: tokenCount }).map(() => glyph).join(' ');
+              const tokenRow = mode === 'label-only' ? segment.displayLabel : Array.from({ length: tokenCount }).map(() => glyph).join(' ');
+              const labelPathId = `wheel-label-${segment.id.replace(/[^a-z0-9_-]/gi, '-')}`;
+              const labelFontSize =
+                layout.labelArcFontSize *
+                wheelLabelScale *
+                (mode === 'label-only'
+                  ? segment.labelPolicy.kind === 'value'
+                    ? 0.9
+                    : segment.labelPolicy.kind === 'badge'
+                      ? 0.88
+                      : 0.84
+                  : segment.labelPolicy.kind === 'value'
+                    ? 1.08
+                    : segment.labelPolicy.kind === 'badge'
+                      ? 1.0
+                      : 0.94);
+              const labelDy = isPortraitCompact
+                ? segment.labelPolicy.kind === 'value'
+                  ? '-0.16em'
+                  : segment.labelPolicy.kind === 'badge'
+                    ? '-0.10em'
+                    : '0.00em'
+                : segment.labelPolicy.kind === 'value'
+                  ? '-0.12em'
+                  : segment.labelPolicy.kind === 'badge'
+                    ? '-0.08em'
+                    : '0.02em';
               return (
-                <Box
-                  key={`${segment.id}-label`}
-                  sx={{
-                    position: 'absolute',
-                    inset: 0,
-                    pointerEvents: 'none',
-                  }}
+                <text
+                  key={`${segment.id}-svg-label`}
+                  fill={segment.textTone}
+                  fontFamily='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'
+                  fontWeight={900}
+                  fontSize={labelFontSize}
+                  letterSpacing={mode === 'label-only' ? 0.06 : segment.labelPolicy.kind === 'value' ? 0.4 : 0.2}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  filter={isSpinning ? 'drop-shadow(0 0 6px rgba(255,255,255,0.16))' : 'drop-shadow(0 1px 3px rgba(0,0,0,0.14))'}
                 >
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      left: '50%',
-                      top: '50%',
-                      transform: `translate(-50%, -50%) rotate(${centerAngle}deg) translateY(-${labelRadius + labelInset}px) rotate(${-centerAngle}deg)`,
-                      display: 'grid',
-                      placeItems: 'center',
-                      gap: 0.25,
-                      width: 90,
-                      maxWidth: 90,
-                      textAlign: 'center',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 0.25,
-                        color: segment.textTone,
-                        fontWeight: 900,
-                        fontSize: { xs: '0.96rem', sm: '1.05rem' },
-                        lineHeight: 1,
-                        letterSpacing: 0,
-                        textShadow: '0 1px 4px rgba(0,0,0,0.18)',
-                        filter: isSpinning ? 'drop-shadow(0 0 6px rgba(255,255,255,0.16))' : 'none',
-                        transform: `scale(${segment.labelPolicy.fontScale * wheelLabelScale})`,
-                      }}
-                    >
-                      {tokenRow}
-                    </Box>
-                    {segment.displayLabel ? (
-                      <Typography
-                        sx={{
-                          color: segment.textTone,
-                          fontWeight: 800,
-                          fontSize: { xs: '0.48rem', sm: '0.54rem' },
-                          lineHeight: 1,
-                          letterSpacing: '0.02em',
-                          opacity: 0.85,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          maxWidth: 84,
-                        }}
-                      >
-                        {segment.displayLabel}
-                      </Typography>
-                    ) : null}
-                  </Box>
-                </Box>
+                  <textPath href={`#${labelPathId}`} startOffset="50%" method="align" spacing="auto" dy={labelDy}>
+                    {tokenRow}
+                  </textPath>
+                </text>
               );
             })}
           </Box>
@@ -246,7 +340,7 @@ export function WheelDial({
           <Box
             sx={{
               position: 'absolute',
-              inset: { xs: '36%', sm: '37%' },
+              inset: { xs: isPortraitCompact ? '38%' : '36%', sm: '37%' },
               borderRadius: '50%',
               background:
                 isSpinning
@@ -284,11 +378,11 @@ export function WheelDial({
           <Box
             sx={{
               position: 'absolute',
-              top: { xs: 8, sm: 12 },
+              top: { xs: isPortraitCompact ? 6 : 8, sm: 12 },
               left: '50%',
               transform: 'translateX(-50%)',
-              width: { xs: 28, sm: 36 },
-              height: { xs: 28, sm: 36 },
+              width: { xs: isPortraitCompact ? 24 : 28, sm: 36 },
+              height: { xs: isPortraitCompact ? 24 : 28, sm: 36 },
               borderRadius: '50%',
               bgcolor: isSettling ? 'rgba(102, 168, 255,0.98)' : 'rgba(102, 168, 255,0.88)',
               boxShadow:

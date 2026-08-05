@@ -1,10 +1,12 @@
 import { getWheelPrizeGlyph, getWheelPrizeShortLabel, type WheelPrize, type WheelSegment } from './wheel-model';
 
 export type WheelLabelKind = 'value' | 'badge' | 'phrase' | 'hidden';
+export type WheelRenderMode = 'emoji-only' | 'label-only' | 'mixed';
 
 export type WheelLabelPolicy = {
   kind: WheelLabelKind;
   glyph: string;
+  renderMode: WheelRenderMode;
   wheelLabel: string;
   railLabel: string;
   maxChars: number;
@@ -23,6 +25,7 @@ export type WheelRenderContract = {
   railLabelScale: number;
   labelInset: number;
   centerLabel: string;
+  preset: 'five' | 'six' | 'eight' | 'tenPlus' | 'custom';
 };
 
 export type WheelRenderSegment = WheelSegment & {
@@ -30,6 +33,7 @@ export type WheelRenderSegment = WheelSegment & {
   displayLabel: string;
   railLabel: string;
   showLabelOnWheel: boolean;
+  slotBias: number;
 };
 
 function normalizeText(value: string) {
@@ -50,6 +54,15 @@ function getPrizeClass(prize: WheelPrize) {
   if (type === 'VOUCHER' || type === 'VIP_CODE') return 'phrase' as const;
   if (type === 'NOTHING') return 'hidden' as const;
   return 'phrase' as const;
+}
+
+function getWheelRenderMode(prize: WheelPrize, kind: WheelLabelKind): WheelRenderMode {
+  const meta = (prize.metadata ?? {}) as Record<string, unknown>;
+  const explicit = String(meta.wheelRenderMode ?? meta.renderMode ?? meta.labelMode ?? '').toLowerCase();
+  if (explicit === 'emoji-only' || explicit === 'label-only' || explicit === 'mixed') return explicit;
+  if (kind === 'value' || kind === 'badge') return 'emoji-only';
+  if (kind === 'phrase') return 'label-only';
+  return 'mixed';
 }
 
 function getPrizeWheelLabel(prize: WheelPrize) {
@@ -97,30 +110,69 @@ function getTextTone(type: string) {
 export function buildWheelRenderContract(prizes: WheelPrize[]) {
   const segmentCount = Math.max(prizes.length, 1);
   const segmentAngle = 360 / segmentCount;
-  const labelRadius = segmentCount <= 5 ? 32 : segmentCount <= 8 ? 30 : 28;
-  const chipLabelLimit = segmentCount <= 6 ? 18 : segmentCount <= 8 ? 14 : 12;
-  const wheelLabelScale = segmentCount <= 5 ? 0.86 : segmentCount <= 8 ? 0.8 : 0.72;
-  const railLabelScale = segmentCount <= 5 ? 1 : 0.95;
-  const labelInset = segmentAngle >= 72 ? 8 : segmentAngle >= 45 ? 10 : 12;
+  const preset: WheelRenderContract['preset'] =
+    segmentCount === 5 ? 'five' : segmentCount === 6 ? 'six' : segmentCount === 8 ? 'eight' : segmentCount >= 10 ? 'tenPlus' : 'custom';
+
+  const labelRadius = preset === 'five' ? 122 : preset === 'six' ? 118 : preset === 'eight' ? 112 : preset === 'tenPlus' ? 104 : 114;
+  const chipLabelLimit = preset === 'five' ? 18 : preset === 'six' ? 16 : preset === 'eight' ? 14 : preset === 'tenPlus' ? 12 : 14;
+  const wheelLabelScale = preset === 'five' ? 0.9 : preset === 'six' ? 0.86 : preset === 'eight' ? 0.8 : preset === 'tenPlus' ? 0.72 : 0.82;
+  const railLabelScale = preset === 'five' ? 1 : preset === 'six' ? 0.98 : 0.96;
+  const labelInset = preset === 'five' ? 6 : preset === 'six' ? 8 : segmentAngle >= 45 ? 10 : 12;
 
   const segments = prizes.length ? prizes : getDefaultWheelPrizes();
+  const slotBiasByPreset: Record<WheelRenderContract['preset'], number[]> = {
+    five: [10, 6, 1, -6, -1],
+    six: [8, 5, 0, -4, -2, 1],
+    eight: [4, 3, 1, -2, -3, -1, 0, 2],
+    tenPlus: [2, 1, 0, -1, -2, -1, 0, 1, 2, -1, 0, 1],
+    custom: [],
+  };
 
   const decoratedSegments: WheelRenderSegment[] = segments.map((prize, index) => {
     const kind = getPrizeClass(prize);
+    const renderMode = getWheelRenderMode(prize, kind);
     const wheelLabelBase = getPrizeWheelLabel(prize);
     const wheelLabelBudget = segmentAngle >= 72 ? 12 : segmentAngle >= 45 ? 10 : 8;
     const glyph = getWheelPrizeGlyph(prize);
-    const wheelLabel = shortText(wheelLabelBase, kind === 'phrase' ? Math.min(11, wheelLabelBudget) : wheelLabelBudget);
+    const wheelLabel = shortText(wheelLabelBase, kind === 'phrase' ? Math.min(10, wheelLabelBudget) : wheelLabelBudget);
     const railLabel = shortText(getPrizeRailLabel(prize, wheelLabel), 24);
+    const showOnWheel = kind !== 'hidden';
     const labelPolicy: WheelLabelPolicy = {
       kind,
       glyph,
+      renderMode,
       wheelLabel,
       railLabel,
       maxChars: kind === 'phrase' ? Math.min(8, wheelLabelBudget) : wheelLabelBudget,
-      showOnWheel: kind !== 'hidden',
-      fontScale: kind === 'value' ? 0.88 : kind === 'badge' ? 0.84 : segmentAngle < 45 ? 0.64 : 0.72,
-      radiusShift: kind === 'value' ? 0.008 : kind === 'badge' ? -0.004 : 0.012,
+      showOnWheel,
+      fontScale:
+        renderMode === 'emoji-only'
+          ? kind === 'value'
+            ? 0.98
+            : kind === 'badge'
+              ? 0.94
+              : 0.9
+          : kind === 'value'
+            ? 0.92
+            : kind === 'badge'
+              ? 0.88
+              : segmentAngle < 45
+                ? 0.72
+                : 0.8,
+      radiusShift:
+        kind === 'value'
+          ? renderMode === 'emoji-only'
+            ? 14
+            : 10
+          : kind === 'badge'
+            ? renderMode === 'emoji-only'
+              ? 10
+              : 6
+            : kind === 'phrase'
+              ? renderMode === 'label-only'
+                ? -2
+                : 0
+              : 0,
       tone: getTone(prize.type, index),
       textTone: getTextTone(prize.type),
     };
@@ -139,6 +191,7 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
       displayLabel: wheelLabel,
       railLabel,
       showLabelOnWheel: labelPolicy.showOnWheel,
+      slotBias: slotBiasByPreset[preset][index % Math.max(slotBiasByPreset[preset].length, 1)] ?? 0,
     };
   });
 
@@ -150,6 +203,7 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
     railLabelScale,
     labelInset,
     centerLabel: '',
+    preset,
     segments: decoratedSegments,
   };
 }

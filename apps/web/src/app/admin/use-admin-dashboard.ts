@@ -46,6 +46,7 @@ export function useAdminDashboard() {
   const [prizeWheelLabel, setPrizeWheelLabel] = useState('');
   const [prizeRailLabel, setPrizeRailLabel] = useState('');
   const [prizeDescription, setPrizeDescription] = useState('');
+  const [prizeRenderMode, setPrizeRenderMode] = useState<'emoji-only' | 'label-only' | 'mixed'>('emoji-only');
   const [selectedWheelCampaignId, setSelectedWheelCampaignId] = useState('');
   const [wheelPrizes, setWheelPrizes] = useState<any[]>([]);
   const [wheelSpins, setWheelSpins] = useState<any[]>([]);
@@ -71,6 +72,7 @@ export function useAdminDashboard() {
   const [editPrizeWheelLabel, setEditPrizeWheelLabel] = useState('');
   const [editPrizeRailLabel, setEditPrizeRailLabel] = useState('');
   const [editPrizeDescription, setEditPrizeDescription] = useState('');
+  const [editPrizeRenderMode, setEditPrizeRenderMode] = useState<'emoji-only' | 'label-only' | 'mixed'>('emoji-only');
   const [editPrizeActive, setEditPrizeActive] = useState(true);
   const pageSize = 20;
 
@@ -226,6 +228,7 @@ export function useAdminDashboard() {
           emojiCount: prizeEmojiCount,
           deliveryMode: prizeDeliveryMode,
           deliveryTarget: prizeDeliveryTarget,
+          wheelRenderMode: prizeRenderMode,
           wheelLabel: prizeWheelLabel || null,
           railLabel: prizeRailLabel || null,
           description: prizeDescription || null,
@@ -251,6 +254,7 @@ export function useAdminDashboard() {
           emojiCount: editPrizeEmojiCount,
           deliveryMode: editPrizeDeliveryMode,
           deliveryTarget: editPrizeDeliveryTarget,
+          wheelRenderMode: editPrizeRenderMode,
           wheelLabel: editPrizeWheelLabel || null,
           railLabel: editPrizeRailLabel || null,
           description: editPrizeDescription || null,
@@ -359,6 +363,8 @@ export function useAdminDashboard() {
     setPrizeRailLabel,
     prizeDescription,
     setPrizeDescription,
+    prizeRenderMode,
+    setPrizeRenderMode,
     selectedWheelCampaignId,
     setSelectedWheelCampaignId,
     wheelPrizes,
@@ -406,6 +412,8 @@ export function useAdminDashboard() {
     setEditPrizeRailLabel,
     editPrizeDescription,
     setEditPrizeDescription,
+    editPrizeRenderMode,
+    setEditPrizeRenderMode,
     editPrizeActive,
     setEditPrizeActive,
     login,
