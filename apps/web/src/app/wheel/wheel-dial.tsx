@@ -1,26 +1,9 @@
 'use client';
 
-import { Box, Typography } from '@mui/material';
-import { useId } from 'react';
+import { Box, Stack, Typography } from '@mui/material';
 import type { CSSProperties } from 'react';
 import { getWheelSegmentAngle } from './wheel-engine';
 import type { WheelRenderSegment } from './wheel-contract';
-
-function polarToViewBox(angleDeg: number, radius: number, center = 50) {
-  const radians = (angleDeg * Math.PI) / 180;
-  const x = center + Math.cos(radians) * radius;
-  const y = center + Math.sin(radians) * radius;
-  return { x, y };
-}
-
-function svgArcPath(cx: number, cy: number, radius: number, startAngle: number, endAngle: number) {
-  const start = polarToViewBox(startAngle, radius, cx);
-  const end = polarToViewBox(endAngle, radius, cx);
-  const sweep = endAngle > startAngle ? 1 : 0;
-  const delta = Math.abs(endAngle - startAngle);
-  const largeArc = delta > 180 ? 1 : 0;
-  return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} ${sweep} ${end.x} ${end.y}`;
-}
 
 export function WheelDial({
   segments,
@@ -42,7 +25,6 @@ export function WheelDial({
   labelInset?: number;
 }) {
   const segmentAngle = getWheelSegmentAngle(segments.length);
-  const svgId = useId();
   const wheelStyle = {
     transform: `rotate(${rotation}deg)`,
     transition:
@@ -186,9 +168,16 @@ export function WheelDial({
           <Box sx={{ position: 'absolute', inset: 0, borderRadius: '50%', overflow: 'hidden' }}>
             {segments.map((segment, index) => {
               if (!segment.showLabelOnWheel) return null;
-              const start = index * segmentAngle - 90 + 7;
-              const end = (index + 1) * segmentAngle - 90 - 7;
-              const pathId = `${svgId}-label-${segment.id}`;
+              const centerAngle = index * segmentAngle + segmentAngle / 2 - 90;
+              const glyph = segment.glyph || segment.labelPolicy.glyph || '✦';
+              const tokenCount = Math.max(
+                1,
+                Math.min(
+                  Number((segment.metadata as any)?.emojiCount ?? segment.emojiCount ?? (segment.metadata as any)?.tokenCount ?? segment.labelPolicy.maxChars ?? 1),
+                  3,
+                ),
+              );
+              const tokenRow = Array.from({ length: tokenCount }).map(() => glyph).join(' ');
               return (
                 <Box
                   key={`${segment.id}-label`}
@@ -196,36 +185,59 @@ export function WheelDial({
                     position: 'absolute',
                     inset: 0,
                     pointerEvents: 'none',
-                    display: 'grid',
-                    placeItems: 'center',
                   }}
                 >
-                  <svg viewBox="0 0 100 100" width="100%" height="100%" style={{ overflow: 'visible' }} aria-hidden="true">
-                    <defs>
-                      <path id={pathId} d={svgArcPath(50, 50, labelRadius + segment.labelPolicy.radiusShift * 2, start, end)} />
-                    </defs>
-                    <text
-                      fill={segment.textTone}
-                      fontWeight={900}
-                      fontSize={`${0.6 * segment.labelPolicy.fontScale * wheelLabelScale}rem`}
-                      letterSpacing="-0.02em"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      paintOrder="stroke"
-                      stroke="rgba(0,0,0,0.28)"
-                      strokeWidth="1.5"
-                      lengthAdjust="spacingAndGlyphs"
-                      textLength={Math.max(12, 32 - labelInset * 1.2)}
-                      style={{
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      left: '50%',
+                      top: '50%',
+                      transform: `translate(-50%, -50%) rotate(${centerAngle}deg) translateY(-${labelRadius + labelInset}px) rotate(${-centerAngle}deg)`,
+                      display: 'grid',
+                      placeItems: 'center',
+                      gap: 0.25,
+                      width: 90,
+                      maxWidth: 90,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 0.25,
+                        color: segment.textTone,
+                        fontWeight: 900,
+                        fontSize: { xs: '0.96rem', sm: '1.05rem' },
+                        lineHeight: 1,
+                        letterSpacing: 0,
                         textShadow: '0 1px 4px rgba(0,0,0,0.18)',
                         filter: isSpinning ? 'drop-shadow(0 0 6px rgba(255,255,255,0.16))' : 'none',
+                        transform: `scale(${segment.labelPolicy.fontScale * wheelLabelScale})`,
                       }}
                     >
-                      <textPath href={`#${pathId}`} startOffset="50%" textAnchor="middle">
+                      {tokenRow}
+                    </Box>
+                    {segment.displayLabel ? (
+                      <Typography
+                        sx={{
+                          color: segment.textTone,
+                          fontWeight: 800,
+                          fontSize: { xs: '0.48rem', sm: '0.54rem' },
+                          lineHeight: 1,
+                          letterSpacing: '0.02em',
+                          opacity: 0.85,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: 84,
+                        }}
+                      >
                         {segment.displayLabel}
-                      </textPath>
-                    </text>
-                  </svg>
+                      </Typography>
+                    ) : null}
+                  </Box>
                 </Box>
               );
             })}
@@ -257,6 +269,16 @@ export function WheelDial({
               },
             }}
           >
+            {centerLabel ? (
+              <Stack spacing={0.2} alignItems="center" sx={{ color: '#3d2a05', px: 1, textAlign: 'center' }}>
+                <Typography sx={{ fontWeight: 900, fontSize: { xs: '0.62rem', sm: '0.72rem' }, letterSpacing: '0.32em', lineHeight: 1 }}>
+                  REVEAL
+                </Typography>
+                <Typography sx={{ fontWeight: 900, fontSize: { xs: '0.94rem', sm: '1.08rem' }, lineHeight: 1.05 }}>
+                  {centerLabel}
+                </Typography>
+              </Stack>
+            ) : null}
           </Box>
 
           <Box

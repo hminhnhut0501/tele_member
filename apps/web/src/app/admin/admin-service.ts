@@ -26,6 +26,7 @@ export function createAdminService(token: string | null) {
     updateWheelCampaign: client.adminUpdateWheelCampaign,
     deleteWheelCampaign: client.adminDeleteWheelCampaign,
     getWheelPrizes: client.adminGetWheelPrizes,
+    getWheelPreview: client.adminGetWheelPreview,
     createWheelPrize: client.adminCreateWheelPrize,
     updateWheelPrize: client.adminUpdateWheelPrize,
     deleteWheelPrize: client.adminDeleteWheelPrize,

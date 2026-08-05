@@ -225,6 +225,15 @@ app.get('/api/me/rewards', async (request, reply) => {
   return { rewards: await context.rewards.listMyRedemptions(user.id) };
 });
 
+app.get('/api/me/inbox', async (request, reply) => {
+  const payload = request.user as { telegramId?: string } | undefined;
+  const telegramId = payload?.telegramId;
+  if (!telegramId) return reply.code(401).send({ message: 'Unauthorized' });
+  const user = await context.points.getUserByTelegramId(telegramId);
+  if (!user) return { inbox: [] };
+  return { inbox: await context.rewards.listMyInbox(user.id) };
+});
+
 app.get('/api/me/spins', async (request, reply) => {
   const payload = request.user as { telegramId?: string } | undefined;
   const telegramId = payload?.telegramId;
@@ -368,6 +377,11 @@ app.delete('/api/admin/wheel/campaigns/:id', async (request) => {
 app.get('/api/admin/wheel/campaigns/:id/prizes', async (request) => {
   const params = z.object({ id: z.string().uuid() }).parse(request.params);
   return { prizes: await context.wheel.listCampaignPrizes(params.id) };
+});
+
+app.get('/api/admin/wheel/campaigns/:id/preview', async (request) => {
+  const params = z.object({ id: z.string().uuid() }).parse(request.params);
+  return await context.wheel.getCampaignPreview(params.id);
 });
 
 app.post('/api/admin/wheel/campaigns/:id/prizes', async (request) => {

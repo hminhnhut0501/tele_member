@@ -109,6 +109,47 @@ export const rewardRedemptionSchema = z.object({
   pointCost: z.number().int(),
   status: redemptionStatusSchema,
   metadata: z.record(z.string(), z.unknown()),
+  deliveryStatus: z.string(),
+  deliveryMode: z.string(),
+  deliveryTarget: z.string(),
+  deliveryPayload: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+});
+
+export const rewardInboxStatusSchema = z.enum(['new', 'delivered', 'claimed', 'expired', 'failed']);
+export const rewardInboxKindSchema = z.enum(['POINT', 'SPIN_TICKET', 'VOUCHER', 'VIP_CODE', 'ITEM', 'BADGE', 'NOTHING', 'CUSTOM']);
+
+export const rewardInboxSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  sourceType: z.enum(['wheel', 'reward_redemption', 'manual', 'checkin']),
+  sourceId: z.string().uuid().nullable(),
+  kind: rewardInboxKindSchema,
+  status: rewardInboxStatusSchema,
+  claimable: z.boolean(),
+  title: z.string(),
+  subtitle: z.string().nullable(),
+  payload: z.record(z.string(), z.unknown()),
+  claimUrl: z.string().nullable(),
+  expiresAt: z.string().nullable(),
+  viewedAt: z.string().nullable(),
+  claimedAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const rewardDeliveryLogSchema = z.object({
+  id: z.string().uuid(),
+  userId: z.string().uuid(),
+  sourceType: z.enum(['wheel', 'reward_redemption', 'manual', 'checkin']),
+  sourceId: z.string().uuid().nullable(),
+  rewardId: z.string().uuid().nullable(),
+  prizeId: z.string().uuid().nullable(),
+  deliveryMode: z.string(),
+  deliveryTarget: z.string(),
+  status: z.enum(['success', 'failed', 'pending']),
+  message: z.string().nullable(),
+  payload: z.record(z.string(), z.unknown()),
   createdAt: z.string(),
 });
 
@@ -185,6 +226,8 @@ export type TelegramProfile = z.infer<typeof telegramProfileSchema>;
 export type Reward = z.infer<typeof rewardSchema>;
 export type RewardCode = z.infer<typeof rewardCodeSchema>;
 export type RewardRedemption = z.infer<typeof rewardRedemptionSchema>;
+export type RewardInboxItem = z.infer<typeof rewardInboxSchema>;
+export type RewardDeliveryLog = z.infer<typeof rewardDeliveryLogSchema>;
 export type SpinWallet = z.infer<typeof spinWalletSchema>;
 export type SpinTransaction = z.infer<typeof spinTransactionSchema>;
 export type WheelCampaign = z.infer<typeof wheelCampaignSchema>;

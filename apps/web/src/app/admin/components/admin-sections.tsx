@@ -200,7 +200,29 @@ export function WheelSection(props: any) {
             <TextField label="Weight" type="number" value={props.prizeWeight} onChange={(e) => props.setPrizeWeight(Number(e.target.value))} />
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
               <TextField fullWidth label="Glyph / Emoji" value={props.prizeGlyph} onChange={(e) => props.setPrizeGlyph(e.target.value)} />
+              <TextField fullWidth label="Emoji count" type="number" value={props.prizeEmojiCount} onChange={(e) => props.setPrizeEmojiCount(Number(e.target.value))} />
               <TextField fullWidth label="Wheel label" value={props.prizeWheelLabel} onChange={(e) => props.setPrizeWheelLabel(e.target.value)} />
+            </Stack>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+              <FormControl fullWidth>
+                <InputLabel>Delivery mode</InputLabel>
+                <Select label="Delivery mode" value={props.prizeDeliveryMode} onChange={(e) => props.setPrizeDeliveryMode(e.target.value)}>
+                  <MenuItem value="immediate">Immediate</MenuItem>
+                  <MenuItem value="inbox">Inbox</MenuItem>
+                  <MenuItem value="claim_required">Claim required</MenuItem>
+                  <MenuItem value="external_code">External code</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Delivery target</InputLabel>
+                <Select label="Delivery target" value={props.prizeDeliveryTarget} onChange={(e) => props.setPrizeDeliveryTarget(e.target.value)}>
+                  <MenuItem value="point_wallet">Point wallet</MenuItem>
+                  <MenuItem value="spin_wallet">Spin wallet</MenuItem>
+                  <MenuItem value="reward_inbox">Reward inbox</MenuItem>
+                  <MenuItem value="code_pool">Code pool</MenuItem>
+                  <MenuItem value="manual">Manual</MenuItem>
+                </Select>
+              </FormControl>
             </Stack>
             <TextField label="Rail label" value={props.prizeRailLabel} onChange={(e) => props.setPrizeRailLabel(e.target.value)} />
             <TextField label="Description" value={props.prizeDescription} onChange={(e) => props.setPrizeDescription(e.target.value)} multiline minRows={2} />
@@ -229,7 +251,7 @@ export function WheelSection(props: any) {
                       {prize.type} • weight {prize.weight} • stock {prize.stock ?? '∞'} • {prize.is_active ? 'Active' : 'Inactive'}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {String(prize.metadata?.wheelLabel ?? prize.name)} / {String(prize.metadata?.railLabel ?? prize.name)}
+                      {String(prize.metadata?.wheelLabel ?? prize.name)} / {String(prize.metadata?.railLabel ?? prize.name)} / {String(prize.metadata?.deliveryMode ?? 'immediate')} / {String(prize.metadata?.deliveryTarget ?? 'reward_inbox')}
                     </Typography>
                   </Box>
                   <Button
@@ -242,6 +264,9 @@ export function WheelSection(props: any) {
                       props.setEditPrizeWeight(prize.weight);
                       props.setEditPrizeStock(prize.stock === null ? '' : String(prize.stock));
                       props.setEditPrizeGlyph(String(prize.metadata?.glyph ?? prize.metadata?.wheelGlyph ?? prize.metadata?.icon ?? prize.metadata?.emoji ?? '⭐'));
+                      props.setEditPrizeEmojiCount(Number(prize.metadata?.emojiCount ?? 1));
+                      props.setEditPrizeDeliveryMode(String(prize.metadata?.deliveryMode ?? 'immediate'));
+                      props.setEditPrizeDeliveryTarget(String(prize.metadata?.deliveryTarget ?? 'point_wallet'));
                       props.setEditPrizeWheelLabel(String(prize.metadata?.wheelLabel ?? ''));
                       props.setEditPrizeRailLabel(String(prize.metadata?.railLabel ?? ''));
                       props.setEditPrizeDescription(String(prize.metadata?.description ?? ''));
@@ -268,6 +293,48 @@ export function WheelSection(props: any) {
                 </Typography>
               </Box>
             ))}
+          </Stack>
+        </CardContent>
+      </AppSection>
+
+      <AppSection title="Probability preview" subtitle="Xác suất theo weight và trạng thái active của campaign đang chọn." accent="violet">
+        <CardContent>
+          <Stack spacing={1.5}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="body2" color="text.secondary">
+                Total weight: <b>{props.wheelPreview?.totalWeight ?? 0}</b>
+              </Typography>
+              <Chip label={`${props.wheelPreview?.prizes?.length ?? 0} prizes`} size="small" />
+            </Stack>
+            <Stack spacing={1}>
+              {(props.wheelPreview?.prizes ?? props.wheelPrizes).map((prize: any) => (
+                <Box
+                  key={prize.id}
+                  sx={{
+                    p: 1.25,
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: '#fff',
+                  }}
+                >
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
+                    <Box>
+                      <Typography fontWeight={800}>
+                        {String(prize.glyph ?? prize.metadata?.glyph ?? '✦')} {prize.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {prize.type} • weight {prize.weight} • chance {Number(prize.chance ?? 0).toFixed(2)}%
+                      </Typography>
+                    </Box>
+                    <Stack direction="row" spacing={1}>
+                      <Chip label={String(prize.deliveryMode ?? prize.metadata?.deliveryMode ?? 'immediate')} size="small" variant="outlined" />
+                      <Chip label={String(prize.deliveryTarget ?? prize.metadata?.deliveryTarget ?? 'reward_inbox')} size="small" variant="outlined" />
+                    </Stack>
+                  </Stack>
+                </Box>
+              ))}
+            </Stack>
           </Stack>
         </CardContent>
       </AppSection>
@@ -302,6 +369,28 @@ export function WheelSection(props: any) {
             <TextField label="Weight" type="number" value={props.editPrizeWeight} onChange={(e) => props.setEditPrizeWeight(Number(e.target.value))} />
             <TextField label="Stock" value={props.editPrizeStock} onChange={(e) => props.setEditPrizeStock(e.target.value)} />
             <TextField label="Glyph / Emoji" value={props.editPrizeGlyph} onChange={(e) => props.setEditPrizeGlyph(e.target.value)} />
+            <TextField label="Emoji count" type="number" value={props.editPrizeEmojiCount} onChange={(e) => props.setEditPrizeEmojiCount(Number(e.target.value))} />
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+              <FormControl fullWidth>
+                <InputLabel>Delivery mode</InputLabel>
+                <Select label="Delivery mode" value={props.editPrizeDeliveryMode} onChange={(e) => props.setEditPrizeDeliveryMode(e.target.value)}>
+                  <MenuItem value="immediate">Immediate</MenuItem>
+                  <MenuItem value="inbox">Inbox</MenuItem>
+                  <MenuItem value="claim_required">Claim required</MenuItem>
+                  <MenuItem value="external_code">External code</MenuItem>
+                </Select>
+              </FormControl>
+              <FormControl fullWidth>
+                <InputLabel>Delivery target</InputLabel>
+                <Select label="Delivery target" value={props.editPrizeDeliveryTarget} onChange={(e) => props.setEditPrizeDeliveryTarget(e.target.value)}>
+                  <MenuItem value="point_wallet">Point wallet</MenuItem>
+                  <MenuItem value="spin_wallet">Spin wallet</MenuItem>
+                  <MenuItem value="reward_inbox">Reward inbox</MenuItem>
+                  <MenuItem value="code_pool">Code pool</MenuItem>
+                  <MenuItem value="manual">Manual</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
             <TextField label="Wheel label" value={props.editPrizeWheelLabel} onChange={(e) => props.setEditPrizeWheelLabel(e.target.value)} />
             <TextField label="Rail label" value={props.editPrizeRailLabel} onChange={(e) => props.setEditPrizeRailLabel(e.target.value)} />
             <TextField label="Description" value={props.editPrizeDescription} onChange={(e) => props.setEditPrizeDescription(e.target.value)} multiline minRows={2} />

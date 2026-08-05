@@ -40,12 +40,16 @@ export function useAdminDashboard() {
   const [prizeType, setPrizeType] = useState('POINT');
   const [prizeWeight, setPrizeWeight] = useState(1);
   const [prizeGlyph, setPrizeGlyph] = useState('⭐');
+  const [prizeEmojiCount, setPrizeEmojiCount] = useState(1);
+  const [prizeDeliveryMode, setPrizeDeliveryMode] = useState('immediate');
+  const [prizeDeliveryTarget, setPrizeDeliveryTarget] = useState('point_wallet');
   const [prizeWheelLabel, setPrizeWheelLabel] = useState('');
   const [prizeRailLabel, setPrizeRailLabel] = useState('');
   const [prizeDescription, setPrizeDescription] = useState('');
   const [selectedWheelCampaignId, setSelectedWheelCampaignId] = useState('');
   const [wheelPrizes, setWheelPrizes] = useState<any[]>([]);
   const [wheelSpins, setWheelSpins] = useState<any[]>([]);
+  const [wheelPreview, setWheelPreview] = useState<any>(null);
   const [editingReward, setEditingReward] = useState<any>(null);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
   const [editingPrize, setEditingPrize] = useState<any>(null);
@@ -61,6 +65,9 @@ export function useAdminDashboard() {
   const [editPrizeWeight, setEditPrizeWeight] = useState(1);
   const [editPrizeStock, setEditPrizeStock] = useState<string>('');
   const [editPrizeGlyph, setEditPrizeGlyph] = useState('⭐');
+  const [editPrizeEmojiCount, setEditPrizeEmojiCount] = useState(1);
+  const [editPrizeDeliveryMode, setEditPrizeDeliveryMode] = useState('immediate');
+  const [editPrizeDeliveryTarget, setEditPrizeDeliveryTarget] = useState('point_wallet');
   const [editPrizeWheelLabel, setEditPrizeWheelLabel] = useState('');
   const [editPrizeRailLabel, setEditPrizeRailLabel] = useState('');
   const [editPrizeDescription, setEditPrizeDescription] = useState('');
@@ -89,7 +96,18 @@ export function useAdminDashboard() {
 
   useEffect(() => {
     if (!token || !selectedWheelCampaignId) return;
-    service.getWheelPrizes(selectedWheelCampaignId).then((data) => setWheelPrizes(data.prizes ?? [])).catch(() => setWheelPrizes([]));
+    Promise.all([
+      service.getWheelPrizes(selectedWheelCampaignId),
+      service.getWheelPreview(selectedWheelCampaignId),
+    ])
+      .then(([prizeData, previewData]) => {
+        setWheelPrizes(prizeData.prizes ?? []);
+        setWheelPreview(previewData ?? null);
+      })
+      .catch(() => {
+        setWheelPrizes([]);
+        setWheelPreview(null);
+      });
   }, [selectedWheelCampaignId, service, token]);
 
   useEffect(() => {
@@ -203,15 +221,20 @@ export function useAdminDashboard() {
       weight: prizeWeight,
       stock: null,
       isActive: true,
-      metadata: {
-        glyph: prizeGlyph,
-        wheelLabel: prizeWheelLabel || null,
-        railLabel: prizeRailLabel || null,
-        description: prizeDescription || null,
-      },
+        metadata: {
+          glyph: prizeGlyph,
+          emojiCount: prizeEmojiCount,
+          deliveryMode: prizeDeliveryMode,
+          deliveryTarget: prizeDeliveryTarget,
+          wheelLabel: prizeWheelLabel || null,
+          railLabel: prizeRailLabel || null,
+          description: prizeDescription || null,
+        },
     });
     const data = await service.getWheelPrizes(prizeCampaignId);
     setWheelPrizes(data.prizes ?? []);
+    const preview = await service.getWheelPreview(prizeCampaignId);
+    setWheelPreview(preview ?? null);
   }
 
   async function updatePrize() {
@@ -222,16 +245,21 @@ export function useAdminDashboard() {
       weight: editPrizeWeight,
       stock: editPrizeStock === '' ? null : Number(editPrizeStock),
       isActive: editPrizeActive,
-      metadata: {
-        ...(editingPrize.metadata ?? {}),
-        glyph: editPrizeGlyph,
-        wheelLabel: editPrizeWheelLabel || null,
-        railLabel: editPrizeRailLabel || null,
-        description: editPrizeDescription || null,
-      },
+        metadata: {
+          ...(editingPrize.metadata ?? {}),
+          glyph: editPrizeGlyph,
+          emojiCount: editPrizeEmojiCount,
+          deliveryMode: editPrizeDeliveryMode,
+          deliveryTarget: editPrizeDeliveryTarget,
+          wheelLabel: editPrizeWheelLabel || null,
+          railLabel: editPrizeRailLabel || null,
+          description: editPrizeDescription || null,
+        },
     });
     const data = await service.getWheelPrizes(selectedWheelCampaignId || editingPrize.campaign_id);
     setWheelPrizes(data.prizes ?? []);
+    const preview = await service.getWheelPreview(selectedWheelCampaignId || editingPrize.campaign_id);
+    setWheelPreview(preview ?? null);
     setEditingPrize(null);
   }
 
@@ -319,6 +347,12 @@ export function useAdminDashboard() {
     setPrizeWeight,
     prizeGlyph,
     setPrizeGlyph,
+    prizeEmojiCount,
+    setPrizeEmojiCount,
+    prizeDeliveryMode,
+    setPrizeDeliveryMode,
+    prizeDeliveryTarget,
+    setPrizeDeliveryTarget,
     prizeWheelLabel,
     setPrizeWheelLabel,
     prizeRailLabel,
@@ -329,6 +363,7 @@ export function useAdminDashboard() {
     setSelectedWheelCampaignId,
     wheelPrizes,
     wheelSpins,
+    wheelPreview,
     editingReward,
     setEditingReward,
     editingCampaign,
@@ -359,6 +394,12 @@ export function useAdminDashboard() {
     setEditPrizeStock,
     editPrizeGlyph,
     setEditPrizeGlyph,
+    editPrizeEmojiCount,
+    setEditPrizeEmojiCount,
+    editPrizeDeliveryMode,
+    setEditPrizeDeliveryMode,
+    editPrizeDeliveryTarget,
+    setEditPrizeDeliveryTarget,
     editPrizeWheelLabel,
     setEditPrizeWheelLabel,
     editPrizeRailLabel,

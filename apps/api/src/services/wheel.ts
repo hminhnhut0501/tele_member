@@ -54,6 +54,14 @@ export function createWheelService(supabase: any) {
     return data;
   }
 
+  async function getCampaignPreview(campaignId: string) {
+    const { data, error } = await supabase.rpc('wheel_campaign_probability_preview', {
+      p_campaign_id: campaignId,
+    });
+    if (error) throw error;
+    return data ?? null;
+  }
+
   async function createCampaign(input: {
     name: string;
     description?: string | null;
@@ -143,5 +151,5 @@ export function createWheelService(supabase: any) {
     return data;
   }
 
-  return { getCurrentCampaign, getCampaign, listCampaignPrizes, spin, listSpinHistory, listAdminSpins, createCampaign, updateCampaign, createPrize, updatePrize };
+  return { getCurrentCampaign, getCampaign, listCampaignPrizes, spin, listSpinHistory, listAdminSpins, getCampaignPreview, createCampaign, updateCampaign, createPrize, updatePrize };
 }

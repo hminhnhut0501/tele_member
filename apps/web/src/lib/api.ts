@@ -62,6 +62,7 @@ export function apiClient(token?: string | null) {
     getReward: (id: string) => request(`/api/rewards/${id}`, {}, token),
     redeemReward: (id: string) => request(`/api/rewards/${id}/redeem`, { method: 'POST' }, token),
     getMyRewards: () => request('/api/me/rewards', {}, token),
+    getMyInbox: () => request('/api/me/inbox', {}, token),
     getMySpins: () => request('/api/me/spins', {}, token),
     getSpinTransactions: () => request('/api/me/spin-transactions', {}, token),
     getWheelCurrent: () => request('/api/wheel/current', {}, token),
@@ -91,6 +92,7 @@ export function apiClient(token?: string | null) {
       request(`/api/admin/wheel/campaigns/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }, token),
     adminDeleteWheelCampaign: (id: string) => request(`/api/admin/wheel/campaigns/${id}`, { method: 'DELETE' }, token),
     adminGetWheelPrizes: (id: string) => request(`/api/admin/wheel/campaigns/${id}/prizes`, {}, token),
+    adminGetWheelPreview: (id: string) => request(`/api/admin/wheel/campaigns/${id}/preview`, {}, token),
     adminCreateWheelPrize: (id: string, payload: Record<string, unknown>) =>
       request(`/api/admin/wheel/campaigns/${id}/prizes`, { method: 'POST', body: JSON.stringify(payload) }, token),
     adminUpdateWheelPrize: (id: string, payload: Record<string, unknown>) =>

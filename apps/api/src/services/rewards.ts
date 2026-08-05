@@ -25,7 +25,16 @@ export function createRewardService(supabase: any) {
   async function listMyRedemptions(userId: string) {
     const { data = [] } = await supabase
       .from('reward_redemptions')
-      .select('id, user_id, reward_id, code_id, point_cost, status, metadata, created_at, rewards(name, type), reward_codes(code)')
+      .select('id, user_id, reward_id, code_id, point_cost, status, metadata, delivery_status, delivery_mode, delivery_target, delivery_payload, created_at, rewards(name, type), reward_codes(code)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    return data;
+  }
+
+  async function listMyInbox(userId: string) {
+    const { data = [] } = await supabase
+      .from('reward_inbox_items')
+      .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     return data;
@@ -117,5 +126,5 @@ export function createRewardService(supabase: any) {
     return data;
   }
 
-  return { listRewards, getReward, redeemReward, listMyRedemptions, listAdminRedemptions, createReward, updateReward, importCodes, listCodes };
+  return { listRewards, getReward, redeemReward, listMyRedemptions, listMyInbox, listAdminRedemptions, createReward, updateReward, importCodes, listCodes };
 }

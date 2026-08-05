@@ -18,6 +18,7 @@ export type WheelSegment = {
   name: string;
   compactName: string;
   glyph: string;
+  emojiCount?: number;
   type: string;
   weight: number;
   tone: string;
@@ -41,7 +42,9 @@ export function getWheelPrizeGlyph(prize: Pick<WheelPrize, 'type' | 'metadata'>)
   if (type === 'VOUCHER') return '🎁';
   if (type === 'VIP_CODE') return '👑';
   if (type === 'NOTHING') return '😢';
-  return '•';
+  if (type === 'ITEM') return '🧩';
+  if (type === 'BADGE') return '💠';
+  return '✦';
 }
 
 export function getWheelPrizeShortLabel(prize: Pick<WheelPrize, 'name' | 'type' | 'metadata'>) {
@@ -64,6 +67,7 @@ export function buildWheelSegments(prizes: WheelPrize[]) {
     name: normalizeText(prize.name || prize.type || 'Prize'),
     compactName: normalizeText(prize.name || prize.type || 'Prize'),
     glyph: getWheelPrizeGlyph(prize),
+    emojiCount: Number((prize.metadata ? (prize.metadata as Record<string, unknown>).emojiCount : undefined) ?? 1),
     type: prize.type,
     weight: prize.weight,
     tone: index % 2 === 0 ? '#2f64e4' : '#4b7bff',
