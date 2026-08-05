@@ -1,9 +1,10 @@
-import type { WheelPrize, WheelSegment } from './wheel-model';
+import { getWheelPrizeGlyph, getWheelPrizeShortLabel, type WheelPrize, type WheelSegment } from './wheel-model';
 
 export type WheelLabelKind = 'value' | 'badge' | 'phrase' | 'hidden';
 
 export type WheelLabelPolicy = {
   kind: WheelLabelKind;
+  glyph: string;
   wheelLabel: string;
   railLabel: string;
   maxChars: number;
@@ -53,27 +54,29 @@ function getPrizeClass(prize: WheelPrize) {
 
 function getPrizeWheelLabel(prize: WheelPrize) {
   const type = String(prize.type ?? '').toUpperCase();
+  const glyph = getWheelPrizeGlyph(prize);
   if (type === 'POINT') {
     const amount = prize.metadata?.points ?? prize.metadata?.point_amount ?? prize.metadata?.value;
-    return amount ? `✦${amount}` : '✦';
+    return amount ? `${glyph}${amount}` : glyph;
   }
-  if (type === 'SPIN_TICKET') return '⟲1';
-  if (type === 'VOUCHER') return '✉';
-  if (type === 'VIP_CODE') return '⛭';
-  if (type === 'NOTHING') return '·';
-  return prize.name || '•';
+  if (type === 'SPIN_TICKET') return glyph || '⟲';
+  if (type === 'VOUCHER') return glyph || '🎁';
+  if (type === 'VIP_CODE') return glyph || '👑';
+  if (type === 'NOTHING') return glyph || '😢';
+  return glyph || prize.name || '•';
 }
 
 function getPrizeRailLabel(prize: WheelPrize, fallbackWheelLabel: string) {
   const type = String(prize.type ?? '').toUpperCase();
+  const glyph = getWheelPrizeGlyph(prize);
   if (type === 'POINT') {
     const amount = prize.metadata?.points ?? prize.metadata?.point_amount ?? prize.metadata?.value;
-    return amount ? `${amount} điểm` : 'Điểm';
+    return amount ? `${glyph} ${amount} điểm` : `${glyph} Điểm`;
   }
-  if (type === 'SPIN_TICKET') return '1 lượt quay';
-  if (type === 'VOUCHER') return prize.name || 'Voucher';
-  if (type === 'VIP_CODE') return prize.name || 'VIP';
-  if (type === 'NOTHING') return 'Không trúng';
+  if (type === 'SPIN_TICKET') return prize.name || `${glyph} 1 lượt quay`;
+  if (type === 'VOUCHER') return prize.name || `${glyph} Voucher`;
+  if (type === 'VIP_CODE') return prize.name || `${glyph} VIP`;
+  if (type === 'NOTHING') return prize.name || `${glyph} Không trúng`;
   return prize.name || fallbackWheelLabel;
 }
 
@@ -106,15 +109,17 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
     const kind = getPrizeClass(prize);
     const wheelLabelBase = getPrizeWheelLabel(prize);
     const wheelLabelBudget = segmentAngle >= 72 ? 12 : segmentAngle >= 45 ? 10 : 8;
+    const glyph = getWheelPrizeGlyph(prize);
     const wheelLabel = shortText(wheelLabelBase, kind === 'phrase' ? Math.min(11, wheelLabelBudget) : wheelLabelBudget);
     const railLabel = shortText(getPrizeRailLabel(prize, wheelLabel), 24);
     const labelPolicy: WheelLabelPolicy = {
       kind,
+      glyph,
       wheelLabel,
       railLabel,
       maxChars: kind === 'phrase' ? Math.min(8, wheelLabelBudget) : wheelLabelBudget,
       showOnWheel: kind !== 'hidden',
-      fontScale: kind === 'value' ? 0.9 : kind === 'badge' ? 0.84 : segmentAngle < 45 ? 0.68 : 0.76,
+      fontScale: kind === 'value' ? 0.88 : kind === 'badge' ? 0.84 : segmentAngle < 45 ? 0.64 : 0.72,
       radiusShift: kind === 'value' ? 0.008 : kind === 'badge' ? -0.004 : 0.012,
       tone: getTone(prize.type, index),
       textTone: getTextTone(prize.type),
@@ -124,6 +129,7 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
       id: prize.id,
       name: normalizeText(prize.name || wheelLabel),
       compactName: wheelLabel,
+      glyph,
       type: prize.type,
       weight: prize.weight,
       tone: labelPolicy.tone,

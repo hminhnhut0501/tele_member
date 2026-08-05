@@ -39,8 +39,16 @@ export function useAdminDashboard() {
   const [prizeName, setPrizeName] = useState('');
   const [prizeType, setPrizeType] = useState('POINT');
   const [prizeWeight, setPrizeWeight] = useState(1);
+  const [prizeGlyph, setPrizeGlyph] = useState('⭐');
+  const [prizeWheelLabel, setPrizeWheelLabel] = useState('');
+  const [prizeRailLabel, setPrizeRailLabel] = useState('');
+  const [prizeDescription, setPrizeDescription] = useState('');
+  const [selectedWheelCampaignId, setSelectedWheelCampaignId] = useState('');
+  const [wheelPrizes, setWheelPrizes] = useState<any[]>([]);
+  const [wheelSpins, setWheelSpins] = useState<any[]>([]);
   const [editingReward, setEditingReward] = useState<any>(null);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
+  const [editingPrize, setEditingPrize] = useState<any>(null);
   const [editRewardName, setEditRewardName] = useState('');
   const [editRewardType, setEditRewardType] = useState('VOUCHER');
   const [editRewardPointCost, setEditRewardPointCost] = useState(0);
@@ -48,6 +56,15 @@ export function useAdminDashboard() {
   const [editCampaignName, setEditCampaignName] = useState('');
   const [editCampaignDescription, setEditCampaignDescription] = useState('');
   const [editCampaignActive, setEditCampaignActive] = useState(false);
+  const [editPrizeName, setEditPrizeName] = useState('');
+  const [editPrizeType, setEditPrizeType] = useState('POINT');
+  const [editPrizeWeight, setEditPrizeWeight] = useState(1);
+  const [editPrizeStock, setEditPrizeStock] = useState<string>('');
+  const [editPrizeGlyph, setEditPrizeGlyph] = useState('⭐');
+  const [editPrizeWheelLabel, setEditPrizeWheelLabel] = useState('');
+  const [editPrizeRailLabel, setEditPrizeRailLabel] = useState('');
+  const [editPrizeDescription, setEditPrizeDescription] = useState('');
+  const [editPrizeActive, setEditPrizeActive] = useState(true);
   const pageSize = 20;
 
   const service = useMemo(() => createAdminService(token), [token]);
@@ -63,8 +80,22 @@ export function useAdminDashboard() {
     service.getTransactions(search, page * pageSize, pageSize).then((data) => setTransactions(data.transactions ?? data)).catch((err) => setError(String(err)));
     service.getAuditLogs(page * pageSize, pageSize).then((data) => setAuditLogs(data.logs ?? data)).catch((err) => setError(String(err)));
     service.getRewards().then((data) => setRewards(data.rewards ?? [])).catch(() => {});
-    service.getWheelCampaigns().then((data) => setCampaigns(data.campaigns ?? [])).catch(() => {});
+    service.getWheelCampaigns().then((data) => {
+      const nextCampaigns = data.campaigns ?? [];
+      setCampaigns(nextCampaigns);
+      setSelectedWheelCampaignId((current) => current || nextCampaigns[0]?.id || '');
+    }).catch(() => {});
   }, [page, pageSize, search, service, token]);
+
+  useEffect(() => {
+    if (!token || !selectedWheelCampaignId) return;
+    service.getWheelPrizes(selectedWheelCampaignId).then((data) => setWheelPrizes(data.prizes ?? [])).catch(() => setWheelPrizes([]));
+  }, [selectedWheelCampaignId, service, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    service.getWheelSpins().then((data) => setWheelSpins(data.spins ?? [])).catch(() => setWheelSpins([]));
+  }, [service, token]);
 
   async function login() {
     try {
@@ -172,8 +203,36 @@ export function useAdminDashboard() {
       weight: prizeWeight,
       stock: null,
       isActive: true,
-      metadata: {},
+      metadata: {
+        glyph: prizeGlyph,
+        wheelLabel: prizeWheelLabel || null,
+        railLabel: prizeRailLabel || null,
+        description: prizeDescription || null,
+      },
     });
+    const data = await service.getWheelPrizes(prizeCampaignId);
+    setWheelPrizes(data.prizes ?? []);
+  }
+
+  async function updatePrize() {
+    if (!editingPrize) return;
+    await service.updateWheelPrize(editingPrize.id, {
+      name: editPrizeName,
+      type: editPrizeType,
+      weight: editPrizeWeight,
+      stock: editPrizeStock === '' ? null : Number(editPrizeStock),
+      isActive: editPrizeActive,
+      metadata: {
+        ...(editingPrize.metadata ?? {}),
+        glyph: editPrizeGlyph,
+        wheelLabel: editPrizeWheelLabel || null,
+        railLabel: editPrizeRailLabel || null,
+        description: editPrizeDescription || null,
+      },
+    });
+    const data = await service.getWheelPrizes(selectedWheelCampaignId || editingPrize.campaign_id);
+    setWheelPrizes(data.prizes ?? []);
+    setEditingPrize(null);
   }
 
   async function updateReward() {
@@ -258,10 +317,24 @@ export function useAdminDashboard() {
     setPrizeType,
     prizeWeight,
     setPrizeWeight,
+    prizeGlyph,
+    setPrizeGlyph,
+    prizeWheelLabel,
+    setPrizeWheelLabel,
+    prizeRailLabel,
+    setPrizeRailLabel,
+    prizeDescription,
+    setPrizeDescription,
+    selectedWheelCampaignId,
+    setSelectedWheelCampaignId,
+    wheelPrizes,
+    wheelSpins,
     editingReward,
     setEditingReward,
     editingCampaign,
     setEditingCampaign,
+    editingPrize,
+    setEditingPrize,
     editRewardName,
     setEditRewardName,
     editRewardType,
@@ -276,16 +349,43 @@ export function useAdminDashboard() {
     setEditCampaignDescription,
     editCampaignActive,
     setEditCampaignActive,
+    editPrizeName,
+    setEditPrizeName,
+    editPrizeType,
+    setEditPrizeType,
+    editPrizeWeight,
+    setEditPrizeWeight,
+    editPrizeStock,
+    setEditPrizeStock,
+    editPrizeGlyph,
+    setEditPrizeGlyph,
+    editPrizeWheelLabel,
+    setEditPrizeWheelLabel,
+    editPrizeRailLabel,
+    setEditPrizeRailLabel,
+    editPrizeDescription,
+    setEditPrizeDescription,
+    editPrizeActive,
+    setEditPrizeActive,
     login,
     adjustPoints,
     openUserAdjust,
     submitUserAdjust,
     refreshDebug,
+    handleDebugEnv: refreshDebug,
     createReward,
+    handleCreateReward: createReward,
     createCampaign,
+    handleCreateCampaign: createCampaign,
     importCodes,
+    handleImportCodes: importCodes,
     createPrize,
+    handleCreatePrize: createPrize,
+    updatePrize,
+    handleUpdatePrize: updatePrize,
     updateReward,
+    handleUpdateReward: updateReward,
     updateCampaign,
+    handleUpdateCampaign: updateCampaign,
   };
 }

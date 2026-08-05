@@ -17,6 +17,7 @@ export type WheelSegment = {
   id: string;
   name: string;
   compactName: string;
+  glyph: string;
   type: string;
   weight: number;
   tone: string;
@@ -30,16 +31,42 @@ function normalizeText(value: string) {
     .trim();
 }
 
+export function getWheelPrizeGlyph(prize: Pick<WheelPrize, 'type' | 'metadata'>) {
+  const type = String(prize.type ?? '').toUpperCase();
+  const meta = (prize.metadata ?? {}) as Record<string, unknown>;
+  const glyph = normalizeText(String(meta.glyph ?? meta.wheelGlyph ?? meta.icon ?? meta.emoji ?? '✦'));
+  if (glyph) return glyph;
+  if (type === 'POINT') return '⭐';
+  if (type === 'SPIN_TICKET') return '🎞';
+  if (type === 'VOUCHER') return '🎁';
+  if (type === 'VIP_CODE') return '👑';
+  if (type === 'NOTHING') return '😢';
+  return '•';
+}
+
+export function getWheelPrizeShortLabel(prize: Pick<WheelPrize, 'name' | 'type' | 'metadata'>) {
+  const meta = (prize.metadata ?? {}) as Record<string, unknown>;
+  const glyph = getWheelPrizeGlyph(prize);
+  const type = String(prize.type ?? '').toUpperCase();
+  if (type === 'POINT') {
+    const amount = meta.points ?? meta.point_amount ?? meta.value;
+    return amount ? `${glyph} ${amount}` : glyph;
+  }
+  return normalizeText(prize.name || glyph);
+}
+
 export function buildWheelSegments(prizes: WheelPrize[]) {
   const source = prizes.length ? prizes : getDefaultWheelPrizes();
 
   return source.map((prize, index) => ({
+    ...(prize.metadata ? {} : {}),
     id: prize.id,
     name: normalizeText(prize.name || prize.type || 'Prize'),
     compactName: normalizeText(prize.name || prize.type || 'Prize'),
+    glyph: getWheelPrizeGlyph(prize),
     type: prize.type,
     weight: prize.weight,
-    tone: index % 2 === 0 ? '#294fc2' : '#2f64e4',
+    tone: index % 2 === 0 ? '#2f64e4' : '#4b7bff',
     textTone: '#eef5ff',
     metadata: prize.metadata ?? {},
   }));
@@ -59,10 +86,10 @@ export function getWheelDefaultOutcomeLabel(name?: string | null) {
 
 export function getDefaultWheelPrizes() {
   return [
-    { id: 'demo-point-10', name: '10đ', type: 'POINT', weight: 4, metadata: { points: 10 } },
-    { id: 'demo-spin-1', name: '+1 spin', type: 'SPIN_TICKET', weight: 3, metadata: {} },
-    { id: 'demo-point-25', name: '25đ', type: 'POINT', weight: 2, metadata: { points: 25 } },
-    { id: 'demo-voucher', name: 'Voucher', type: 'VOUCHER', weight: 1, metadata: {} },
-    { id: 'demo-lose', name: 'Không trúng', type: 'CUSTOM', weight: 1, metadata: {} },
+    { id: 'demo-point-10', name: '10 điểm', type: 'POINT', weight: 4, metadata: { points: 10, glyph: '⭐' } },
+    { id: 'demo-spin-1', name: '+1 lượt quay', type: 'SPIN_TICKET', weight: 3, metadata: { glyph: '🎞' } },
+    { id: 'demo-point-25', name: '25 điểm', type: 'POINT', weight: 2, metadata: { points: 25, glyph: '⭐' } },
+    { id: 'demo-voucher', name: 'Voucher', type: 'VOUCHER', weight: 1, metadata: { glyph: '🎁' } },
+    { id: 'demo-lose', name: 'Không trúng', type: 'CUSTOM', weight: 1, metadata: { glyph: '😢' } },
   ];
 }

@@ -7,10 +7,12 @@ import { PageShell } from '../shared-ui';
 import { WheelDial } from './wheel-dial';
 import { buildWheelRenderContract } from './wheel-contract';
 import type { WheelPrize } from './wheel-model';
+import { WheelHistoryRail, WheelRewardRail } from './wheel-rail';
 
 export default function WheelPage() {
   const [token, setToken] = useState<string | null>(null);
   const [prizes, setPrizes] = useState<WheelPrize[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
   const [spins, setSpins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
@@ -32,11 +34,12 @@ export default function WheelPage() {
     let cancelled = false;
     setLoading(true);
 
-    Promise.all([client.getWheelCurrent(), client.getMySpins()])
-      .then(([wheel, spinData]) => {
+    Promise.all([client.getWheelCurrent(), client.getMySpins(), client.getWheelHistory()])
+      .then(([wheel, spinData, historyData]) => {
         if (cancelled) return;
         setPrizes(((wheel?.prizes ?? []) as WheelPrize[]) ?? []);
         setSpins(Number(spinData?.balance ?? 0));
+        setHistory(((historyData?.spins ?? []) as any[]) ?? []);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -76,6 +79,8 @@ export default function WheelPage() {
 
       const updatedSpins = await client.getMySpins();
       setSpins(Number(updatedSpins?.balance ?? 0));
+      const refreshedHistory = await client.getWheelHistory();
+      setHistory(((refreshedHistory?.spins ?? []) as any[]) ?? []);
     } catch (err) {
       setSpinPhase('idle');
     } finally {
@@ -99,6 +104,28 @@ export default function WheelPage() {
         />
 
         <Stack spacing={1.5} sx={{ position: 'relative', alignItems: 'center' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: 1,
+              alignItems: 'center',
+              width: 'min(92vw, 560px)',
+              px: 1,
+              py: 0.8,
+              borderRadius: 999,
+              bgcolor: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+            }}
+          >
+            <Box sx={{ color: '#f2f7ff', fontWeight: 800, fontSize: '0.88rem' }}>
+              Lượt quay: {spins}
+            </Box>
+            <Box sx={{ color: 'rgba(226,234,255,0.74)', fontSize: '0.84rem' }}>
+              Blue lobby
+            </Box>
+          </Box>
+
           <WheelDial
             segments={segments}
             spinning={spinning}
@@ -133,6 +160,11 @@ export default function WheelPage() {
           >
             {spinning ? 'ĐANG QUAY...' : spins > 0 ? 'QUAY NGAY' : 'HẾT LƯỢT QUAY'}
           </Button>
+
+          <Box sx={{ width: 'min(92vw, 560px)', display: 'grid', gap: 1.5, mt: 1.5 }}>
+            <WheelRewardRail prizes={prizes} />
+            <WheelHistoryRail items={history} />
+          </Box>
         </Stack>
       </Container>
     </PageShell>
