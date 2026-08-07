@@ -35,6 +35,8 @@ export type WheelRenderContract = {
   labelInset: number;
   centerLabel: string;
   preset: 'five' | 'six' | 'eight' | 'tenPlus' | 'custom';
+  tokenStyle: 'emoji-first' | 'label-first' | 'mixed';
+  backgroundMode: 'lobby-grid' | 'soft-glow' | 'minimal-dark';
 };
 
 export type WheelRenderSegment = WheelSegment & {
@@ -73,11 +75,8 @@ function getPrizeWheelLabel(prize: WheelPrize) {
   const type = String(prize.type ?? '').toUpperCase();
   const glyph = getWheelPrizeGlyph(prize);
   const normalized = normalizeWheelPrize(prize);
-  if (type === 'POINT') {
-    const amount = normalized.metadata?.points ?? normalized.metadata?.point_amount ?? normalized.metadata?.value;
-    return amount ? `${glyph}${amount}🍑` : glyph;
-  }
-  if (type === 'SPIN_TICKET' || type === 'SPIN') return glyph || '⟲';
+  if (type === 'POINT') return glyph || '🍑';
+  if (type === 'SPIN_TICKET' || type === 'SPIN') return glyph || '🎞';
   if (type === 'VOUCHER') return glyph || '🎁';
   if (type === 'VIP_CODE') return glyph || '👑';
   if (type === 'NOTHING') return glyph || '😢';
@@ -124,6 +123,14 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
   const wheelLabelScale = preset === 'five' ? 1.1 : preset === 'six' ? 0.96 : preset === 'eight' ? 0.88 : preset === 'tenPlus' ? 0.78 : 0.9;
   const railLabelScale = preset === 'five' ? 1 : preset === 'six' ? 0.98 : 0.96;
   const labelInset = preset === 'five' ? 6 : preset === 'six' ? 8 : segmentAngle >= 45 ? 10 : 12;
+  const centerLabel = preset === 'five' ? 'Sẵn sàng' : preset === 'six' ? 'Ready' : preset === 'eight' ? 'Spin' : 'Go';
+  const tokenStyle = normalizedPrizes.every((prize) => getWheelRenderMode(prize, getPrizeClass(prize)) === 'emoji-only')
+    ? 'emoji-first'
+    : normalizedPrizes.every((prize) => getWheelRenderMode(prize, getPrizeClass(prize)) === 'label-only')
+      ? 'label-first'
+      : 'mixed';
+  const backgroundMode: 'lobby-grid' | 'soft-glow' | 'minimal-dark' =
+    preset === 'tenPlus' ? 'minimal-dark' : 'lobby-grid';
 
   const slotBiasByPreset: Record<WheelRenderContract['preset'], number[]> = {
     five: [10, 6, 1, -6, -1],
@@ -207,8 +214,10 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
     wheelLabelScale,
     railLabelScale,
     labelInset,
-    centerLabel: '',
+    centerLabel,
     preset,
+    tokenStyle,
+    backgroundMode,
     segments: decoratedSegments,
   };
 }

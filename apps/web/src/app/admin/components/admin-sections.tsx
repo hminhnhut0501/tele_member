@@ -9,7 +9,6 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   FormControl,
   InputLabel,
   MenuItem,
@@ -719,24 +718,29 @@ export function UserAdjustDialog({
   onSubmit,
 }: any) {
   return (
-    <AdminDialog open={Boolean(open && user)} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>
-        {mode === 'points' ? 'Cộng 🍑' : 'Cộng lượt quay'} {user ? `• ${user.firstName ?? ''} ${user.lastName ?? ''}` : ''}
-      </DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ pt: 1 }}>
-          <ToggleButtonGroup exclusive value={mode} onChange={(_, value) => value && onModeChange(value)} size="small">
-            <ToggleButton value="points">🍑</ToggleButton>
-            <ToggleButton value="spins">Lượt quay</ToggleButton>
-          </ToggleButtonGroup>
-          <TextField label="Số lượng" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
-          <TextField label="Lý do" value={reason} onChange={(e) => setReason(e.target.value)} />
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Hủy</Button>
-        <Button variant="contained" onClick={onSubmit}>Lưu</Button>
-      </DialogActions>
+    <AdminDialog
+      open={Boolean(open && user)}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      title={mode === 'points' ? 'Cộng 🍑' : 'Cộng lượt quay'}
+      subtitle={user ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || `@${user.username ?? user.telegramId}` : 'Chọn người dùng để điều chỉnh'}
+      badge="Điều chỉnh"
+      actions={
+        <>
+          <Button onClick={onClose}>Hủy</Button>
+          <Button variant="contained" onClick={onSubmit}>Lưu</Button>
+        </>
+      }
+    >
+      <Stack spacing={2} sx={{ pt: 1 }}>
+        <ToggleButtonGroup exclusive value={mode} onChange={(_, value) => value && onModeChange(value)} size="small">
+          <ToggleButton value="points">🍑</ToggleButton>
+          <ToggleButton value="spins">Lượt quay</ToggleButton>
+        </ToggleButtonGroup>
+        <TextField label="Số lượng" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+        <TextField label="Lý do" value={reason} onChange={(e) => setReason(e.target.value)} />
+      </Stack>
     </AdminDialog>
   );
 }

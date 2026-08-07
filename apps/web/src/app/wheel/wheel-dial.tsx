@@ -295,6 +295,7 @@ export function WheelDial({
               const labelFontSize =
                 layout.labelArcFontSize *
                 wheelLabelScale *
+                segment.labelPolicy.fontScale *
                 (mode === 'label-only'
                   ? segment.labelPolicy.kind === 'value'
                     ? 0.9
@@ -366,7 +367,7 @@ export function WheelDial({
             {centerLabel ? (
               <Stack spacing={0.2} alignItems="center" sx={{ color: '#3d2a05', px: 1, textAlign: 'center' }}>
                 <Typography sx={{ fontWeight: 900, fontSize: { xs: '0.62rem', sm: '0.72rem' }, letterSpacing: '0.32em', lineHeight: 1 }}>
-                  REVEAL
+                  SPIN
                 </Typography>
                 <Typography sx={{ fontWeight: 900, fontSize: { xs: '0.94rem', sm: '1.08rem' }, lineHeight: 1.05 }}>
                   {centerLabel}
