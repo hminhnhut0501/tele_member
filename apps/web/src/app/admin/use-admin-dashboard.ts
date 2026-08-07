@@ -1,8 +1,15 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import {
+  buildWheelPreviewContract,
+  type WheelCampaign,
+  type WheelPrize,
+  type WheelPreviewContract,
+} from '@tele-member/shared';
 import { createAdminService } from './admin-service';
 import type { AdminAuditLog, AdminTransaction, AdminUser } from './components/admin-tables';
+import { normalizeWheelCampaign, normalizeWheelPrize } from '../wheel/wheel-schema';
 
 type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'settings';
 
@@ -25,7 +32,7 @@ export function useAdminDashboard() {
   const [transactions, setTransactions] = useState<AdminTransaction[]>([]);
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
   const [rewards, setRewards] = useState<any[]>([]);
-  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<WheelCampaign[]>([]);
   const [telegramId, setTelegramId] = useState('');
   const [amount, setAmount] = useState(10);
   const [reason, setReason] = useState('manual_adjustment');
@@ -56,9 +63,9 @@ export function useAdminDashboard() {
   const [prizeRenderMode, setPrizeRenderMode] = useState<'emoji-only' | 'label-only' | 'mixed'>('emoji-only');
   const [createPrizeOpen, setCreatePrizeOpen] = useState(false);
   const [selectedWheelCampaignId, setSelectedWheelCampaignId] = useState('');
-  const [wheelPrizes, setWheelPrizes] = useState<any[]>([]);
+  const [wheelPrizes, setWheelPrizes] = useState<WheelPrize[]>([]);
   const [wheelSpins, setWheelSpins] = useState<any[]>([]);
-  const [wheelPreview, setWheelPreview] = useState<any>(null);
+  const [wheelPreview, setWheelPreview] = useState<WheelPreviewContract | null>(null);
   const [editingReward, setEditingReward] = useState<any>(null);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
   const [editingPrize, setEditingPrize] = useState<any>(null);
@@ -98,7 +105,7 @@ export function useAdminDashboard() {
     service.getAuditLogs(page * pageSize, pageSize).then((data) => setAuditLogs(data.logs ?? data)).catch((err) => setError(String(err)));
     service.getRewards().then((data) => setRewards(data.rewards ?? [])).catch(() => {});
     service.getWheelCampaigns().then((data) => {
-      const nextCampaigns = data.campaigns ?? [];
+      const nextCampaigns = (data.campaigns ?? []).map((campaign: WheelCampaign) => normalizeWheelCampaign(campaign as any));
       setCampaigns(nextCampaigns);
       setSelectedWheelCampaignId((current) => current || nextCampaigns[0]?.id || '');
     }).catch(() => {});
@@ -111,8 +118,18 @@ export function useAdminDashboard() {
       service.getWheelPreview(selectedWheelCampaignId),
     ])
       .then(([prizeData, previewData]) => {
-        setWheelPrizes(prizeData.prizes ?? []);
-        setWheelPreview(previewData ?? null);
+        const nextPrizes = (prizeData.prizes ?? []).map((prize: WheelPrize) => normalizeWheelPrize(prize as any));
+        setWheelPrizes(nextPrizes);
+        setWheelPreview(buildWheelPreviewContract({
+          campaignId: selectedWheelCampaignId,
+          prizes: nextPrizes as unknown as Array<Record<string, unknown>>,
+          distribution: Array.isArray((previewData as any)?.distribution) ? (previewData as any).distribution : Array.isArray((previewData as any)?.prizes) ? (previewData as any).prizes : [],
+          totalWeight: (previewData as any)?.totalWeight ?? (previewData as any)?.total_weight,
+          preset: (previewData as any)?.preset ?? (previewData as any)?.slotPreset,
+          mobileMode: (previewData as any)?.mobileMode,
+          renderHints: (previewData as any)?.renderHints,
+          warnings: (previewData as any)?.warnings,
+        }));
       })
       .catch(() => {
         setWheelPrizes([]);
@@ -233,7 +250,7 @@ export function useAdminDashboard() {
         metadata: {},
       });
       const data = await service.getWheelCampaigns();
-      setCampaigns(data.campaigns ?? []);
+      setCampaigns((data.campaigns ?? []).map((campaign: WheelCampaign) => normalizeWheelCampaign(campaign as any)));
       setCreateCampaignOpen(false);
       setNotice('Đã tạo chiến dịch');
     } catch (err) {
@@ -277,9 +294,18 @@ export function useAdminDashboard() {
         },
       });
       const data = await service.getWheelPrizes(prizeCampaignId);
-      setWheelPrizes(data.prizes ?? []);
+      setWheelPrizes((data.prizes ?? []).map((prize: WheelPrize) => normalizeWheelPrize(prize as any)));
       const preview = await service.getWheelPreview(prizeCampaignId);
-      setWheelPreview(preview ?? null);
+      setWheelPreview(buildWheelPreviewContract({
+        campaignId: prizeCampaignId,
+        prizes: ((data.prizes ?? []) as WheelPrize[]).map((prize) => normalizeWheelPrize(prize as any)) as unknown as Array<Record<string, unknown>>,
+        distribution: Array.isArray((preview as any)?.distribution) ? (preview as any).distribution : Array.isArray((preview as any)?.prizes) ? (preview as any).prizes : [],
+        totalWeight: (preview as any)?.totalWeight ?? (preview as any)?.total_weight,
+        preset: (preview as any)?.preset ?? (preview as any)?.slotPreset,
+        mobileMode: (preview as any)?.mobileMode,
+        renderHints: (preview as any)?.renderHints,
+        warnings: (preview as any)?.warnings,
+      }));
       setCreatePrizeOpen(false);
       setNotice('Đã tạo phần thưởng');
     } catch (err) {
@@ -311,9 +337,18 @@ export function useAdminDashboard() {
         },
       });
       const data = await service.getWheelPrizes(selectedWheelCampaignId || editingPrize.campaign_id);
-      setWheelPrizes(data.prizes ?? []);
+      setWheelPrizes((data.prizes ?? []).map((prize: WheelPrize) => normalizeWheelPrize(prize as any)));
       const preview = await service.getWheelPreview(selectedWheelCampaignId || editingPrize.campaign_id);
-      setWheelPreview(preview ?? null);
+      setWheelPreview(buildWheelPreviewContract({
+        campaignId: selectedWheelCampaignId || editingPrize.campaign_id,
+        prizes: ((data.prizes ?? []) as WheelPrize[]).map((prize) => normalizeWheelPrize(prize as any)) as unknown as Array<Record<string, unknown>>,
+        distribution: Array.isArray((preview as any)?.distribution) ? (preview as any).distribution : Array.isArray((preview as any)?.prizes) ? (preview as any).prizes : [],
+        totalWeight: (preview as any)?.totalWeight ?? (preview as any)?.total_weight,
+        preset: (preview as any)?.preset ?? (preview as any)?.slotPreset,
+        mobileMode: (preview as any)?.mobileMode,
+        renderHints: (preview as any)?.renderHints,
+        warnings: (preview as any)?.warnings,
+      }));
       setEditingPrize(null);
       setNotice('Đã lưu phần thưởng');
     } catch (err) {

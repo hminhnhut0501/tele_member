@@ -1,3 +1,5 @@
+import { buildWheelPreviewContract } from '@tele-member/shared';
+
 export function createWheelService(supabase: any) {
   async function getCurrentCampaign() {
     const { data } = await supabase
@@ -59,7 +61,17 @@ export function createWheelService(supabase: any) {
       p_campaign_id: campaignId,
     });
     if (error) throw error;
-    return data ?? null;
+    const preview = data ?? null;
+    return buildWheelPreviewContract({
+      campaignId,
+      prizes: Array.isArray(preview?.prizes) ? preview.prizes : Array.isArray(preview?.distribution) ? preview.distribution : [],
+      distribution: Array.isArray(preview?.distribution) ? preview.distribution : Array.isArray(preview?.prizes) ? preview.prizes : [],
+      totalWeight: preview?.totalWeight ?? preview?.total_weight,
+      preset: preview?.preset ?? preview?.slotPreset,
+      mobileMode: preview?.mobileMode,
+      renderHints: preview?.renderHints,
+      warnings: preview?.warnings,
+    });
   }
 
   async function createCampaign(input: {
