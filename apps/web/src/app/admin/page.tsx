@@ -70,7 +70,7 @@ export default function AdminPage() {
   if (!admin.token) {
     return (
       <Container maxWidth="sm" sx={{ py: 6 }}>
-        <Card sx={{ borderRadius: 2, boxShadow: '0 20px 60px rgba(15, 23, 42, 0.08)' }}>
+        <Card sx={{ borderRadius: 1.5, boxShadow: '0 14px 40px rgba(15, 23, 42, 0.08)' }}>
           <CardContent>
             <Stack spacing={2}>
               <Chip label="Đăng nhập quản trị" color="primary" sx={{ alignSelf: 'flex-start' }} />
@@ -113,7 +113,7 @@ export default function AdminPage() {
       <Drawer variant="permanent" sx={{ width: DRAWER_WIDTH, flexShrink: 0, '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box', borderRight: '1px solid rgba(15,23,42,0.08)', background: 'linear-gradient(180deg, #0c1322 0%, #131c2c 60%, #17243a 100%)', color: '#cbd5e1' } }}>
         <Toolbar sx={{ minHeight: 70 }} />
         <Box sx={{ px: 1.5, py: 1.5 }}>
-          <Card sx={{ borderRadius: 2, mb: 1.75, boxShadow: '0 12px 36px rgba(15, 23, 42, 0.18)', bgcolor: 'rgba(255,255,255,0.05)', color: 'inherit', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <Card sx={{ borderRadius: 1.5, mb: 1.75, boxShadow: '0 10px 28px rgba(15, 23, 42, 0.16)', bgcolor: 'rgba(255,255,255,0.05)', color: 'inherit', border: '1px solid rgba(255,255,255,0.08)' }}>
             <CardContent>
               <Stack spacing={0.85}>
                 <Typography variant="overline" sx={{ color: 'rgba(148,163,184,0.82)', letterSpacing: '0.12em', lineHeight: 1.2 }}>Khu vực làm việc</Typography>
@@ -128,7 +128,7 @@ export default function AdminPage() {
           </Card>
           <List disablePadding>
             {NAV_ITEMS.map((item) => (
-              <ListItemButton key={item.key} selected={admin.activeSection === item.key} onClick={() => admin.setActiveSection(item.key)} sx={{ borderRadius: 1.5, mb: 0.5, px: 1.35, py: 1, color: 'inherit', '& .MuiListItemIcon-root': { color: 'rgba(203,213,225,0.72)', minWidth: 32 }, '& .MuiListItemText-primary': { fontWeight: 650, letterSpacing: '-0.01em' }, '&.Mui-selected': { bgcolor: 'rgba(37,99,235,0.20)', color: '#eff6ff', '& .MuiListItemIcon-root': { color: '#93c5fd' } }, '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' } }}>
+              <ListItemButton key={item.key} selected={admin.activeSection === item.key} onClick={() => admin.setActiveSection(item.key)} sx={{ borderRadius: 1, mb: 0.5, px: 1.35, py: 1, color: 'inherit', '& .MuiListItemIcon-root': { color: 'rgba(203,213,225,0.72)', minWidth: 32 }, '& .MuiListItemText-primary': { fontWeight: 650, letterSpacing: '-0.01em' }, '&.Mui-selected': { bgcolor: 'rgba(37,99,235,0.20)', color: '#eff6ff', '& .MuiListItemIcon-root': { color: '#93c5fd' } }, '&:hover': { bgcolor: 'rgba(255,255,255,0.06)' } }}>
                 <ListItemIcon sx={{ minWidth: 34 }}>{item.icon}</ListItemIcon>
                 <ListItemText primary={item.label} />
               </ListItemButton>
@@ -142,7 +142,7 @@ export default function AdminPage() {
           <Stack spacing={2.25}>
             {admin.error ? <Alert severity="warning">{admin.error}</Alert> : null}
             {admin.notice ? <Alert severity="success">{admin.notice}</Alert> : null}
-            <Card sx={{ borderRadius: 2.25, boxShadow: '0 16px 48px rgba(15,23,42,0.06)', border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+            <Card sx={{ borderRadius: 1.5, boxShadow: '0 12px 36px rgba(15,23,42,0.06)', border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
               <CardContent>
                 <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1.5}>
                   <Box>

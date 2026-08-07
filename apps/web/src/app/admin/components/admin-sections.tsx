@@ -23,7 +23,7 @@ import { AuditTable, TransactionsTable, UsersTable } from './admin-tables';
 import { AppSection, MetricCard } from '../../shared-ui';
 
 const dialogPaperSx = {
-  borderRadius: 3,
+  borderRadius: 1.5,
   border: '1px solid',
   borderColor: 'divider',
   boxShadow: '0 24px 64px rgba(15,23,42,0.14)',
@@ -239,7 +239,7 @@ export function FeatureFlagsSection({ featureFlagsLive, policies, openPolicyEdit
               )}
             </Stack>
 
-            <Box sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+            <Box sx={{ p: 1.5, borderRadius: 1.25, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
               <Typography fontWeight={800} sx={{ mb: 1 }}>Luồng publish</Typography>
               <Typography variant="body2" color="text.secondary">
                 1) Sửa nháp trong policy center. 2) Xem preview trước khi publish. 3) Xuất bản để runtime đọc từ <code>feature_flags</code>.
@@ -334,7 +334,7 @@ export function OpsSection({
 
             <Stack spacing={1}>
               {opsEvents.length ? opsEvents.map((event: any) => (
-                <Box key={event.id} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+                <Box key={event.id} sx={{ p: 1.5, borderRadius: 1.25, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
                   <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1.5} alignItems={{ xs: 'start', md: 'center' }}>
                     <Box sx={{ minWidth: 0 }}>
                       <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center" sx={{ mb: 0.5 }}>
@@ -407,7 +407,7 @@ export function PolicySection(props: any) {
             <Box
               sx={{
                 p: 2,
-                borderRadius: 2,
+                borderRadius: 1.25,
                 border: '1px solid',
                 borderColor: 'divider',
                 bgcolor: '#fff',
@@ -450,7 +450,7 @@ export function PolicySection(props: any) {
         <CardContent>
           <Stack spacing={1}>
             {versions.length ? versions.map((version: any) => (
-              <Box key={version.id} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+              <Box key={version.id} sx={{ p: 1.5, borderRadius: 1.25, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
                 <Stack direction="row" justifyContent="space-between" spacing={2} alignItems="center">
                   <Box>
                     <Typography fontWeight={800}>Phiên bản {version.version}</Typography>
@@ -544,7 +544,7 @@ export function RewardsSection(props: any) {
                   key={reward.id}
                   sx={{
                     p: 1.75,
-                    borderRadius: 2,
+                    borderRadius: 1.25,
                     border: '1px solid',
                     borderColor: 'divider',
                     bgcolor: '#fff',
@@ -694,7 +694,7 @@ export function WheelSection(props: any) {
                   key={campaign.id}
                   sx={{
                     p: 1.75,
-                    borderRadius: 2,
+                    borderRadius: 1.25,
                     border: '1px solid',
                     borderColor: 'divider',
                     bgcolor: '#fff',
@@ -745,7 +745,7 @@ export function WheelSection(props: any) {
               {props.wheelPrizes.map((prize: any) => {
                 const isActive = prize.isActive ?? true;
                 return (
-                  <Box key={prize.id} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+                  <Box key={prize.id} sx={{ p: 1.5, borderRadius: 1.25, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
                     <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'start', md: 'center' }}>
                       <Box>
                         <Typography fontWeight={800}>
@@ -793,7 +793,7 @@ export function WheelSection(props: any) {
         <CardContent>
           <Stack spacing={1}>
               {props.wheelSpins.slice(0, 10).map((spin: any) => (
-                <Box key={spin.id} sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+                <Box key={spin.id} sx={{ p: 1.25, borderRadius: 1.25, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
                   <Typography fontWeight={800}>{spin.displayName ?? spin.username ?? spin.userId}</Typography>
                   <Typography variant="body2" color="text.secondary">
                   {spin.prizeName ?? spin.resultLabel ?? 'Không trúng'} • {new Date(spin.createdAt).toLocaleString('vi-VN')}
@@ -823,7 +823,7 @@ export function WheelSection(props: any) {
                   const glyph = String(prize.glyph ?? prize.metadata?.glyph ?? '✦');
                   const slotTone = ['#2f64e4', '#4b7bff', '#7aaaff', '#1f3d9b'][index % 4];
                   return (
-                    <Box key={prize.id} sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+                    <Box key={prize.id} sx={{ p: 1.25, borderRadius: 1.25, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
                         <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
                           <Box sx={{ width: 36, height: 36, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: slotTone, color: '#fff', fontSize: '1rem', fontWeight: 900, flex: '0 0 auto' }}>

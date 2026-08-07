@@ -161,7 +161,7 @@ export function UsersTable({
   const someSelected = selectedIds.length > 0 && !allSelected;
 
   return (
-    <Card sx={{ overflow: 'hidden' }}>
+    <Card sx={{ overflow: 'hidden', borderRadius: 1.25 }}>
       <CardContent>
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'start', md: 'center' }}>
@@ -203,7 +203,7 @@ export function UsersTable({
           </Stack>
 
           {(selectedIds.length > 0) ? (
-            <Box sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'rgba(37,99,235,0.04)' }}>
+            <Box sx={{ p: 1.5, borderRadius: 1.25, border: '1px solid', borderColor: 'divider', bgcolor: 'rgba(37,99,235,0.04)' }}>
               <TableActionBar
                 count={selectedIds.length}
                 onClear={() => setSelectedIds([])}
@@ -342,7 +342,7 @@ export function TransactionsTable({
   const someSelected = selectedIds.length > 0 && !allSelected;
 
   return (
-    <Card sx={{ overflow: 'hidden' }}>
+    <Card sx={{ overflow: 'hidden', borderRadius: 1.25 }}>
       <CardContent>
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'start', md: 'center' }}>
@@ -384,7 +384,7 @@ export function TransactionsTable({
           </Stack>
 
           {(selectedIds.length > 0) ? (
-            <Box sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'rgba(37,99,235,0.04)' }}>
+            <Box sx={{ p: 1.5, borderRadius: 1.25, border: '1px solid', borderColor: 'divider', bgcolor: 'rgba(37,99,235,0.04)' }}>
               <TableActionBar
                 count={selectedIds.length}
                 onClear={() => setSelectedIds([])}
@@ -524,7 +524,7 @@ export function AuditTable({
   const someSelected = selectedIds.length > 0 && !allSelected;
 
   return (
-    <Card sx={{ overflow: 'hidden' }}>
+    <Card sx={{ overflow: 'hidden', borderRadius: 1.25 }}>
       <CardContent>
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'start', md: 'center' }}>
@@ -558,7 +558,7 @@ export function AuditTable({
           </Stack>
 
           {(selectedIds.length > 0) ? (
-            <Box sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'rgba(37,99,235,0.04)' }}>
+            <Box sx={{ p: 1.5, borderRadius: 1.25, border: '1px solid', borderColor: 'divider', bgcolor: 'rgba(37,99,235,0.04)' }}>
               <TableActionBar
                 count={selectedIds.length}
                 onClear={() => setSelectedIds([])}

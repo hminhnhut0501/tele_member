@@ -120,7 +120,7 @@ export default function MyRewardsPage() {
                       <Box
                         sx={{
                           p: 1.5,
-                          borderRadius: 2,
+                          borderRadius: 1.25,
                           bgcolor: 'rgba(255,214,102,0.07)',
                           border: '1px solid rgba(255,214,102,0.14)',
                         }}
@@ -181,7 +181,7 @@ export default function MyRewardsPage() {
                         <Box
                           sx={{
                             p: 1.5,
-                            borderRadius: 2,
+                            borderRadius: 1.25,
                             bgcolor: 'rgba(59,130,246,0.08)',
                             border: '1px solid rgba(59,130,246,0.14)',
                           }}

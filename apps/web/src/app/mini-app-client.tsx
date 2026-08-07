@@ -281,7 +281,7 @@ export default function MiniAppClient() {
             <Chip label={`initDataLength: ${debugInfo?.initDataLength ?? 0}`} variant="outlined" />
             <Chip label={`status: ${status}`} variant="outlined" />
           </Box>
-          <Box component="pre" sx={{ m: 0, p: 2, borderRadius: 2, bgcolor: 'rgba(2,6,23,0.04)', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, lineHeight: 1.55 }}>
+          <Box component="pre" sx={{ m: 0, p: 2, borderRadius: 1, bgcolor: 'rgba(2,6,23,0.04)', overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, lineHeight: 1.55 }}>
             {JSON.stringify(debugInfo, null, 2)}
           </Box>
         </Stack>
@@ -456,7 +456,7 @@ export default function MiniAppClient() {
             <Stack spacing={1}>
               {summary?.transactions?.length ? (
                 summary.transactions.map((tx) => (
-                  <Box key={tx.id} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: 'rgba(255,255,255,0.8)' }}>
+                  <Box key={tx.id} sx={{ p: 1.5, borderRadius: 1, border: '1px solid', borderColor: 'divider', bgcolor: 'rgba(255,255,255,0.8)' }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2}>
                       <Box>
                         <Typography fontWeight={700}>{tx.type.toUpperCase()} {tx.amount} 🍑</Typography>

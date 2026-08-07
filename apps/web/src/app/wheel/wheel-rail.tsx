@@ -7,7 +7,7 @@ export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
   return (
     <Card
       sx={{
-        borderRadius: 4,
+        borderRadius: 1.25,
         border: '1px solid rgba(105, 147, 255, 0.10)',
         background: 'linear-gradient(180deg, rgba(7,14,30,0.90), rgba(9,16,34,0.96))',
         boxShadow: '0 20px 56px rgba(0,0,0,0.22)',
@@ -56,7 +56,7 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
   return (
     <Card
       sx={{
-        borderRadius: 4,
+        borderRadius: 1.25,
         border: '1px solid rgba(105, 147, 255, 0.10)',
         background: 'linear-gradient(180deg, rgba(7,14,30,0.90), rgba(9,16,34,0.96))',
         boxShadow: '0 20px 56px rgba(0,0,0,0.22)',
@@ -100,7 +100,7 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                     alignItems: 'center',
                     px: 1.5,
                     py: 1.2,
-                    borderRadius: 3,
+                    borderRadius: 1,
                     bgcolor: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.06)',
                   }}
@@ -151,7 +151,7 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                 sx={{
                   px: 2,
                   py: 2.5,
-                  borderRadius: 3,
+                  borderRadius: 1,
                   bgcolor: 'rgba(255,255,255,0.03)',
                   border: '1px dashed rgba(255,255,255,0.08)',
                   color: 'rgba(226,234,255,0.72)',

@@ -39,22 +39,15 @@ export function AppSection({
       variant="outlined"
       sx={{
         overflow: 'hidden',
-        borderRadius: 4,
-        boxShadow: `0 16px 36px ${tone.main}12`,
+        borderRadius: 2,
+        boxShadow: `0 10px 24px ${tone.main}10`,
         borderColor: 'divider',
         position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          height: 4,
-          background: `linear-gradient(90deg, ${tone.main}, #7c3aed, #10b981)`,
-        },
       }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, px: 2.25, py: 1.75, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', backgroundImage: `radial-gradient(circle at top left, ${tone.bg} 0%, rgba(255,255,255,0.98) 46%)` }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, px: 2.25, py: 1.75, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
         <Box sx={{ position: 'relative', pl: 1.75 }}>
-          <Box sx={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 4, borderRadius: 999, bgcolor: tone.main }} />
+          <Box sx={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: 999, bgcolor: tone.main, opacity: 0.8 }} />
           <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
             {title}
           </Typography>
@@ -84,9 +77,9 @@ export function PanelHead({
 }) {
   const tone = toneToken(accent);
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, px: 2.25, py: 1.75, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', backgroundImage: `radial-gradient(circle at top left, ${tone.bg} 0%, rgba(255,255,255,0.98) 46%)` }}>
-      <Box sx={{ position: 'relative', pl: 1.75 }}>
-        <Box sx={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 4, borderRadius: 999, bgcolor: tone.main }} />
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, px: 2.25, py: 1.75, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Box sx={{ position: 'relative', pl: 1.75 }}>
+          <Box sx={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: 999, bgcolor: tone.main, opacity: 0.8 }} />
         <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.15 }}>
           {title}
         </Typography>
@@ -120,12 +113,12 @@ export function MetricCard({
       sx={{
         position: 'relative',
         overflow: 'hidden',
-        borderRadius: 6,
+        borderRadius: 2,
         minHeight: 128,
         bgcolor: tone.bg,
         borderColor: `${tone.main}18`,
-        backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.88) 0%, ${tone.bg} 38%, rgba(255,255,255,0.96) 100%)`,
-        boxShadow: `0 10px 26px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.92), 0 0 0 1px ${tone.glow}`,
+        backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.90) 0%, ${tone.bg} 42%, rgba(255,255,255,0.96) 100%)`,
+        boxShadow: `0 8px 22px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.92), 0 0 0 1px ${tone.glow}`,
       }}
     >
       <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1, minHeight: 124, '&:last-child': { pb: 2 } }}>
@@ -207,25 +200,18 @@ export function GameSection({
       variant="outlined"
       sx={{
         overflow: 'hidden',
-        borderRadius: 4,
+        borderRadius: 2,
         borderColor: 'rgba(88, 160, 255, 0.16)',
         background:
           'linear-gradient(180deg, rgba(10, 19, 37, 0.98) 0%, rgba(8, 14, 28, 1) 100%)',
         boxShadow: '0 24px 48px rgba(3, 8, 20, 0.44), inset 0 1px 0 rgba(255,255,255,0.05)',
         color: '#eef5ff',
         position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          height: 4,
-          background: 'linear-gradient(90deg, #2563eb, #38bdf8, #60a5fa)',
-        },
       }}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, px: 2.25, py: 1.75, borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'linear-gradient(180deg, rgba(37,99,235,0.15) 0%, rgba(255,255,255,0) 100%)' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, px: 2.25, py: 1.75, borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(37,99,235,0.06)' }}>
         <Box sx={{ position: 'relative', pl: 1.75 }}>
-          <Box sx={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 4, borderRadius: 999, bgcolor: '#3b82f6' }} />
+          <Box sx={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: 999, bgcolor: '#3b82f6', opacity: 0.9 }} />
           <Typography variant="h6" sx={{ fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.15, color: '#f5f9ff' }}>
             {title}
           </Typography>
