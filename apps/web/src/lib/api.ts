@@ -1,6 +1,8 @@
 import {
   normalizeWheelCurrentResponse,
   normalizeWheelHistoryResponse,
+  normalizePolicyConfigsResponse,
+  normalizePolicyVersionsResponse,
 } from '@tele-member/shared';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
@@ -95,6 +97,23 @@ export function apiClient(token?: string | null) {
       request(`/api/admin/rewards/${id}/codes/import`, { method: 'POST', body: JSON.stringify({ codes }) }, token),
     adminGetRewardCodes: (id: string) => request(`/api/admin/rewards/${id}/codes`, {}, token),
     adminGetRedemptions: () => request('/api/admin/redemptions', {}, token),
+    adminGetPolicies: async () => normalizePolicyConfigsResponse(await request('/api/admin/policies', {}, token)),
+    adminGetPolicy: (key: string) => request(`/api/admin/policies/${encodeURIComponent(key)}`, {}, token),
+    adminGetPolicyVersions: async (key: string) => normalizePolicyVersionsResponse(await request(`/api/admin/policies/${encodeURIComponent(key)}/versions`, {}, token)),
+    adminUpdatePolicy: (key: string, payload: {
+      scope: string;
+      title: string;
+      description?: string | null;
+      data?: Record<string, unknown>;
+      note?: string | null;
+    }) => request(`/api/admin/policies/${encodeURIComponent(key)}`, { method: 'PATCH', body: JSON.stringify(payload) }, token),
+    adminPublishPolicy: (key: string, payload: {
+      scope: string;
+      title: string;
+      description?: string | null;
+      data?: Record<string, unknown>;
+      note?: string | null;
+    }) => request(`/api/admin/policies/${encodeURIComponent(key)}/publish`, { method: 'POST', body: JSON.stringify(payload) }, token),
     adminGetWheelCampaigns: () => request('/api/admin/wheel/campaigns', {}, token),
     adminCreateWheelCampaign: (payload: Record<string, unknown>) =>
       request('/api/admin/wheel/campaigns', { method: 'POST', body: JSON.stringify(payload) }, token),

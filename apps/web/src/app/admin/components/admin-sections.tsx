@@ -129,6 +129,21 @@ function deliveryTargetLabel(value: string) {
   return value;
 }
 
+function policyScopeLabel(value: string) {
+  if (value === 'currency') return 'Đào';
+  if (value === 'reward') return 'Quà đổi';
+  if (value === 'delivery') return 'Giao quà';
+  if (value === 'wheel') return 'Vòng quay';
+  if (value === 'feature_flag') return 'Feature flag';
+  return 'Hệ thống';
+}
+
+function policyStatusLabel(value: string) {
+  if (value === 'published') return 'Đã xuất bản';
+  if (value === 'archived') return 'Đã lưu trữ';
+  return 'Nháp';
+}
+
 export function OverviewSection({ users, transactions, rewards, campaigns }: any) {
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 2 }}>
@@ -178,6 +193,162 @@ export function TransactionsSection(props: any) {
 
 export function AuditSection({ auditLogs, handleDebugEnv, auditFilter, setAuditFilter }: any) {
   return <AuditTable logs={auditLogs} onRefresh={handleDebugEnv} filter={auditFilter} onFilterChange={setAuditFilter} />;
+}
+
+export function PolicySection(props: any) {
+  const selectedPolicy = props.policies.find((policy: any) => policy.policyKey === props.selectedPolicyKey) ?? props.policies[0] ?? null;
+  const versions = props.policyVersions ?? [];
+
+  return (
+    <Stack spacing={2}>
+      <AppSection
+        title="Trung tâm chính sách"
+        subtitle="Quản lý quy tắc vận hành, bản nháp và bản đã xuất bản."
+        accent="violet"
+        action={
+          <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
+            <Button variant="outlined" onClick={props.refreshPolicies}>
+              Làm mới
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => {
+                const next = selectedPolicy ?? props.policies[0];
+                if (next) props.openPolicyEditor(next);
+              }}
+            >
+              Sửa policy
+            </Button>
+          </Stack>
+        }
+      >
+        <CardContent sx={{ pt: 0 }}>
+          <Stack spacing={2}>
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              {props.policies.map((policy: any) => (
+                <Chip
+                  key={policy.id}
+                  label={policy.title}
+                  clickable
+                  onClick={() => {
+                    props.setSelectedPolicyKey(policy.policyKey);
+                    props.openPolicyEditor(policy);
+                  }}
+                  color={props.selectedPolicyKey === policy.policyKey ? 'primary' : 'default'}
+                  variant={props.selectedPolicyKey === policy.policyKey ? 'filled' : 'outlined'}
+                />
+              ))}
+            </Stack>
+
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                bgcolor: '#fff',
+                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.03)',
+              }}
+            >
+              {selectedPolicy ? (
+                <Stack spacing={1.25}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} flexWrap="wrap">
+                    <Box>
+                      <Typography fontWeight={900}>{selectedPolicy.title}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedPolicy.policyKey} • {policyScopeLabel(selectedPolicy.scope)} • {policyStatusLabel(selectedPolicy.status)}
+                      </Typography>
+                    </Box>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
+                      <Chip label={`ver ${selectedPolicy.currentVersion}`} size="small" />
+                      <Chip label={`pub ${selectedPolicy.publishedVersion}`} size="small" variant="outlined" />
+                    </Stack>
+                  </Stack>
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedPolicy.description ?? 'Không có mô tả'}
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, minmax(0, 1fr))' }, gap: 1 }}>
+                    <MetricCard label="Nháp" value={String(Object.keys(selectedPolicy.draftData ?? {}).length)} note="Khóa dữ liệu" accent="violet" />
+                    <MetricCard label="Đã xuất bản" value={String(Object.keys(selectedPolicy.publishedData ?? {}).length)} note="Khóa dữ liệu" accent="blue" />
+                    <MetricCard label="Phiên bản" value={String(selectedPolicy.currentVersion ?? 0)} note="Bản hiện tại" accent="cyan" />
+                    <MetricCard label="Lịch sử" value={String(versions.length)} note="Bản ghi version" accent="emerald" />
+                  </Box>
+                </Stack>
+              ) : (
+                <Typography color="text.secondary">Chưa có policy nào.</Typography>
+              )}
+            </Box>
+          </Stack>
+        </CardContent>
+      </AppSection>
+
+      <AppSection title="Lịch sử policy" subtitle="Theo dõi các lần lưu và xuất bản gần nhất." accent="blue">
+        <CardContent>
+          <Stack spacing={1}>
+            {versions.length ? versions.map((version: any) => (
+              <Box key={version.id} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+                <Stack direction="row" justifyContent="space-between" spacing={2} alignItems="center">
+                  <Box>
+                    <Typography fontWeight={800}>Phiên bản {version.version}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {policyStatusLabel(version.status)}{version.note ? ` • ${version.note}` : ''}
+                    </Typography>
+                  </Box>
+                  <Chip label={new Date(version.createdAt).toLocaleString('vi-VN')} size="small" variant="outlined" />
+                </Stack>
+              </Box>
+            )) : (
+              <Typography color="text.secondary">Chưa có lịch sử version.</Typography>
+            )}
+          </Stack>
+        </CardContent>
+      </AppSection>
+
+      <AdminDialog
+        open={Boolean(props.policyEditorOpen)}
+        onClose={() => props.setPolicyEditorOpen(false)}
+        maxWidth="md"
+        title={props.editingPolicy ? `Sửa policy: ${props.editingPolicy.title}` : 'Sửa policy'}
+        subtitle="Chỉnh thông tin policy, dữ liệu JSON nháp và xuất bản khi đã sẵn sàng."
+        badge="Chính sách"
+        primaryAction={<Button variant="contained" onClick={() => props.handleSavePolicy(true)}>Xuất bản</Button>}
+        secondaryAction={<Button variant="outlined" onClick={() => props.handleSavePolicy(false)}>Lưu nháp</Button>}
+        actions={
+          <>
+            <Button onClick={() => props.setPolicyEditorOpen(false)}>Đóng</Button>
+          </>
+        }
+      >
+        <Stack spacing={2} sx={{ pt: 1 }}>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+            <TextField fullWidth label="Mã policy" value={props.editingPolicy?.policyKey ?? ''} InputProps={{ readOnly: true }} />
+            <FormControl fullWidth>
+              <InputLabel>Nhóm</InputLabel>
+              <Select label="Nhóm" value={props.policyScope} onChange={(e) => props.setPolicyScope(e.target.value)}>
+                <MenuItem value="system">Hệ thống</MenuItem>
+                <MenuItem value="currency">Đào</MenuItem>
+                <MenuItem value="reward">Quà đổi</MenuItem>
+                <MenuItem value="delivery">Giao quà</MenuItem>
+                <MenuItem value="wheel">Vòng quay</MenuItem>
+                <MenuItem value="feature_flag">Feature flag</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+          <TextField label="Tiêu đề" value={props.policyTitle} onChange={(e) => props.setPolicyTitle(e.target.value)} />
+          <TextField label="Mô tả" value={props.policyDescription} onChange={(e) => props.setPolicyDescription(e.target.value)} multiline minRows={2} />
+          <TextField
+            label="Dữ liệu JSON"
+            value={props.policyDataText}
+            onChange={(e) => props.setPolicyDataText(e.target.value)}
+            multiline
+            minRows={12}
+            sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' }}
+          />
+          <TextField label="Ghi chú version" value={props.policyNote} onChange={(e) => props.setPolicyNote(e.target.value)} />
+        </Stack>
+      </AdminDialog>
+    </Stack>
+  );
 }
 
 export function RewardsSection(props: any) {

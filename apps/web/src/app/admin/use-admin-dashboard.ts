@@ -6,9 +6,13 @@ import {
   normalizeAdminAuditLogsResponse,
   normalizeAdminRewardsResponse,
   normalizeAdminTransactionsResponse,
+  normalizePolicyConfigsResponse,
+  normalizePolicyVersionsResponse,
   normalizeWheelCampaignsResponse,
   normalizeWheelHistoryResponse,
   normalizeWheelPrizesResponse,
+  type PolicyConfig,
+  type PolicyVersion,
   type WheelCampaign,
   type WheelPrize,
   type WheelSpinHistoryItem,
@@ -17,7 +21,7 @@ import {
 import { createAdminService } from './admin-service';
 import type { AdminAuditLog, AdminTransaction, AdminUser } from './components/admin-tables';
 
-type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'settings';
+type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'policies' | 'settings';
 
 export function useAdminDashboard() {
   const [token, setToken] = useState<string | null>(null);
@@ -39,6 +43,16 @@ export function useAdminDashboard() {
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
   const [rewards, setRewards] = useState<any[]>([]);
   const [campaigns, setCampaigns] = useState<WheelCampaign[]>([]);
+  const [policies, setPolicies] = useState<PolicyConfig[]>([]);
+  const [policyVersions, setPolicyVersions] = useState<PolicyVersion[]>([]);
+  const [selectedPolicyKey, setSelectedPolicyKey] = useState('');
+  const [policyEditorOpen, setPolicyEditorOpen] = useState(false);
+  const [editingPolicy, setEditingPolicy] = useState<PolicyConfig | null>(null);
+  const [policyScope, setPolicyScope] = useState<'system' | 'currency' | 'reward' | 'delivery' | 'wheel' | 'feature_flag'>('system');
+  const [policyTitle, setPolicyTitle] = useState('');
+  const [policyDescription, setPolicyDescription] = useState('');
+  const [policyDataText, setPolicyDataText] = useState('{}');
+  const [policyNote, setPolicyNote] = useState('');
   const [telegramId, setTelegramId] = useState('');
   const [amount, setAmount] = useState(10);
   const [reason, setReason] = useState('manual_adjustment');
@@ -123,6 +137,13 @@ export function useAdminDashboard() {
         setSelectedWheelCampaignId((current) => current || normalized[0]?.id || '');
       })
       .catch(() => {});
+    service.getPolicies()
+      .then((data) => {
+        const normalized = normalizePolicyConfigsResponse(data).policies;
+        setPolicies(normalized);
+        setSelectedPolicyKey((current) => current || normalized[0]?.policyKey || '');
+      })
+      .catch(() => setPolicies([]));
   }, [page, pageSize, search, service, token]);
 
   useEffect(() => {
@@ -150,6 +171,19 @@ export function useAdminDashboard() {
         setWheelPreview(null);
       });
   }, [selectedWheelCampaignId, service, token]);
+
+  useEffect(() => {
+    if (!token || !selectedPolicyKey) {
+      setPolicyVersions([]);
+      return;
+    }
+    service.getPolicyVersions(selectedPolicyKey)
+      .then((data) => {
+        const normalized = normalizePolicyVersionsResponse(data).versions;
+        setPolicyVersions(normalized);
+      })
+      .catch(() => setPolicyVersions([]));
+  }, [selectedPolicyKey, service, token]);
 
   useEffect(() => {
     if (!token) return;
@@ -330,6 +364,64 @@ export function useAdminDashboard() {
     }
   }
 
+  function openPolicyEditor(policy: PolicyConfig) {
+    setEditingPolicy(policy);
+    setPolicyEditorOpen(true);
+    setPolicyScope(policy.scope);
+    setPolicyTitle(policy.title);
+    setPolicyDescription(policy.description ?? '');
+    setPolicyDataText(JSON.stringify(policy.draftData && Object.keys(policy.draftData).length ? policy.draftData : policy.publishedData ?? {}, null, 2));
+    setPolicyNote('');
+  }
+
+  function refreshPolicies() {
+    if (!token) return;
+    service.getPolicies()
+      .then((data) => {
+        const normalized = normalizePolicyConfigsResponse(data).policies;
+        setPolicies(normalized);
+        setSelectedPolicyKey((current) => current || normalized[0]?.policyKey || '');
+      })
+      .catch(() => setPolicies([]));
+  }
+
+  async function savePolicy(publish = false) {
+    if (!editingPolicy) return;
+    try {
+      setError('');
+      setNotice('');
+      const parsedData = policyDataText.trim() ? JSON.parse(policyDataText) : {};
+      const payload = {
+        scope: policyScope,
+        title: policyTitle,
+        description: policyDescription || null,
+        data: parsedData,
+        note: policyNote || null,
+      };
+      if (publish) {
+        await service.publishPolicy(editingPolicy.policyKey, payload);
+        setNotice('Đã xuất bản chính sách');
+      } else {
+        await service.updatePolicy(editingPolicy.policyKey, payload);
+        setNotice('Đã lưu nháp chính sách');
+      }
+      refreshPolicies();
+      const refreshed = await service.getPolicy(editingPolicy.policyKey);
+      const normalized = refreshed ? normalizePolicyConfigsResponse({ policies: [refreshed] }).policies[0] : null;
+      setPolicyVersions(normalized?.versions ?? []);
+      setEditingPolicy(null);
+      setPolicyEditorOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể lưu chính sách');
+    }
+  }
+
+  async function openPolicyByKey(policyKey: string) {
+    setSelectedPolicyKey(policyKey);
+    const policy = policies.find((item) => item.policyKey === policyKey);
+    if (policy) openPolicyEditor(policy);
+  }
+
   async function updatePrize() {
     if (!editingPrize) return;
     try {
@@ -444,6 +536,24 @@ export function useAdminDashboard() {
     auditLogs,
     rewards,
     campaigns,
+    policies,
+    policyVersions,
+    selectedPolicyKey,
+    setSelectedPolicyKey,
+    policyEditorOpen,
+    setPolicyEditorOpen,
+    editingPolicy,
+    setEditingPolicy,
+    policyScope,
+    setPolicyScope,
+    policyTitle,
+    setPolicyTitle,
+    policyDescription,
+    setPolicyDescription,
+    policyDataText,
+    setPolicyDataText,
+    policyNote,
+    setPolicyNote,
     telegramId,
     setTelegramId,
     amount,
@@ -573,5 +683,10 @@ export function useAdminDashboard() {
     handleUpdateReward: updateReward,
     updateCampaign,
     handleUpdateCampaign: updateCampaign,
+    openPolicyEditor,
+    openPolicyByKey,
+    refreshPolicies,
+    savePolicy,
+    handleSavePolicy: savePolicy,
   };
 }

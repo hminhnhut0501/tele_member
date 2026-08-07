@@ -28,10 +28,12 @@ import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 import Inventory2RoundedIcon from '@mui/icons-material/Inventory2Rounded';
 import CasinoRoundedIcon from '@mui/icons-material/CasinoRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
+import PolicyRoundedIcon from '@mui/icons-material/PolicyRounded';
 import { useAdminDashboard } from './use-admin-dashboard';
 import {
   AuditSection,
   OverviewSection,
+  PolicySection,
   RewardsSection,
   SettingsSection,
   UserAdjustDialog,
@@ -41,7 +43,7 @@ import {
 } from './components/admin-sections';
 import { MetricCard } from '../shared-ui';
 
-type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'settings';
+type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'policies' | 'settings';
 
 const NAV_ITEMS: Array<{ key: SectionKey; label: string; icon: React.ReactNode }> = [
   { key: 'overview', label: 'Tổng quan', icon: <DashboardRoundedIcon /> },
@@ -50,6 +52,7 @@ const NAV_ITEMS: Array<{ key: SectionKey; label: string; icon: React.ReactNode }
   { key: 'audit', label: 'Nhật ký', icon: <FactCheckRoundedIcon /> },
   { key: 'rewards', label: 'Quà đổi', icon: <Inventory2RoundedIcon /> },
   { key: 'wheel', label: 'Vòng quay', icon: <CasinoRoundedIcon /> },
+  { key: 'policies', label: 'Chính sách', icon: <PolicyRoundedIcon /> },
   { key: 'settings', label: 'Cài đặt', icon: <SettingsRoundedIcon /> },
 ];
 
@@ -168,6 +171,31 @@ export default function AdminPage() {
             {admin.activeSection === 'audit' ? <AuditSection auditLogs={admin.auditLogs} handleDebugEnv={admin.refreshDebug} auditFilter={admin.auditFilter} setAuditFilter={admin.setAuditFilter} /> : null}
             {admin.activeSection === 'rewards' ? <RewardsSection {...admin} /> : null}
             {admin.activeSection === 'wheel' ? <WheelSection {...admin} /> : null}
+            {admin.activeSection === 'policies' ? (
+              <PolicySection
+                policies={admin.policies}
+                policyVersions={admin.policyVersions}
+                selectedPolicyKey={admin.selectedPolicyKey}
+                setSelectedPolicyKey={admin.setSelectedPolicyKey}
+                policyEditorOpen={admin.policyEditorOpen}
+                setPolicyEditorOpen={admin.setPolicyEditorOpen}
+                editingPolicy={admin.editingPolicy}
+                setEditingPolicy={admin.setEditingPolicy}
+                policyScope={admin.policyScope}
+                setPolicyScope={admin.setPolicyScope}
+                policyTitle={admin.policyTitle}
+                setPolicyTitle={admin.setPolicyTitle}
+                policyDescription={admin.policyDescription}
+                setPolicyDescription={admin.setPolicyDescription}
+                policyDataText={admin.policyDataText}
+                setPolicyDataText={admin.setPolicyDataText}
+                policyNote={admin.policyNote}
+                setPolicyNote={admin.setPolicyNote}
+                openPolicyEditor={admin.openPolicyEditor}
+                handleSavePolicy={admin.handleSavePolicy}
+                refreshPolicies={admin.refreshPolicies}
+              />
+            ) : null}
             {admin.activeSection === 'settings' ? <SettingsSection debugEnv={admin.debugEnv} botInfo={admin.botInfo} debugLoading={admin.debugLoading} handleDebugEnv={admin.refreshDebug} /> : null}
 
             <UserAdjustDialog

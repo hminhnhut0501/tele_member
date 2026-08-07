@@ -253,6 +253,43 @@ export type WheelPreviewWarningType =
   | 'INVALID_RENDER_MODE'
   | 'MOBILE_OVERDENSITY';
 
+export const policyScopeSchema = z.enum(['system', 'currency', 'reward', 'delivery', 'wheel', 'feature_flag']);
+export const policyStatusSchema = z.enum(['draft', 'published', 'archived']);
+export const policyVersionStatusSchema = z.enum(['draft', 'published', 'archived']);
+
+export const policyVersionSchema = z.object({
+  id: z.string().uuid(),
+  policyId: z.string().uuid(),
+  version: z.number().int(),
+  status: policyVersionStatusSchema,
+  data: z.record(z.string(), z.unknown()),
+  note: z.string().nullable().optional(),
+  createdBy: z.string().nullable().optional(),
+  publishedBy: z.string().nullable().optional(),
+  createdAt: z.string(),
+  publishedAt: z.string().nullable().optional(),
+});
+
+export const policyConfigSchema = z.object({
+  id: z.string().uuid(),
+  policyKey: z.string(),
+  scope: policyScopeSchema,
+  title: z.string(),
+  description: z.string().nullable().optional(),
+  status: policyStatusSchema,
+  currentVersion: z.number().int(),
+  publishedVersion: z.number().int(),
+  draftData: z.record(z.string(), z.unknown()),
+  publishedData: z.record(z.string(), z.unknown()),
+  createdBy: z.string().nullable().optional(),
+  updatedBy: z.string().nullable().optional(),
+  publishedBy: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  publishedAt: z.string().nullable().optional(),
+  versions: z.array(policyVersionSchema).optional(),
+});
+
 export type WheelPreviewDistributionItem = {
   prizeId: string;
   name: string;
@@ -370,6 +407,23 @@ export type WheelSpinHistoryItem = {
 
 export type WheelHistoryResponse = {
   spins: WheelSpinHistoryItem[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+};
+
+export type PolicyVersion = z.infer<typeof policyVersionSchema>;
+export type PolicyConfig = z.infer<typeof policyConfigSchema>;
+
+export type PolicyConfigsResponse = {
+  policies: PolicyConfig[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+};
+
+export type PolicyVersionsResponse = {
+  versions: PolicyVersion[];
   limit?: number;
   offset?: number;
   total?: number;
@@ -783,6 +837,60 @@ function normalizeWheelHistoryShape(
   };
 }
 
+function normalizePolicyVersionShape(version: Partial<PolicyVersion> & Record<string, unknown>): PolicyVersion {
+  const data = (version.data ?? {}) as Record<string, unknown>;
+  const status = String(version.status ?? 'draft').toLowerCase();
+  return policyVersionSchema.parse({
+    id: String(version.id ?? cryptoRandomId('policy_version')),
+    policyId: String(version.policyId ?? version.policy_id ?? ''),
+    version: Number.isFinite(Number(version.version ?? 0)) ? Number(version.version ?? 0) : 0,
+    status: policyVersionStatusSchema.safeParse(status).success ? status : 'draft',
+    data: normalizeSnakeCaseRecord({
+      ...data,
+      ...(version.data ?? {}),
+    }),
+    note: version.note === undefined ? undefined : version.note === null ? null : normalizeText(version.note),
+    createdBy: version.createdBy ?? version.created_by ?? null,
+    publishedBy: version.publishedBy ?? version.published_by ?? null,
+    createdAt: String(version.createdAt ?? version.created_at ?? ''),
+    publishedAt: version.publishedAt ?? version.published_at ?? null,
+  });
+}
+
+function normalizePolicyConfigShape(policy: Partial<PolicyConfig> & Record<string, unknown>): PolicyConfig {
+  const draftData = (policy.draftData ?? policy.draft_data ?? {}) as Record<string, unknown>;
+  const publishedData = (policy.publishedData ?? policy.published_data ?? {}) as Record<string, unknown>;
+  const versions = Array.isArray(policy.versions) ? policy.versions : Array.isArray((policy as any).items) ? (policy as any).items : null;
+  const status = String(policy.status ?? 'draft').toLowerCase();
+  return policyConfigSchema.parse({
+    id: String(policy.id ?? cryptoRandomId('policy')),
+    policyKey: normalizeText(policy.policyKey ?? policy.policy_key ?? ''),
+    scope: policyScopeSchema.safeParse(String(policy.scope ?? 'system').toLowerCase()).success
+      ? (String(policy.scope ?? 'system').toLowerCase() as z.infer<typeof policyScopeSchema>)
+      : 'system',
+    title: normalizeText(policy.title ?? 'Policy'),
+    description: policy.description === undefined ? undefined : policy.description === null ? null : normalizeText(policy.description),
+    status: policyStatusSchema.safeParse(status).success ? status : 'draft',
+    currentVersion: Number.isFinite(Number(policy.currentVersion ?? policy.current_version ?? 1)) ? Number(policy.currentVersion ?? policy.current_version ?? 1) : 1,
+    publishedVersion: Number.isFinite(Number(policy.publishedVersion ?? policy.published_version ?? 0)) ? Number(policy.publishedVersion ?? policy.published_version ?? 0) : 0,
+    draftData: normalizeSnakeCaseRecord({
+      ...draftData,
+      ...(policy.draftData ?? policy.draft_data ?? {}),
+    }),
+    publishedData: normalizeSnakeCaseRecord({
+      ...publishedData,
+      ...(policy.publishedData ?? policy.published_data ?? {}),
+    }),
+    createdBy: policy.createdBy ?? policy.created_by ?? null,
+    updatedBy: policy.updatedBy ?? policy.updated_by ?? null,
+    publishedBy: policy.publishedBy ?? policy.published_by ?? null,
+    createdAt: String(policy.createdAt ?? policy.created_at ?? ''),
+    updatedAt: String(policy.updatedAt ?? policy.updated_at ?? ''),
+    publishedAt: policy.publishedAt ?? policy.published_at ?? null,
+    versions: Array.isArray(versions) ? versions.map((version: unknown) => normalizePolicyVersionShape(version as Partial<PolicyVersion> & Record<string, unknown>)) : undefined,
+  });
+}
+
 function normalizeResponseEnvelope<T>(value: T) {
   return value;
 }
@@ -893,6 +1001,26 @@ export function normalizeWheelHistoryResponse(
   const spins = Array.isArray(input.spins ?? (input as any).data) ? (input.spins ?? (input as any).data) : [];
   return normalizeResponseEnvelope({
     spins: spins.map((spin: unknown) => normalizeWheelHistoryShape(spin as Partial<WheelSpinHistoryItem> & Record<string, unknown>, fallbackTelegramId)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
+}
+
+export function normalizePolicyConfigsResponse(input: Partial<PolicyConfigsResponse> & Record<string, unknown>): PolicyConfigsResponse {
+  const policies = Array.isArray(input.policies ?? (input as any).data) ? (input.policies ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    policies: policies.map((policy: unknown) => normalizePolicyConfigShape(policy as Partial<PolicyConfig> & Record<string, unknown>)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
+}
+
+export function normalizePolicyVersionsResponse(input: Partial<PolicyVersionsResponse> & Record<string, unknown>): PolicyVersionsResponse {
+  const versions = Array.isArray(input.versions ?? (input as any).data) ? (input.versions ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    versions: versions.map((version: unknown) => normalizePolicyVersionShape(version as Partial<PolicyVersion> & Record<string, unknown>)),
     limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
     offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
     total: input.total === undefined ? (input as any).total : Number(input.total),

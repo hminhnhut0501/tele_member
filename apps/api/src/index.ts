@@ -8,6 +8,8 @@ import {
   checkinResponseSchema,
   manualAdjustmentSchema,
   pointSummarySchema,
+  normalizePolicyConfigsResponse,
+  normalizePolicyVersionsResponse,
   normalizeAdminAuditLogsResponse,
   normalizeAdminRewardsResponse,
   normalizeAdminTransactionsResponse,
@@ -366,6 +368,80 @@ app.get('/api/admin/redemptions', async (request) => {
     offset: z.coerce.number().int().min(0).default(0),
   }).parse(request.query);
   return { redemptions: await context.rewards.listAdminRedemptions(query) };
+});
+
+app.get('/api/admin/policies', async (request) => {
+  const query = z
+    .object({
+      scope: z.string().optional(),
+      status: z.string().optional(),
+    })
+    .parse(request.query);
+  const policies = await context.policies.listPolicies();
+  const filtered = policies.filter((policy: any) => {
+    if (query.scope && policy.scope !== query.scope) return false;
+    if (query.status && policy.status !== query.status) return false;
+    return true;
+  });
+  return normalizePolicyConfigsResponse({ policies: filtered, total: filtered.length });
+});
+
+app.get('/api/admin/policies/:key', async (request, reply) => {
+  const params = z.object({ key: z.string().min(1) }).parse(request.params);
+  const policy = await context.policies.getPolicy(params.key);
+  if (!policy) return reply.code(404).send({ message: 'Not found' });
+  return policy;
+});
+
+app.get('/api/admin/policies/:key/versions', async (request, reply) => {
+  const params = z.object({ key: z.string().min(1) }).parse(request.params);
+  const policy = await context.policies.getPolicy(params.key);
+  if (!policy) return reply.code(404).send({ message: 'Not found' });
+  return normalizePolicyVersionsResponse({ versions: Array.isArray((policy as any).versions) ? (policy as any).versions : [] });
+});
+
+app.patch('/api/admin/policies/:key', async (request, reply) => {
+  const params = z.object({ key: z.string().min(1) }).parse(request.params);
+  const body = z.object({
+    scope: z.enum(['system', 'currency', 'reward', 'delivery', 'wheel', 'feature_flag']),
+    title: z.string().min(1),
+    description: z.string().nullable().optional(),
+    data: z.record(z.string(), z.unknown()).optional(),
+    note: z.string().nullable().optional(),
+  }).parse(request.body);
+  const actorEmail = (request.user as { email?: string } | undefined)?.email ?? null;
+  const policy = await context.policies.savePolicyDraft({
+    policyKey: params.key,
+    scope: body.scope,
+    title: body.title,
+    description: body.description ?? null,
+    data: body.data ?? {},
+    note: body.note ?? null,
+    actorEmail,
+  });
+  return policy;
+});
+
+app.post('/api/admin/policies/:key/publish', async (request, reply) => {
+  const params = z.object({ key: z.string().min(1) }).parse(request.params);
+  const body = z.object({
+    scope: z.enum(['system', 'currency', 'reward', 'delivery', 'wheel', 'feature_flag']),
+    title: z.string().min(1),
+    description: z.string().nullable().optional(),
+    data: z.record(z.string(), z.unknown()).optional(),
+    note: z.string().nullable().optional(),
+  }).parse(request.body);
+  const actorEmail = (request.user as { email?: string } | undefined)?.email ?? null;
+  const policy = await context.policies.publishPolicy({
+    policyKey: params.key,
+    scope: body.scope,
+    title: body.title,
+    description: body.description ?? null,
+    data: body.data ?? {},
+    note: body.note ?? null,
+    actorEmail,
+  });
+  return policy;
 });
 
 app.get('/api/admin/wheel/campaigns', async () => {
