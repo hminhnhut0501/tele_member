@@ -11,6 +11,8 @@ import {
   normalizeAdminAuditLogsResponse,
   normalizeAdminRewardsResponse,
   normalizeAdminTransactionsResponse,
+  normalizeWheelCurrentResponse,
+  normalizeWheelHistoryResponse,
   normalizeRewardInboxResponse,
   normalizeRewardRedemptionsResponse,
   normalizeRewardsResponse,
@@ -287,8 +289,8 @@ app.post('/api/me/spins/convert', async (request, reply) => {
 
 app.get('/api/wheel/current', async () => {
   const campaign = await context.wheel.getCurrentCampaign();
-  if (!campaign) return { campaign: null, prizes: [] };
-  return { campaign, prizes: await context.wheel.listCampaignPrizes(campaign.id) };
+  if (!campaign) return normalizeWheelCurrentResponse({ campaign: null, prizes: [] });
+  return normalizeWheelCurrentResponse({ campaign, prizes: await context.wheel.listCampaignPrizes(campaign.id) });
 });
 
 app.post('/api/wheel/spin', async (request, reply) => {
@@ -307,8 +309,8 @@ app.get('/api/wheel/history', async (request, reply) => {
   const telegramId = payload?.telegramId;
   if (!telegramId) return reply.code(401).send({ message: 'Unauthorized' });
   const user = await context.points.getUserByTelegramId(telegramId);
-  if (!user) return { spins: [] };
-  return { spins: await context.wheel.listSpinHistory(user.id) };
+  if (!user) return normalizeWheelHistoryResponse({ spins: [] }, telegramId);
+  return normalizeWheelHistoryResponse({ spins: await context.wheel.listSpinHistory(user.id) }, telegramId);
 });
 
 app.get('/api/admin/rewards', async () => normalizeAdminRewardsResponse({ rewards: await context.rewards.listRewards() }));
@@ -449,7 +451,7 @@ app.get('/api/admin/wheel/spins', async (request) => {
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
   }).parse(request.query);
-  return { spins: await context.wheel.listAdminSpins(query) };
+  return normalizeWheelHistoryResponse({ spins: await context.wheel.listAdminSpins(query), limit: query.limit, offset: query.offset }, '');
 });
 
 app.post('/admin/adjust', async (request) => {

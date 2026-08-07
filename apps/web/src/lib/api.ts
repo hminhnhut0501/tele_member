@@ -1,3 +1,8 @@
+import {
+  normalizeWheelCurrentResponse,
+  normalizeWheelHistoryResponse,
+} from '@tele-member/shared';
+
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
 
 async function request(path: string, options: RequestInit = {}, token?: string | null) {
@@ -70,9 +75,9 @@ export function apiClient(token?: string | null) {
         method: 'POST',
         body: JSON.stringify({ amount }),
       }, token),
-    getWheelCurrent: () => request('/api/wheel/current', {}, token),
+    getWheelCurrent: async () => normalizeWheelCurrentResponse(await request('/api/wheel/current', {}, token)),
     spinWheel: () => request('/api/wheel/spin', { method: 'POST' }, token),
-    getWheelHistory: () => request('/api/wheel/history', {}, token),
+    getWheelHistory: async () => normalizeWheelHistoryResponse(await request('/api/wheel/history', {}, token)),
     adminGetRewards: () => request('/api/admin/rewards', {}, token),
     adminCreateReward: (payload: {
       name: string;
@@ -103,6 +108,6 @@ export function apiClient(token?: string | null) {
     adminUpdateWheelPrize: (id: string, payload: Record<string, unknown>) =>
       request(`/api/admin/wheel/prizes/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }, token),
     adminDeleteWheelPrize: (id: string) => request(`/api/admin/wheel/prizes/${id}`, { method: 'DELETE' }, token),
-    adminGetWheelSpins: () => request('/api/admin/wheel/spins', {}, token),
+    adminGetWheelSpins: async () => normalizeWheelHistoryResponse(await request('/api/admin/wheel/spins', {}, token)),
   };
 }

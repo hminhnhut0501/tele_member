@@ -7,9 +7,11 @@ import {
   normalizeAdminRewardsResponse,
   normalizeAdminTransactionsResponse,
   normalizeWheelCampaignsResponse,
+  normalizeWheelHistoryResponse,
   normalizeWheelPrizesResponse,
   type WheelCampaign,
   type WheelPrize,
+  type WheelSpinHistoryItem,
   type WheelPreviewContract,
 } from '@tele-member/shared';
 import { createAdminService } from './admin-service';
@@ -68,7 +70,7 @@ export function useAdminDashboard() {
   const [createPrizeOpen, setCreatePrizeOpen] = useState(false);
   const [selectedWheelCampaignId, setSelectedWheelCampaignId] = useState('');
   const [wheelPrizes, setWheelPrizes] = useState<WheelPrize[]>([]);
-  const [wheelSpins, setWheelSpins] = useState<any[]>([]);
+  const [wheelSpins, setWheelSpins] = useState<WheelSpinHistoryItem[]>([]);
   const [wheelPreview, setWheelPreview] = useState<WheelPreviewContract | null>(null);
   const [editingReward, setEditingReward] = useState<any>(null);
   const [editingCampaign, setEditingCampaign] = useState<any>(null);
@@ -151,7 +153,9 @@ export function useAdminDashboard() {
 
   useEffect(() => {
     if (!token) return;
-    service.getWheelSpins().then((data) => setWheelSpins(data.spins ?? [])).catch(() => setWheelSpins([]));
+    service.getWheelSpins()
+      .then((data) => setWheelSpins(normalizeWheelHistoryResponse(data).spins))
+      .catch(() => setWheelSpins([]));
   }, [service, token]);
 
   async function login() {

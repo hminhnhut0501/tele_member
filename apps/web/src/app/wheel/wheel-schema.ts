@@ -142,6 +142,7 @@ export interface WheelSpinHistoryItem {
   resultType: PrizeType | string;
   status: 'won' | 'missed' | 'pending' | 'claimed';
   createdAt: string;
+  resultMetadata?: WheelPrizeMetadata | Record<string, unknown>;
 }
 
 export interface WheelSlotToken {

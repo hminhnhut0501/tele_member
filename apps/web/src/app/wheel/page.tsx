@@ -6,13 +6,14 @@ import { apiClient } from '../../lib/api';
 import { PageShell } from '../shared-ui';
 import { WheelDial } from './wheel-dial';
 import { buildWheelRenderContract } from './wheel-contract';
-import { getDefaultWheelPrizes, type WheelPrize } from './wheel-model';
+import { getDefaultWheelPrizes, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
+import { getWheelStartSpinRotation, getWheelTargetRotation } from './wheel-engine';
 import { WheelHistoryRail, WheelRewardRail } from './wheel-rail';
 
 export default function WheelPage() {
   const [token, setToken] = useState<string | null>(null);
   const [prizes, setPrizes] = useState<WheelPrize[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<WheelSpinHistoryItem[]>([]);
   const [spins, setSpins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
@@ -50,7 +51,6 @@ export default function WheelPage() {
     };
   }, [client, token]);
 
-  const renderContract = buildWheelRenderContract(prizes);
   const demoFallbackPrizes = getDefaultWheelPrizes();
   const effectivePrizes = prizes.length ? prizes : demoFallbackPrizes;
   const renderContractWithFallback = buildWheelRenderContract(effectivePrizes);
@@ -62,17 +62,14 @@ export default function WheelPage() {
       setSpinning(true);
       setSpinPhase('spinning');
 
-      const spinStart = rotation + 1440 + Math.floor(Math.random() * 360);
+      const spinStart = getWheelStartSpinRotation(rotation);
       setRotation(spinStart);
 
       const data = await client.spinWheel();
 
       const prizeId = data?.prize?.id;
-      const prizeIndex = segments.findIndex((segment) => segment.id === prizeId);
-      if (prizeIndex >= 0) {
-        const segmentAngle = 360 / Math.max(segments.length, 1);
-        const target = 360 - (prizeIndex * segmentAngle + segmentAngle / 2);
-        const finalRotation = spinStart + target;
+      const finalRotation = spinStart + getWheelTargetRotation(segments, prizeId);
+      if (prizeId && finalRotation !== spinStart) {
         setSpinPhase('settling');
         setRotation(finalRotation + 10);
         window.setTimeout(() => setRotation(finalRotation - 3), 180);

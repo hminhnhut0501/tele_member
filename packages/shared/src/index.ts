@@ -347,6 +347,34 @@ export type WheelSpinsResponse = {
   total?: number;
 };
 
+export type WheelCurrentResponse = {
+  campaign: WheelCampaign | null;
+  prizes: WheelPrize[];
+};
+
+export type WheelSpinHistoryItem = {
+  id: string;
+  userId: string;
+  telegramId: string;
+  username: string | null;
+  displayName: string | null;
+  prizeId: string | null;
+  prizeName: string;
+  prizeToken: string | null;
+  resultLabel: string;
+  resultType: string;
+  status: 'won' | 'missed' | 'pending' | 'claimed';
+  createdAt: string;
+  resultMetadata: Record<string, unknown>;
+};
+
+export type WheelHistoryResponse = {
+  spins: WheelSpinHistoryItem[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+};
+
 export type RewardsResponse = {
   rewards: Reward[];
   limit?: number;
@@ -680,6 +708,81 @@ function normalizeWheelSpinShape(spin: Partial<WheelSpin> & Record<string, unkno
   });
 }
 
+function normalizeWheelStatus(value: unknown, hasPrize: boolean): WheelSpinHistoryItem['status'] {
+  const raw = String(value ?? '').toLowerCase();
+  if (raw === 'won' || raw === 'missed' || raw === 'pending' || raw === 'claimed') return raw;
+  return hasPrize ? 'won' : 'missed';
+}
+
+function normalizeWheelHistoryShape(
+  spin: Partial<WheelSpinHistoryItem> & Record<string, unknown>,
+  fallbackTelegramId = '',
+): WheelSpinHistoryItem {
+  const metadata = (spin.resultMetadata ?? spin.result_metadata ?? {}) as Record<string, unknown>;
+  const user = (spin.user ?? spin.users ?? metadata.user ?? metadata.users ?? {}) as Record<string, unknown>;
+  const prize = (spin.prize ?? spin.wheel_prizes ?? metadata.prize ?? metadata.wheelPrize ?? {}) as Record<string, unknown>;
+  const prizeMetadata = (prize.metadata ?? metadata.prizeMetadata ?? metadata.prize_metadata ?? {}) as Record<string, unknown>;
+  const prizeType = String(prize.type ?? spin.resultType ?? metadata.resultType ?? metadata.result_type ?? 'CUSTOM').toUpperCase();
+  const telegramId = normalizeText(
+    spin.telegramId ?? spin.telegram_id ?? user.telegramId ?? user.telegram_id ?? fallbackTelegramId,
+  ) || fallbackTelegramId;
+  const username = user.username ?? metadata.username ?? null;
+  const firstName = normalizeText(user.firstName ?? user.first_name ?? '');
+  const lastName = normalizeText(user.lastName ?? user.last_name ?? '');
+  const displayName = firstName || lastName ? normalizeText([firstName, lastName].filter(Boolean).join(' ')) : (username ? `@${normalizeText(username)}` : null);
+  const prizeName = normalizeText(
+    spin.prizeName ??
+      spin.prize_name ??
+      prize.name ??
+      prize.prizeName ??
+      prize.prize_name ??
+      metadata.prizeName ??
+      metadata.prize_name ??
+      'Không trúng',
+  ) || 'Không trúng';
+  const prizeToken = normalizeText(
+    spin.prizeToken ??
+      spin.prize_token ??
+      metadata.prizeToken ??
+      metadata.prize_token ??
+      getGlyph({ type: prizeType, metadata: prizeMetadata, name: prizeName }),
+  ) || null;
+  const resultLabel = normalizeText(
+    spin.resultLabel ??
+      spin.result_label ??
+      metadata.resultLabel ??
+      metadata.result_label ??
+      prizeName,
+  ) || prizeName;
+  const resultType = normalizeText(
+    spin.resultType ??
+      spin.result_type ??
+      prizeType ??
+      metadata.resultType ??
+      metadata.result_type ??
+      (prizeName === 'Không trúng' ? 'NOTHING' : 'CUSTOM'),
+  ) || 'CUSTOM';
+  const createdAt = String(spin.createdAt ?? spin.created_at ?? metadata.createdAt ?? metadata.created_at ?? '');
+  return {
+    id: String(spin.id ?? metadata.id ?? cryptoRandomId('spin_history')),
+    userId: String(spin.userId ?? spin.user_id ?? user.id ?? metadata.userId ?? metadata.user_id ?? ''),
+    telegramId,
+    username: username ? normalizeText(username) : null,
+    displayName,
+    prizeId: (spin.prizeId ?? spin.prize_id ?? prize.id ?? metadata.prizeId ?? metadata.prize_id ?? null) as string | null,
+    prizeName,
+    prizeToken,
+    resultLabel,
+    resultType,
+    status: normalizeWheelStatus(spin.status ?? metadata.status, Boolean(spin.prizeId ?? spin.prize_id ?? prize.id)),
+    createdAt,
+    resultMetadata: normalizeSnakeCaseRecord({
+      ...metadata,
+      ...(spin.resultMetadata ?? spin.result_metadata ?? {}),
+    }),
+  };
+}
+
 function normalizeResponseEnvelope<T>(value: T) {
   return value;
 }
@@ -768,6 +871,28 @@ export function normalizeWheelSpinsResponse(input: Partial<WheelSpinsResponse> &
   const spins = Array.isArray(input.spins ?? (input as any).data) ? (input.spins ?? (input as any).data) : [];
   return normalizeResponseEnvelope({
     spins: spins.map((spin: unknown) => normalizeWheelSpinShape(spin as Partial<WheelSpin> & Record<string, unknown>)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
+}
+
+export function normalizeWheelCurrentResponse(input: Partial<WheelCurrentResponse> & Record<string, unknown>): WheelCurrentResponse {
+  const campaign = input.campaign ? normalizeWheelCampaignShape(input.campaign as Partial<WheelCampaign> & Record<string, unknown>) : null;
+  const prizes = Array.isArray(input.prizes ?? (input as any).data) ? (input.prizes ?? (input as any).data) : [];
+  return {
+    campaign,
+    prizes: prizes.map((prize: unknown) => normalizeWheelPrizeShape(prize as Partial<WheelPrize> & Record<string, unknown>)),
+  };
+}
+
+export function normalizeWheelHistoryResponse(
+  input: Partial<WheelHistoryResponse> & Record<string, unknown>,
+  fallbackTelegramId = '',
+): WheelHistoryResponse {
+  const spins = Array.isArray(input.spins ?? (input as any).data) ? (input.spins ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    spins: spins.map((spin: unknown) => normalizeWheelHistoryShape(spin as Partial<WheelSpinHistoryItem> & Record<string, unknown>, fallbackTelegramId)),
     limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
     offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
     total: input.total === undefined ? (input as any).total : Number(input.total),

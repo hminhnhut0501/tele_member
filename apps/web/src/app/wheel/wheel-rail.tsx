@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Card, CardContent, Chip, Stack, Typography } from '@mui/material';
-import { getWheelPrizeGlyph, getWheelPrizeShortLabel, type WheelPrize } from './wheel-model';
+import { getWheelPrizeGlyph, getWheelPrizeShortLabel, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
 
 export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
   return (
@@ -52,18 +52,7 @@ export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
   );
 }
 
-type WheelHistoryItem = {
-  id: string;
-  created_at?: string;
-  createdAt?: string;
-  prize_id?: string | null;
-  prize?: { name?: string | null; type?: string | null } | null;
-  wheel_prizes?: { name?: string | null; type?: string | null } | null;
-  result_metadata?: Record<string, unknown> | null;
-  users?: { username?: string | null; first_name?: string | null; last_name?: string | null; avatar_url?: string | null } | null;
-};
-
-export function WheelHistoryRail({ items }: { items: WheelHistoryItem[] }) {
+export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
   return (
     <Card
       sx={{
@@ -92,14 +81,15 @@ export function WheelHistoryRail({ items }: { items: WheelHistoryItem[] }) {
 
           <Stack spacing={1}>
             {items.length ? items.map((item) => {
-              const name = item.users?.first_name || item.users?.last_name
-                ? `${item.users?.first_name ?? ''} ${item.users?.last_name ?? ''}`.trim()
-                : item.users?.username
-                  ? `@${item.users.username}`
-                  : 'Người chơi';
-              const createdAt = item.created_at ?? item.createdAt ?? '';
-              const prizeName = item.prize?.name ?? item.wheel_prizes?.name ?? 'Không trúng';
-              const glyph = String(item.result_metadata?.glyph ?? item.result_metadata?.wheelGlyph ?? item.prize?.type ?? item.wheel_prizes?.type ?? '✦');
+              const name = item.displayName ?? (item.username ? `@${item.username}` : 'Người chơi');
+              const createdAt = item.createdAt ?? '';
+              const prizeName = item.prizeName || 'Không trúng';
+              const glyph = item.prizeToken || item.resultLabel || getWheelPrizeGlyph({ type: item.resultType, metadata: item.resultMetadata });
+              const statusLabel =
+                item.status === 'won' ? 'Đã trúng' :
+                item.status === 'claimed' ? 'Đã nhận' :
+                item.status === 'pending' ? 'Chờ xử lý' :
+                'Chưa trúng';
               return (
                 <Box
                   key={item.id}
@@ -129,10 +119,10 @@ export function WheelHistoryRail({ items }: { items: WheelHistoryItem[] }) {
                         fontSize: '1rem',
                         fontWeight: 900,
                       }}
-                    >
-                      {glyph}
-                    </Box>
-                    <Box sx={{ minWidth: 0 }}>
+                  >
+                    {glyph}
+                  </Box>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
                       <Typography sx={{ color: '#f4f8ff', fontWeight: 800, lineHeight: 1.2 }} noWrap>
                         {name}
                       </Typography>
@@ -140,6 +130,16 @@ export function WheelHistoryRail({ items }: { items: WheelHistoryItem[] }) {
                         {prizeName}
                       </Typography>
                     </Box>
+                    <Chip
+                      label={statusLabel}
+                      size="small"
+                      sx={{
+                        bgcolor: item.status === 'won' ? 'rgba(52,211,153,0.16)' : 'rgba(255,255,255,0.06)',
+                        color: '#ecf4ff',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        fontWeight: 800,
+                      }}
+                    />
                   </Stack>
                   <Typography sx={{ color: 'rgba(226,234,255,0.56)', fontSize: '0.8rem', flex: '0 0 auto' }}>
                     {createdAt ? new Date(createdAt).toLocaleString('vi-VN') : '—'}

@@ -202,9 +202,9 @@ export function RewardsSection(props: any) {
         <CardContent sx={{ pt: 0 }}>
           <Stack spacing={1.25}>
             {props.rewards.map((reward: any) => {
-              const pointCost = reward.pointCost ?? reward.point_cost ?? 0;
+              const pointCost = reward.pointCost ?? 0;
               const stock = reward.stock ?? null;
-              const isActive = reward.isActive ?? reward.is_active ?? true;
+              const isActive = reward.isActive ?? true;
               return (
                 <Box
                   key={reward.id}
@@ -354,7 +354,7 @@ export function WheelSection(props: any) {
             </Stack>
             <Stack spacing={1}>
             {props.campaigns.map((campaign: any) => {
-              const isActive = campaign.isActive ?? campaign.is_active ?? true;
+              const isActive = campaign.isActive ?? true;
               return (
                 <Box
                   key={campaign.id}
@@ -409,7 +409,7 @@ export function WheelSection(props: any) {
 
             <Stack spacing={1}>
               {props.wheelPrizes.map((prize: any) => {
-                const isActive = prize.isActive ?? prize.is_active ?? true;
+                const isActive = prize.isActive ?? true;
                 return (
                   <Box key={prize.id} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
                     <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'start', md: 'center' }}>
@@ -458,14 +458,14 @@ export function WheelSection(props: any) {
       <AppSection title="Lịch sử trúng" subtitle="Theo dõi các lượt quay gần đây." accent="emerald">
         <CardContent>
           <Stack spacing={1}>
-            {props.wheelSpins.slice(0, 10).map((spin: any) => (
-              <Box key={spin.id} sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
-                <Typography fontWeight={800}>{spin.users?.first_name ?? spin.users?.username ?? spin.userId ?? spin.user_id}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {spin.wheel_prizes?.name ?? spin.resultMetadata?.prizeName ?? 'Không trúng'} • {new Date(spin.createdAt ?? spin.created_at).toLocaleString('vi-VN')}
-                </Typography>
-              </Box>
-            ))}
+              {props.wheelSpins.slice(0, 10).map((spin: any) => (
+                <Box key={spin.id} sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+                  <Typography fontWeight={800}>{spin.displayName ?? spin.username ?? spin.userId}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                  {spin.prizeName ?? spin.resultLabel ?? 'Không trúng'} • {new Date(spin.createdAt).toLocaleString('vi-VN')}
+                  </Typography>
+                </Box>
+              ))}
           </Stack>
         </CardContent>
       </AppSection>
