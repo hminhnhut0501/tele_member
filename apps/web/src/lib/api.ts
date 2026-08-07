@@ -106,6 +106,7 @@ export function apiClient(token?: string | null) {
         return acc;
       }, {} as Record<string, string>)).toString()}`, {}, token)),
     adminGetPolicies: async () => normalizePolicyConfigsResponse(await request('/api/admin/policies', {}, token)),
+    adminGetFeatureFlags: async () => normalizePolicyConfigsResponse(await request('/api/admin/feature-flags', {}, token)),
     adminGetPolicy: (key: string) => request(`/api/admin/policies/${encodeURIComponent(key)}`, {}, token),
     adminGetPolicyVersions: async (key: string) => normalizePolicyVersionsResponse(await request(`/api/admin/policies/${encodeURIComponent(key)}/versions`, {}, token)),
     adminUpdatePolicy: (key: string, payload: {

@@ -30,9 +30,11 @@ import CasinoRoundedIcon from '@mui/icons-material/CasinoRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import MonitorHeartRoundedIcon from '@mui/icons-material/MonitorHeartRounded';
 import PolicyRoundedIcon from '@mui/icons-material/PolicyRounded';
+import ToggleOnRoundedIcon from '@mui/icons-material/ToggleOnRounded';
 import { useAdminDashboard } from './use-admin-dashboard';
 import {
   AuditSection,
+  FeatureFlagsSection,
   OverviewSection,
   PolicySection,
   RewardsSection,
@@ -45,7 +47,7 @@ import {
 } from './components/admin-sections';
 import { MetricCard } from '../shared-ui';
 
-type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'policies' | 'ops' | 'settings';
+type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'policies' | 'featureFlags' | 'ops' | 'settings';
 
 const NAV_ITEMS: Array<{ key: SectionKey; label: string; icon: React.ReactNode }> = [
   { key: 'overview', label: 'Tổng quan', icon: <DashboardRoundedIcon /> },
@@ -55,6 +57,7 @@ const NAV_ITEMS: Array<{ key: SectionKey; label: string; icon: React.ReactNode }
   { key: 'rewards', label: 'Quà đổi', icon: <Inventory2RoundedIcon /> },
   { key: 'wheel', label: 'Vòng quay', icon: <CasinoRoundedIcon /> },
   { key: 'policies', label: 'Chính sách', icon: <PolicyRoundedIcon /> },
+  { key: 'featureFlags', label: 'Cờ tính năng', icon: <ToggleOnRoundedIcon /> },
   { key: 'ops', label: 'Vận hành', icon: <MonitorHeartRoundedIcon /> },
   { key: 'settings', label: 'Cài đặt', icon: <SettingsRoundedIcon /> },
 ];
@@ -196,6 +199,14 @@ export default function AdminPage() {
                 setPolicyNote={admin.setPolicyNote}
                 openPolicyEditor={admin.openPolicyEditor}
                 handleSavePolicy={admin.handleSavePolicy}
+                refreshPolicies={admin.refreshPolicies}
+              />
+            ) : null}
+            {admin.activeSection === 'featureFlags' ? (
+              <FeatureFlagsSection
+                featureFlagsLive={admin.featureFlagsLive}
+                policies={admin.policies}
+                openPolicyEditor={admin.openPolicyEditor}
                 refreshPolicies={admin.refreshPolicies}
               />
             ) : null}

@@ -25,7 +25,7 @@ import {
 import { createAdminService } from './admin-service';
 import type { AdminAuditLog, AdminTransaction, AdminUser } from './components/admin-tables';
 
-type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'policies' | 'ops' | 'settings';
+type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'policies' | 'featureFlags' | 'ops' | 'settings';
 
 export function useAdminDashboard() {
   const [token, setToken] = useState<string | null>(null);
@@ -49,6 +49,7 @@ export function useAdminDashboard() {
   const [campaigns, setCampaigns] = useState<WheelCampaign[]>([]);
   const [policies, setPolicies] = useState<PolicyConfig[]>([]);
   const [policyVersions, setPolicyVersions] = useState<PolicyVersion[]>([]);
+  const [featureFlagsLive, setFeatureFlagsLive] = useState<Record<string, unknown>>({});
   const [opsSummary, setOpsSummary] = useState<OpsSummary | null>(null);
   const [opsEvents, setOpsEvents] = useState<OpsEvent[]>([]);
   const [opsSeverity, setOpsSeverity] = useState<'all' | 'info' | 'warning' | 'error' | 'critical'>('all');
@@ -154,6 +155,13 @@ export function useAdminDashboard() {
         setSelectedPolicyKey((current) => current || normalized[0]?.policyKey || '');
       })
       .catch(() => setPolicies([]));
+    service.getFeatureFlags()
+      .then((data) => {
+        const normalized = normalizePolicyConfigsResponse(data).policies;
+        const policy = normalized.find((item) => item.policyKey === 'feature_flags') ?? normalized[0] ?? null;
+        setFeatureFlagsLive((policy?.publishedData ?? policy?.draftData ?? {}) as Record<string, unknown>);
+      })
+      .catch(() => setFeatureFlagsLive({}));
     refreshOps();
   }, [page, pageSize, search, service, token]);
 
@@ -577,6 +585,7 @@ export function useAdminDashboard() {
     campaigns,
     policies,
     policyVersions,
+    featureFlagsLive,
     opsSummary,
     opsEvents,
     opsSeverity,

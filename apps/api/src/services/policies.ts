@@ -1,4 +1,10 @@
 export function createPolicyService(supabase: any) {
+  async function getActivePolicyJson(policyKey: string) {
+    const { data, error } = await supabase.rpc('get_active_policy_json', { p_policy_key: policyKey });
+    if (error) throw error;
+    return data ?? {};
+  }
+
   async function listPolicies() {
     const { data = [] } = await supabase
       .from('policy_configs')
@@ -74,5 +80,9 @@ export function createPolicyService(supabase: any) {
     return data;
   }
 
-  return { listPolicies, getPolicy, savePolicyDraft, publishPolicy };
+  async function getFeatureFlags() {
+    return getActivePolicyJson('feature_flags');
+  }
+
+  return { listPolicies, getPolicy, savePolicyDraft, publishPolicy, getActivePolicyJson, getFeatureFlags };
 }

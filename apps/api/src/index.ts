@@ -420,6 +420,16 @@ app.get('/api/admin/policies', async (request) => {
   return normalizePolicyConfigsResponse({ policies: filtered, total: filtered.length });
 });
 
+app.get('/api/admin/feature-flags', async () => {
+  const policy = await context.policies.getPolicy('feature_flags');
+  return normalizePolicyConfigsResponse({ policies: policy ? [policy] : [] });
+});
+
+app.get('/api/feature-flags', async () => {
+  const flags = await context.policies.getFeatureFlags();
+  return { flags };
+});
+
 app.get('/api/admin/policies/:key', async (request, reply) => {
   const params = z.object({ key: z.string().min(1) }).parse(request.params);
   const policy = await context.policies.getPolicy(params.key);
@@ -475,6 +485,14 @@ app.post('/api/admin/policies/:key/publish', async (request, reply) => {
     note: body.note ?? null,
     actorEmail,
   });
+  await context.ops.logEvent({
+    source: 'admin_policy',
+    category: 'publish_flow',
+    severity: 'info',
+    title: 'Policy published',
+    message: `Published policy ${params.key}`,
+    metadata: { policyKey: params.key, scope: body.scope, actorEmail },
+  }).catch(() => {});
   return policy;
 });
 

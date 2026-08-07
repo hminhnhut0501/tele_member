@@ -195,6 +195,63 @@ export function AuditSection({ auditLogs, handleDebugEnv, auditFilter, setAuditF
   return <AuditTable logs={auditLogs} onRefresh={handleDebugEnv} filter={auditFilter} onFilterChange={setAuditFilter} />;
 }
 
+function flagLabel(value: unknown) {
+  return value ? 'Bật' : 'Tắt';
+}
+
+export function FeatureFlagsSection({ featureFlagsLive, policies, openPolicyEditor, refreshPolicies }: any) {
+  const featurePolicy = policies.find((policy: any) => policy.policyKey === 'feature_flags') ?? null;
+  const published = featurePolicy?.publishedData ?? {};
+  const draft = featurePolicy?.draftData ?? {};
+  const keys = Array.from(new Set([...Object.keys(published ?? {}), ...Object.keys(draft ?? {}), ...Object.keys(featureFlagsLive ?? {})]));
+
+  return (
+    <Stack spacing={2}>
+      <AppSection
+        title="Cờ tính năng"
+        subtitle="Bật/tắt nhanh những phần cần mở theo từng giai đoạn mà không hardcode vào backend."
+        accent="violet"
+        action={
+          <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
+            <Button variant="outlined" onClick={refreshPolicies}>Làm mới</Button>
+            <Button variant="contained" onClick={() => featurePolicy && openPolicyEditor(featurePolicy)}>Sửa & xuất bản</Button>
+          </Stack>
+        }
+      >
+        <CardContent sx={{ pt: 0 }}>
+          <Stack spacing={2}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 1.5 }}>
+              <MetricCard label="Policy live" value={featurePolicy ? policyStatusLabel(featurePolicy.status) : 'Chưa có'} note={`Scope: ${policyScopeLabel(featurePolicy?.scope ?? 'feature_flag')}`} accent="violet" />
+              <MetricCard label="Flag bật" value={String(Object.values(featureFlagsLive ?? {}).filter(Boolean).length)} note="Trạng thái runtime" accent="emerald" />
+              <MetricCard label="Flag tổng" value={String(keys.length)} note="Nháp + published" accent="blue" />
+            </Box>
+
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+              {keys.length ? keys.map((key) => (
+                <Chip
+                  key={key}
+                  label={`${key}: ${flagLabel((featureFlagsLive as any)?.[key] ?? published?.[key] ?? draft?.[key])}`}
+                  color={Boolean((featureFlagsLive as any)?.[key] ?? published?.[key] ?? draft?.[key]) ? 'success' : 'default'}
+                  variant={Boolean((featureFlagsLive as any)?.[key] ?? published?.[key] ?? draft?.[key]) ? 'filled' : 'outlined'}
+                />
+              )) : (
+                <Typography color="text.secondary">Chưa có cờ tính năng nào.</Typography>
+              )}
+            </Stack>
+
+            <Box sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+              <Typography fontWeight={800} sx={{ mb: 1 }}>Luồng publish</Typography>
+              <Typography variant="body2" color="text.secondary">
+                1) Sửa nháp trong policy center. 2) Xem preview trước khi publish. 3) Xuất bản để runtime đọc từ <code>feature_flags</code>.
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </AppSection>
+    </Stack>
+  );
+}
+
 function opsStatusLabel(value: string) {
   if (value === 'ok') return 'Ổn định';
   if (value === 'degraded') return 'Suy giảm';
