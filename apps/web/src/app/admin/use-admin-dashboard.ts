@@ -3,13 +3,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   buildWheelPreviewContract,
+  normalizeAdminAuditLogsResponse,
+  normalizeAdminRewardsResponse,
+  normalizeAdminTransactionsResponse,
+  normalizeWheelCampaignsResponse,
+  normalizeWheelPrizesResponse,
   type WheelCampaign,
   type WheelPrize,
   type WheelPreviewContract,
 } from '@tele-member/shared';
 import { createAdminService } from './admin-service';
 import type { AdminAuditLog, AdminTransaction, AdminUser } from './components/admin-tables';
-import { normalizeWheelCampaign, normalizeWheelPrize } from '../wheel/wheel-schema';
 
 type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'settings';
 
@@ -101,14 +105,22 @@ export function useAdminDashboard() {
   useEffect(() => {
     if (!token) return;
     service.getUsers(search, page * pageSize, pageSize).then((data) => setUsers(data.users ?? data)).catch((err) => setError(String(err)));
-    service.getTransactions(search, page * pageSize, pageSize).then((data) => setTransactions(data.transactions ?? data)).catch((err) => setError(String(err)));
-    service.getAuditLogs(page * pageSize, pageSize).then((data) => setAuditLogs(data.logs ?? data)).catch((err) => setError(String(err)));
-    service.getRewards().then((data) => setRewards(data.rewards ?? [])).catch(() => {});
-    service.getWheelCampaigns().then((data) => {
-      const nextCampaigns = (data.campaigns ?? []).map((campaign: WheelCampaign) => normalizeWheelCampaign(campaign as any));
-      setCampaigns(nextCampaigns);
-      setSelectedWheelCampaignId((current) => current || nextCampaigns[0]?.id || '');
-    }).catch(() => {});
+    service.getTransactions(search, page * pageSize, pageSize)
+      .then((data) => setTransactions(normalizeAdminTransactionsResponse(data).transactions as AdminTransaction[]))
+      .catch((err) => setError(String(err)));
+    service.getAuditLogs(page * pageSize, pageSize)
+      .then((data) => setAuditLogs(normalizeAdminAuditLogsResponse(data).logs as AdminAuditLog[]))
+      .catch((err) => setError(String(err)));
+    service.getRewards()
+      .then((data) => setRewards(normalizeAdminRewardsResponse(data).rewards))
+      .catch(() => {});
+    service.getWheelCampaigns()
+      .then((data) => {
+        const normalized = normalizeWheelCampaignsResponse(data).campaigns;
+        setCampaigns(normalized);
+        setSelectedWheelCampaignId((current) => current || normalized[0]?.id || '');
+      })
+      .catch(() => {});
   }, [page, pageSize, search, service, token]);
 
   useEffect(() => {
@@ -118,7 +130,7 @@ export function useAdminDashboard() {
       service.getWheelPreview(selectedWheelCampaignId),
     ])
       .then(([prizeData, previewData]) => {
-        const nextPrizes = (prizeData.prizes ?? []).map((prize: WheelPrize) => normalizeWheelPrize(prize as any));
+        const nextPrizes = normalizeWheelPrizesResponse(prizeData).prizes;
         setWheelPrizes(nextPrizes);
         setWheelPreview(buildWheelPreviewContract({
           campaignId: selectedWheelCampaignId,
@@ -232,7 +244,7 @@ export function useAdminDashboard() {
         metadata: {},
       });
       const data = await service.getRewards();
-      setRewards(data.rewards ?? []);
+      setRewards(normalizeAdminRewardsResponse(data).rewards);
       setCreateRewardOpen(false);
       setNotice('Đã tạo quà');
     } catch (err) {
@@ -250,7 +262,7 @@ export function useAdminDashboard() {
         metadata: {},
       });
       const data = await service.getWheelCampaigns();
-      setCampaigns((data.campaigns ?? []).map((campaign: WheelCampaign) => normalizeWheelCampaign(campaign as any)));
+      setCampaigns(normalizeWheelCampaignsResponse(data).campaigns);
       setCreateCampaignOpen(false);
       setNotice('Đã tạo chiến dịch');
     } catch (err) {
@@ -294,11 +306,12 @@ export function useAdminDashboard() {
         },
       });
       const data = await service.getWheelPrizes(prizeCampaignId);
-      setWheelPrizes((data.prizes ?? []).map((prize: WheelPrize) => normalizeWheelPrize(prize as any)));
+      const normalizedPrizes = normalizeWheelPrizesResponse(data).prizes;
+      setWheelPrizes(normalizedPrizes);
       const preview = await service.getWheelPreview(prizeCampaignId);
       setWheelPreview(buildWheelPreviewContract({
         campaignId: prizeCampaignId,
-        prizes: ((data.prizes ?? []) as WheelPrize[]).map((prize) => normalizeWheelPrize(prize as any)) as unknown as Array<Record<string, unknown>>,
+        prizes: normalizedPrizes as unknown as Array<Record<string, unknown>>,
         distribution: Array.isArray((preview as any)?.distribution) ? (preview as any).distribution : Array.isArray((preview as any)?.prizes) ? (preview as any).prizes : [],
         totalWeight: (preview as any)?.totalWeight ?? (preview as any)?.total_weight,
         preset: (preview as any)?.preset ?? (preview as any)?.slotPreset,
@@ -336,12 +349,13 @@ export function useAdminDashboard() {
           description: editPrizeDescription || null,
         },
       });
-      const data = await service.getWheelPrizes(selectedWheelCampaignId || editingPrize.campaign_id);
-      setWheelPrizes((data.prizes ?? []).map((prize: WheelPrize) => normalizeWheelPrize(prize as any)));
-      const preview = await service.getWheelPreview(selectedWheelCampaignId || editingPrize.campaign_id);
+      const data = await service.getWheelPrizes(selectedWheelCampaignId || editingPrize.campaignId);
+      const normalizedPrizes = normalizeWheelPrizesResponse(data).prizes;
+      setWheelPrizes(normalizedPrizes);
+      const preview = await service.getWheelPreview(selectedWheelCampaignId || editingPrize.campaignId);
       setWheelPreview(buildWheelPreviewContract({
-        campaignId: selectedWheelCampaignId || editingPrize.campaign_id,
-        prizes: ((data.prizes ?? []) as WheelPrize[]).map((prize) => normalizeWheelPrize(prize as any)) as unknown as Array<Record<string, unknown>>,
+        campaignId: selectedWheelCampaignId || editingPrize.campaignId,
+        prizes: normalizedPrizes as unknown as Array<Record<string, unknown>>,
         distribution: Array.isArray((preview as any)?.distribution) ? (preview as any).distribution : Array.isArray((preview as any)?.prizes) ? (preview as any).prizes : [],
         totalWeight: (preview as any)?.totalWeight ?? (preview as any)?.total_weight,
         preset: (preview as any)?.preset ?? (preview as any)?.slotPreset,
@@ -368,7 +382,7 @@ export function useAdminDashboard() {
         stock: editRewardStock === '' ? null : Number(editRewardStock),
       });
       const data = await service.getRewards();
-      setRewards(data.rewards ?? []);
+      setRewards(normalizeAdminRewardsResponse(data).rewards);
       setEditingReward(null);
       setNotice('Đã lưu quà');
     } catch (err) {
@@ -387,7 +401,7 @@ export function useAdminDashboard() {
         isActive: editCampaignActive,
       });
       const data = await service.getWheelCampaigns();
-      setCampaigns(data.campaigns ?? []);
+      setCampaigns(normalizeWheelCampaignsResponse(data).campaigns);
       setEditingCampaign(null);
       setNotice('Đã lưu chiến dịch');
     } catch (err) {

@@ -226,8 +226,8 @@ export type PointTransaction = z.infer<typeof pointTransactionSchema>;
 export type PointSummary = z.infer<typeof pointSummarySchema>;
 export type CheckinResponse = z.infer<typeof checkinResponseSchema>;
 export type AdminUserRow = z.infer<typeof adminUserRowSchema>;
-export type AdminTransactionRow = z.infer<typeof adminTransactionRowSchema>;
-export type AdminAuditLog = z.infer<typeof adminAuditLogSchema>;
+export type AdminTransactionRecord = z.infer<typeof adminTransactionRowSchema>;
+export type AdminAuditLogRecord = z.infer<typeof adminAuditLogSchema>;
 export type ManualAdjustment = z.infer<typeof manualAdjustmentSchema>;
 export type TelegramProfile = z.infer<typeof telegramProfileSchema>;
 export type Reward = z.infer<typeof rewardSchema>;
@@ -243,6 +243,15 @@ export type WheelSpin = z.infer<typeof wheelSpinSchema>;
 
 export type WheelPreviewRenderMode = 'emoji-only' | 'label-only' | 'mixed';
 export type WheelPreviewPreset = 'five' | 'six' | 'eight' | 'tenPlus' | 'custom';
+export type WheelPreviewWarningType =
+  | 'EMPTY_LABEL'
+  | 'EMPTY_EMOJI'
+  | 'LABEL_TOO_LONG'
+  | 'EMOJI_TOO_MANY'
+  | 'TOTAL_WEIGHT_ZERO'
+  | 'INACTIVE_PRIZE'
+  | 'INVALID_RENDER_MODE'
+  | 'MOBILE_OVERDENSITY';
 
 export type WheelPreviewDistributionItem = {
   prizeId: string;
@@ -280,11 +289,62 @@ export type WheelPreviewContract = {
     fallbackStrategy: WheelPreviewRenderMode;
   };
   warnings: Array<{
-    type: 'EMPTY_LABEL' | 'EMPTY_EMOJI' | 'LABEL_TOO_LONG' | 'EMOJI_TOO_MANY' | 'TOTAL_WEIGHT_ZERO' | 'INACTIVE_PRIZE' | 'INVALID_RENDER_MODE' | 'MOBILE_OVERDENSITY';
+    type: WheelPreviewWarningType;
     prizeId?: string;
     message: string;
     severity: 'info' | 'warning' | 'error';
   }>;
+};
+
+export type AdminRewardRow = Reward;
+export type AdminRewardsResponse = {
+  rewards: AdminRewardRow[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+};
+
+export type AdminTransactionRow = PointTransaction & {
+  telegramId: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+};
+
+export type AdminTransactionsResponse = {
+  transactions: AdminTransactionRecord[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+};
+
+export type AdminAuditLogRow = AdminAuditLogRecord;
+export type AdminAuditLogsResponse = {
+  logs: AdminAuditLogRow[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+};
+
+export type WheelCampaignsResponse = {
+  campaigns: WheelCampaign[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+};
+
+export type WheelPrizesResponse = {
+  prizes: WheelPrize[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+};
+
+export type WheelSpinsResponse = {
+  spins: WheelSpin[];
+  limit?: number;
+  offset?: number;
+  total?: number;
 };
 
 function normalizeText(value: unknown) {
@@ -411,4 +471,195 @@ export function buildWheelPreviewContract(input: {
       severity: warning.severity ?? 'info',
     })),
   };
+}
+
+function normalizeSnakeCaseRecord<T extends Record<string, unknown>>(input: T) {
+  return input as T;
+}
+
+function cryptoRandomId(prefix: string) {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
+  }
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function normalizeRewardShape(reward: Partial<Reward> & Record<string, unknown>): Reward {
+  const metadata = (reward.metadata ?? {}) as Record<string, unknown>;
+  const pointCost = reward.pointCost ?? reward.point_cost ?? metadata.pointCost ?? metadata.point_cost ?? 0;
+  const isActive = reward.isActive ?? reward.is_active ?? metadata.isActive ?? metadata.is_active ?? true;
+  const stock = reward.stock === undefined
+    ? metadata.stock === undefined
+      ? null
+      : metadata.stock === null
+        ? null
+        : Number(metadata.stock)
+    : reward.stock;
+  return rewardSchema.parse({
+    id: String(reward.id ?? metadata.id ?? cryptoRandomId('reward')),
+    name: normalizeText(reward.name ?? metadata.name ?? 'Untitled reward'),
+    description: reward.description === undefined ? (metadata.description === undefined ? null : normalizeText(metadata.description)) : (reward.description === null ? null : normalizeText(reward.description)),
+    type: String(reward.type ?? metadata.type ?? 'CUSTOM').toUpperCase(),
+    pointCost: Number.isFinite(Number(pointCost)) ? Number(pointCost) : 0,
+    stock: stock === null ? null : Number.isFinite(Number(stock)) ? Number(stock) : 0,
+    isActive: Boolean(isActive),
+    metadata: normalizeSnakeCaseRecord({
+      ...metadata,
+      ...reward.metadata,
+    }),
+    createdAt: String(reward.createdAt ?? reward.created_at ?? metadata.createdAt ?? metadata.created_at ?? ''),
+    updatedAt: String(reward.updatedAt ?? reward.updated_at ?? metadata.updatedAt ?? metadata.updated_at ?? ''),
+  });
+}
+
+function normalizeAdminTransactionShape(transaction: Partial<AdminTransactionRecord> & Record<string, unknown>): AdminTransactionRecord {
+  const metadata = (transaction.metadata ?? {}) as Record<string, unknown>;
+  return adminTransactionRowSchema.parse({
+    id: String(transaction.id ?? metadata.id ?? cryptoRandomId('transaction')),
+    userId: String(transaction.userId ?? transaction.user_id ?? metadata.userId ?? metadata.user_id ?? ''),
+    amount: Number.isFinite(Number(transaction.amount ?? metadata.amount ?? 0)) ? Number(transaction.amount ?? metadata.amount ?? 0) : 0,
+    type: String(transaction.type ?? metadata.type ?? 'credit'),
+    reason: String(transaction.reason ?? metadata.reason ?? ''),
+    metadata: normalizeSnakeCaseRecord({
+      ...metadata,
+      ...(transaction.metadata ?? {}),
+    }),
+    createdAt: String(transaction.createdAt ?? transaction.created_at ?? metadata.createdAt ?? metadata.created_at ?? ''),
+    telegramId: String(transaction.telegramId ?? transaction.telegram_id ?? metadata.telegramId ?? metadata.telegram_id ?? ''),
+    username: transaction.username ?? metadata.username ?? null,
+    firstName: transaction.firstName ?? metadata.firstName ?? null,
+    lastName: transaction.lastName ?? metadata.lastName ?? null,
+  });
+}
+
+function normalizeAdminAuditLogShape(log: Partial<AdminAuditLogRow> & Record<string, unknown>): AdminAuditLogRow {
+  const metadata = (log.metadata ?? {}) as Record<string, unknown>;
+  return adminAuditLogSchema.parse({
+    id: String(log.id ?? metadata.id ?? cryptoRandomId('audit')),
+    actorEmail: normalizeText(log.actorEmail ?? log.actor_email ?? metadata.actorEmail ?? metadata.actor_email ?? 'admin@example.com') || 'admin@example.com',
+    action: String(log.action ?? metadata.action ?? ''),
+    targetTelegramId: log.targetTelegramId ?? log.target_telegram_id ?? metadata.targetTelegramId ?? metadata.target_telegram_id ?? null,
+    metadata: normalizeSnakeCaseRecord({
+      ...metadata,
+      ...(log.metadata ?? {}),
+    }),
+    createdAt: String(log.createdAt ?? log.created_at ?? metadata.createdAt ?? metadata.created_at ?? ''),
+  });
+}
+
+function normalizeWheelCampaignShape(campaign: Partial<WheelCampaign> & Record<string, unknown>): WheelCampaign {
+  const metadata = (campaign.metadata ?? {}) as Record<string, unknown>;
+  return wheelCampaignSchema.parse({
+    id: String(campaign.id ?? metadata.id ?? cryptoRandomId('campaign')),
+    name: normalizeText(campaign.name ?? metadata.name ?? 'Wheel Campaign'),
+    description: campaign.description === undefined ? (metadata.description === undefined ? null : normalizeText(metadata.description)) : (campaign.description === null ? null : normalizeText(campaign.description)),
+    isActive: Boolean(campaign.isActive ?? campaign.is_active ?? metadata.isActive ?? metadata.is_active ?? true),
+    startsAt: campaign.startsAt ?? campaign.starts_at ?? metadata.startsAt ?? metadata.starts_at ?? null,
+    endsAt: campaign.endsAt ?? campaign.ends_at ?? metadata.endsAt ?? metadata.ends_at ?? null,
+    metadata: normalizeSnakeCaseRecord({
+      ...metadata,
+      ...campaign.metadata,
+    }),
+    createdAt: String(campaign.createdAt ?? campaign.created_at ?? metadata.createdAt ?? metadata.created_at ?? ''),
+    updatedAt: String(campaign.updatedAt ?? campaign.updated_at ?? metadata.updatedAt ?? metadata.updated_at ?? ''),
+  });
+}
+
+function normalizeWheelPrizeShape(prize: Partial<WheelPrize> & Record<string, unknown>): WheelPrize {
+  const metadata = (prize.metadata ?? {}) as Record<string, unknown>;
+  return wheelPrizeSchema.parse({
+    id: String(prize.id ?? metadata.id ?? cryptoRandomId('prize')),
+    campaignId: String(prize.campaignId ?? prize.campaign_id ?? metadata.campaignId ?? metadata.campaign_id ?? ''),
+    name: normalizeText(prize.name ?? metadata.name ?? 'Untitled prize'),
+    type: String(prize.type ?? metadata.type ?? 'CUSTOM').toUpperCase(),
+    weight: Number.isFinite(Number(prize.weight ?? metadata.weight ?? 0)) ? Number(prize.weight ?? metadata.weight ?? 0) : 0,
+    stock: prize.stock === undefined ? (metadata.stock === undefined ? null : metadata.stock === null ? null : Number.isFinite(Number(metadata.stock)) ? Number(metadata.stock) : 0) : prize.stock,
+    isActive: Boolean(prize.isActive ?? prize.is_active ?? metadata.isActive ?? metadata.is_active ?? true),
+    metadata: normalizeSnakeCaseRecord({
+      ...metadata,
+      ...prize.metadata,
+    }),
+    createdAt: String(prize.createdAt ?? prize.created_at ?? metadata.createdAt ?? metadata.created_at ?? ''),
+    updatedAt: String(prize.updatedAt ?? prize.updated_at ?? metadata.updatedAt ?? metadata.updated_at ?? ''),
+  });
+}
+
+function normalizeWheelSpinShape(spin: Partial<WheelSpin> & Record<string, unknown>): WheelSpin {
+  const metadata = (spin.resultMetadata ?? spin.result_metadata ?? {}) as Record<string, unknown>;
+  return wheelSpinSchema.parse({
+    id: String(spin.id ?? metadata.id ?? cryptoRandomId('spin')),
+    userId: String(spin.userId ?? spin.user_id ?? metadata.userId ?? metadata.user_id ?? ''),
+    campaignId: String(spin.campaignId ?? spin.campaign_id ?? metadata.campaignId ?? metadata.campaign_id ?? ''),
+    prizeId: spin.prizeId === undefined ? (spin.prizeId ?? spin.prize_id ?? metadata.prizeId ?? metadata.prize_id ?? null) : spin.prizeId,
+    costSpins: Number(spin.costSpins ?? spin.cost_spins ?? metadata.costSpins ?? metadata.cost_spins ?? 0),
+    resultMetadata: normalizeSnakeCaseRecord({
+      ...metadata,
+      ...(spin.resultMetadata ?? spin.result_metadata ?? {}),
+    }),
+    createdAt: String(spin.createdAt ?? spin.created_at ?? metadata.createdAt ?? metadata.created_at ?? ''),
+  });
+}
+
+function normalizeResponseEnvelope<T>(value: T) {
+  return value;
+}
+
+export function normalizeAdminRewardsResponse(input: Partial<AdminRewardsResponse> & Record<string, unknown>): AdminRewardsResponse {
+  const rewards = Array.isArray(input.rewards ?? (input as any).data) ? (input.rewards ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    rewards: rewards.map((reward: unknown) => normalizeRewardShape(reward as Partial<Reward> & Record<string, unknown>)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
+}
+
+export function normalizeAdminTransactionsResponse(input: Partial<AdminTransactionsResponse> & Record<string, unknown>): AdminTransactionsResponse {
+  const transactions = Array.isArray(input.transactions ?? (input as any).data) ? (input.transactions ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    transactions: transactions.map((transaction: unknown) => normalizeAdminTransactionShape(transaction as Partial<AdminTransactionRecord> & Record<string, unknown>)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
+}
+
+export function normalizeAdminAuditLogsResponse(input: Partial<AdminAuditLogsResponse> & Record<string, unknown>): AdminAuditLogsResponse {
+  const logs = Array.isArray(input.logs ?? (input as any).data) ? (input.logs ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    logs: logs.map((log: unknown) => normalizeAdminAuditLogShape(log as Partial<AdminAuditLogRow> & Record<string, unknown>)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
+}
+
+export function normalizeWheelCampaignsResponse(input: Partial<WheelCampaignsResponse> & Record<string, unknown>): WheelCampaignsResponse {
+  const campaigns = Array.isArray(input.campaigns ?? (input as any).data) ? (input.campaigns ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    campaigns: campaigns.map((campaign: unknown) => normalizeWheelCampaignShape(campaign as Partial<WheelCampaign> & Record<string, unknown>)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
+}
+
+export function normalizeWheelPrizesResponse(input: Partial<WheelPrizesResponse> & Record<string, unknown>): WheelPrizesResponse {
+  const prizes = Array.isArray(input.prizes ?? (input as any).data) ? (input.prizes ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    prizes: prizes.map((prize: unknown) => normalizeWheelPrizeShape(prize as Partial<WheelPrize> & Record<string, unknown>)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
+}
+
+export function normalizeWheelSpinsResponse(input: Partial<WheelSpinsResponse> & Record<string, unknown>): WheelSpinsResponse {
+  const spins = Array.isArray(input.spins ?? (input as any).data) ? (input.spins ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    spins: spins.map((spin: unknown) => normalizeWheelSpinShape(spin as Partial<WheelSpin> & Record<string, unknown>)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
 }

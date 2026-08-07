@@ -201,21 +201,25 @@ export function RewardsSection(props: any) {
       >
         <CardContent sx={{ pt: 0 }}>
           <Stack spacing={1.25}>
-            {props.rewards.map((reward: any) => (
-              <Box
-                key={reward.id}
-                sx={{
-                  p: 1.75,
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: '#fff',
-                  boxShadow: '0 4px 14px rgba(15, 23, 42, 0.03)',
-                }}
-              >
+            {props.rewards.map((reward: any) => {
+              const pointCost = reward.pointCost ?? reward.point_cost ?? 0;
+              const stock = reward.stock ?? null;
+              const isActive = reward.isActive ?? reward.is_active ?? true;
+              return (
+                <Box
+                  key={reward.id}
+                  sx={{
+                    p: 1.75,
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: '#fff',
+                    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.03)',
+                  }}
+                >
                   <Typography fontWeight={800}>{reward.name}</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {reward.type} | giá {reward.point_cost} 🍑 | tồn kho {reward.stock ?? '∞'} | {reward.is_active ? 'Đang bật' : 'Đang tắt'}
+                    {reward.type} | giá {pointCost} 🍑 | tồn kho {stock ?? '∞'} | {isActive ? 'Đang bật' : 'Đang tắt'}
                   </Typography>
                   <Button
                     size="small"
@@ -225,14 +229,15 @@ export function RewardsSection(props: any) {
                       props.setEditingReward(reward);
                       props.setEditRewardName(reward.name);
                       props.setEditRewardType(reward.type);
-                      props.setEditRewardPointCost(reward.point_cost);
-                      props.setEditRewardStock(reward.stock === null ? '' : String(reward.stock));
+                      props.setEditRewardPointCost(pointCost);
+                      props.setEditRewardStock(stock === null ? '' : String(stock));
                     }}
                   >
                     Sửa
                   </Button>
                 </Box>
-            ))}
+              );
+            })}
           </Stack>
         </CardContent>
       </AppSection>
@@ -348,7 +353,9 @@ export function WheelSection(props: any) {
               ))}
             </Stack>
             <Stack spacing={1}>
-              {props.campaigns.map((campaign: any) => (
+            {props.campaigns.map((campaign: any) => {
+              const isActive = campaign.isActive ?? campaign.is_active ?? true;
+              return (
                 <Box
                   key={campaign.id}
                   sx={{
@@ -363,8 +370,8 @@ export function WheelSection(props: any) {
                   <Stack direction="row" justifyContent="space-between" spacing={2} alignItems="center">
                     <Box>
                       <Typography fontWeight={800}>{campaign.name}</Typography>
-            <Typography variant="body2" color="text.secondary">
-                        {campaign.description ?? 'Chưa có mô tả'} • {campaign.is_active ? 'Đang bật' : 'Đang tắt'}
+                      <Typography variant="body2" color="text.secondary">
+                        {campaign.description ?? 'Chưa có mô tả'} • {isActive ? 'Đang bật' : 'Đang tắt'}
                       </Typography>
                     </Box>
                     <Button
@@ -374,14 +381,15 @@ export function WheelSection(props: any) {
                         props.setEditingCampaign(campaign);
                         props.setEditCampaignName(campaign.name);
                         props.setEditCampaignDescription(campaign.description ?? '');
-                        props.setEditCampaignActive(Boolean(campaign.is_active));
+                        props.setEditCampaignActive(Boolean(isActive));
                       }}
                     >
                       Sửa
                     </Button>
                   </Stack>
                 </Box>
-              ))}
+              );
+            })}
             </Stack>
           </Stack>
         </CardContent>
@@ -400,45 +408,48 @@ export function WheelSection(props: any) {
             <Divider />
 
             <Stack spacing={1}>
-              {props.wheelPrizes.map((prize: any) => (
-                <Box key={prize.id} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
-                  <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'start', md: 'center' }}>
-                    <Box>
-                      <Typography fontWeight={800}>
-                        {String(prize.metadata?.glyph ?? prize.metadata?.wheelGlyph ?? prize.metadata?.icon ?? prize.metadata?.emoji ?? '✦')} {prize.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {prize.type} • trọng số {prize.weight} • tồn kho {prize.stock ?? '∞'} • {prize.is_active ? 'Đang bật' : 'Đang tắt'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {String(prize.metadata?.wheelLabel ?? prize.name)} / {String(prize.metadata?.railLabel ?? prize.name)} / {deliveryModeLabel(String(prize.metadata?.deliveryMode ?? 'immediate'))} / {deliveryTargetLabel(String(prize.metadata?.deliveryTarget ?? 'reward_inbox'))} / {renderModeLabel(String(prize.metadata?.wheelRenderMode ?? prize.metadata?.renderMode ?? prize.metadata?.labelMode ?? 'emoji-only'))}
-                      </Typography>
-                    </Box>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => {
-                        props.setEditingPrize(prize);
-                        props.setEditPrizeName(prize.name);
-                        props.setEditPrizeType(prize.type);
-                        props.setEditPrizeWeight(prize.weight);
-                        props.setEditPrizeStock(prize.stock === null ? '' : String(prize.stock));
-                        props.setEditPrizeGlyph(String(prize.metadata?.glyph ?? prize.metadata?.wheelGlyph ?? prize.metadata?.icon ?? prize.metadata?.emoji ?? '⭐'));
-                        props.setEditPrizeEmojiCount(Number(prize.metadata?.emojiCount ?? 1));
-                        props.setEditPrizeRenderMode(String(prize.metadata?.wheelRenderMode ?? prize.metadata?.renderMode ?? prize.metadata?.labelMode ?? 'emoji-only'));
-                        props.setEditPrizeDeliveryMode(String(prize.metadata?.deliveryMode ?? 'immediate'));
-                        props.setEditPrizeDeliveryTarget(String(prize.metadata?.deliveryTarget ?? 'point_wallet'));
-                        props.setEditPrizeWheelLabel(String(prize.metadata?.wheelLabel ?? ''));
-                        props.setEditPrizeRailLabel(String(prize.metadata?.railLabel ?? ''));
-                        props.setEditPrizeDescription(String(prize.metadata?.description ?? ''));
-                        props.setEditPrizeActive(Boolean(prize.is_active));
-                      }}
-                    >
-                      Sửa
-                    </Button>
-                  </Stack>
-                </Box>
-              ))}
+              {props.wheelPrizes.map((prize: any) => {
+                const isActive = prize.isActive ?? prize.is_active ?? true;
+                return (
+                  <Box key={prize.id} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+                    <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'start', md: 'center' }}>
+                      <Box>
+                        <Typography fontWeight={800}>
+                          {String(prize.metadata?.glyph ?? prize.metadata?.wheelGlyph ?? prize.metadata?.icon ?? prize.metadata?.emoji ?? '✦')} {prize.name}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {prize.type} • trọng số {prize.weight} • tồn kho {prize.stock ?? '∞'} • {isActive ? 'Đang bật' : 'Đang tắt'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {String(prize.metadata?.wheelLabel ?? prize.name)} / {String(prize.metadata?.railLabel ?? prize.name)} / {deliveryModeLabel(String(prize.metadata?.deliveryMode ?? 'immediate'))} / {deliveryTargetLabel(String(prize.metadata?.deliveryTarget ?? 'reward_inbox'))} / {renderModeLabel(String(prize.metadata?.wheelRenderMode ?? prize.metadata?.renderMode ?? prize.metadata?.labelMode ?? 'emoji-only'))}
+                        </Typography>
+                      </Box>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => {
+                          props.setEditingPrize(prize);
+                          props.setEditPrizeName(prize.name);
+                          props.setEditPrizeType(prize.type);
+                          props.setEditPrizeWeight(prize.weight);
+                          props.setEditPrizeStock(prize.stock === null ? '' : String(prize.stock));
+                          props.setEditPrizeGlyph(String(prize.metadata?.glyph ?? prize.metadata?.wheelGlyph ?? prize.metadata?.icon ?? prize.metadata?.emoji ?? '⭐'));
+                          props.setEditPrizeEmojiCount(Number(prize.metadata?.emojiCount ?? 1));
+                          props.setEditPrizeRenderMode(String(prize.metadata?.wheelRenderMode ?? prize.metadata?.renderMode ?? prize.metadata?.labelMode ?? 'emoji-only'));
+                          props.setEditPrizeDeliveryMode(String(prize.metadata?.deliveryMode ?? 'immediate'));
+                          props.setEditPrizeDeliveryTarget(String(prize.metadata?.deliveryTarget ?? 'point_wallet'));
+                          props.setEditPrizeWheelLabel(String(prize.metadata?.wheelLabel ?? ''));
+                          props.setEditPrizeRailLabel(String(prize.metadata?.railLabel ?? ''));
+                          props.setEditPrizeDescription(String(prize.metadata?.description ?? ''));
+                          props.setEditPrizeActive(Boolean(isActive));
+                        }}
+                      >
+                        Sửa
+                      </Button>
+                    </Stack>
+                  </Box>
+                );
+              })}
             </Stack>
           </Stack>
         </CardContent>
@@ -449,9 +460,9 @@ export function WheelSection(props: any) {
           <Stack spacing={1}>
             {props.wheelSpins.slice(0, 10).map((spin: any) => (
               <Box key={spin.id} sx={{ p: 1.25, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
-                <Typography fontWeight={800}>{spin.users?.first_name ?? spin.users?.username ?? spin.user_id}</Typography>
+                <Typography fontWeight={800}>{spin.users?.first_name ?? spin.users?.username ?? spin.userId ?? spin.user_id}</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {spin.wheel_prizes?.name ?? 'Không trúng'} • {new Date(spin.created_at).toLocaleString('vi-VN')}
+                  {spin.wheel_prizes?.name ?? spin.resultMetadata?.prizeName ?? 'Không trúng'} • {new Date(spin.createdAt ?? spin.created_at).toLocaleString('vi-VN')}
                 </Typography>
               </Box>
             ))}

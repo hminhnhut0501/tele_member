@@ -8,6 +8,11 @@ import {
   checkinResponseSchema,
   manualAdjustmentSchema,
   pointSummarySchema,
+  normalizeAdminAuditLogsResponse,
+  normalizeAdminRewardsResponse,
+  normalizeAdminTransactionsResponse,
+  normalizeWheelCampaignsResponse,
+  normalizeWheelPrizesResponse,
 } from '@tele-member/shared';
 import { createServiceContext } from './services/context.js';
 import { validateTelegramWebAppInitData } from './lib/telegram-webapp.js';
@@ -129,11 +134,11 @@ app.get('/admin/transactions', async (request) => {
     .parse(request.query);
 
   const transactions = await context.admin.listTransactions(query);
-  return {
+  return normalizeAdminTransactionsResponse({
     transactions,
     limit: query.limit,
     offset: query.offset,
-  };
+  });
 });
 
 app.get('/admin/audit-logs', async (request) => {
@@ -144,11 +149,11 @@ app.get('/admin/audit-logs', async (request) => {
     })
     .parse(request.query);
   const logs = await context.admin.listAuditLogs(query);
-  return {
+  return normalizeAdminAuditLogsResponse({
     logs,
     limit: query.limit,
     offset: query.offset,
-  };
+  });
 });
 
 app.get('/admin/debug/env', async () => {
@@ -303,7 +308,7 @@ app.get('/api/wheel/history', async (request, reply) => {
   return { spins: await context.wheel.listSpinHistory(user.id) };
 });
 
-app.get('/api/admin/rewards', async () => ({ rewards: await context.rewards.listRewards() }));
+app.get('/api/admin/rewards', async () => normalizeAdminRewardsResponse({ rewards: await context.rewards.listRewards() }));
 
 app.post('/api/admin/rewards', async (request) => {
   const body = z.object({
@@ -359,8 +364,8 @@ app.get('/api/admin/redemptions', async (request) => {
 });
 
 app.get('/api/admin/wheel/campaigns', async () => {
-  const { data = [] } = await context.supabase.from('wheel_campaigns').select('*').order('created_at', { ascending: false });
-  return { campaigns: data };
+  const { data } = await context.supabase.from('wheel_campaigns').select('*').order('created_at', { ascending: false });
+  return normalizeWheelCampaignsResponse({ campaigns: Array.isArray(data) ? data : [] });
 });
 
 app.post('/api/admin/wheel/campaigns', async (request) => {
@@ -395,7 +400,7 @@ app.delete('/api/admin/wheel/campaigns/:id', async (request) => {
 
 app.get('/api/admin/wheel/campaigns/:id/prizes', async (request) => {
   const params = z.object({ id: z.string().uuid() }).parse(request.params);
-  return { prizes: await context.wheel.listCampaignPrizes(params.id) };
+  return normalizeWheelPrizesResponse({ prizes: await context.wheel.listCampaignPrizes(params.id) });
 });
 
 app.get('/api/admin/wheel/campaigns/:id/preview', async (request) => {
@@ -486,7 +491,7 @@ app.post('/admin/spins/adjust', async (request, reply) => {
   }
 
   await context.supabase.from('admin_audit_logs').insert({
-    actor_email: auth ?? body.actorEmail ?? 'admin',
+    actor_email: auth ?? body.actorEmail ?? process.env.ADMIN_EMAIL ?? 'admin@example.com',
     action: 'adjust_spins',
     target_telegram_id: body.telegramId,
     metadata: {
