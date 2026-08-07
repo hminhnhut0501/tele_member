@@ -1,7 +1,16 @@
-import { getWheelPrizeGlyph, getWheelPrizeShortLabel, type WheelPrize, type WheelSegment } from './wheel-model';
+import {
+  getDefaultWheelPrizes as getSchemaDefaultWheelPrizes,
+  getWheelPrizeGlyph,
+  getWheelPrizeRenderMode,
+  normalizeText,
+  normalizeWheelPrize,
+  type PrizeRenderMode,
+  type WheelPrize,
+  type WheelSegment,
+} from './wheel-schema';
 
 export type WheelLabelKind = 'value' | 'badge' | 'phrase' | 'hidden';
-export type WheelRenderMode = 'emoji-only' | 'label-only' | 'mixed';
+export type WheelRenderMode = PrizeRenderMode;
 
 export type WheelLabelPolicy = {
   kind: WheelLabelKind;
@@ -36,10 +45,6 @@ export type WheelRenderSegment = WheelSegment & {
   slotBias: number;
 };
 
-function normalizeText(value: string) {
-  return value.replace(/\s+/g, ' ').trim();
-}
-
 function shortText(value: string, maxChars: number) {
   const normalized = normalizeText(value);
   if (normalized.length <= maxChars) return normalized;
@@ -57,8 +62,7 @@ function getPrizeClass(prize: WheelPrize) {
 }
 
 function getWheelRenderMode(prize: WheelPrize, kind: WheelLabelKind): WheelRenderMode {
-  const meta = (prize.metadata ?? {}) as Record<string, unknown>;
-  const explicit = String(meta.wheelRenderMode ?? meta.renderMode ?? meta.labelMode ?? '').toLowerCase();
+  const explicit = getWheelPrizeRenderMode(prize, 'mixed');
   if (explicit === 'emoji-only' || explicit === 'label-only' || explicit === 'mixed') return explicit;
   if (kind === 'value' || kind === 'badge') return 'emoji-only';
   if (kind === 'phrase') return 'label-only';
@@ -68,15 +72,16 @@ function getWheelRenderMode(prize: WheelPrize, kind: WheelLabelKind): WheelRende
 function getPrizeWheelLabel(prize: WheelPrize) {
   const type = String(prize.type ?? '').toUpperCase();
   const glyph = getWheelPrizeGlyph(prize);
+  const normalized = normalizeWheelPrize(prize);
   if (type === 'POINT') {
-    const amount = prize.metadata?.points ?? prize.metadata?.point_amount ?? prize.metadata?.value;
+    const amount = normalized.metadata?.points ?? normalized.metadata?.point_amount ?? normalized.metadata?.value;
     return amount ? `${glyph}${amount}🍑` : glyph;
   }
-  if (type === 'SPIN_TICKET') return glyph || '⟲';
+  if (type === 'SPIN_TICKET' || type === 'SPIN') return glyph || '⟲';
   if (type === 'VOUCHER') return glyph || '🎁';
   if (type === 'VIP_CODE') return glyph || '👑';
   if (type === 'NOTHING') return glyph || '😢';
-  return glyph || prize.name || '•';
+  return glyph || normalized.name || '•';
 }
 
 function getPrizeRailLabel(prize: WheelPrize, fallbackWheelLabel: string) {
@@ -86,7 +91,7 @@ function getPrizeRailLabel(prize: WheelPrize, fallbackWheelLabel: string) {
     const amount = prize.metadata?.points ?? prize.metadata?.point_amount ?? prize.metadata?.value;
     return amount ? `${glyph} ${amount}🍑` : `${glyph} 🍑`;
   }
-  if (type === 'SPIN_TICKET') return prize.name || `${glyph} 1 lượt quay`;
+  if (type === 'SPIN_TICKET' || type === 'SPIN') return prize.name || `${glyph} 1 lượt quay`;
   if (type === 'VOUCHER') return prize.name || `${glyph} Voucher`;
   if (type === 'VIP_CODE') return prize.name || `${glyph} VIP`;
   if (type === 'NOTHING') return prize.name || `${glyph} Không trúng`;
@@ -108,7 +113,8 @@ function getTextTone(type: string) {
 }
 
 export function buildWheelRenderContract(prizes: WheelPrize[]) {
-  const segmentCount = Math.max(prizes.length, 1);
+  const normalizedPrizes = (prizes.length ? prizes : getSchemaDefaultWheelPrizes()).map((prize) => normalizeWheelPrize(prize));
+  const segmentCount = Math.max(normalizedPrizes.length, 1);
   const segmentAngle = 360 / segmentCount;
   const preset: WheelRenderContract['preset'] =
     segmentCount === 5 ? 'five' : segmentCount === 6 ? 'six' : segmentCount === 8 ? 'eight' : segmentCount >= 10 ? 'tenPlus' : 'custom';
@@ -119,7 +125,6 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
   const railLabelScale = preset === 'five' ? 1 : preset === 'six' ? 0.98 : 0.96;
   const labelInset = preset === 'five' ? 6 : preset === 'six' ? 8 : segmentAngle >= 45 ? 10 : 12;
 
-  const segments = prizes.length ? prizes : getDefaultWheelPrizes();
   const slotBiasByPreset: Record<WheelRenderContract['preset'], number[]> = {
     five: [10, 6, 1, -6, -1],
     six: [8, 5, 0, -4, -2, 1],
@@ -128,7 +133,7 @@ export function buildWheelRenderContract(prizes: WheelPrize[]) {
     custom: [],
   };
 
-  const decoratedSegments: WheelRenderSegment[] = segments.map((prize, index) => {
+  const decoratedSegments: WheelRenderSegment[] = normalizedPrizes.map((prize, index) => {
     const kind = getPrizeClass(prize);
     const renderMode = getWheelRenderMode(prize, kind);
     const wheelLabelBase = getPrizeWheelLabel(prize);
