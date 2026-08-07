@@ -14,6 +14,10 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import {
+  normalizeRewardInboxResponse,
+  normalizeRewardRedemptionsResponse,
+} from '@tele-member/shared';
 import { apiClient } from '../../lib/api';
 import { GameSection, HeroChip, PageShell } from '../shared-ui';
 
@@ -40,8 +44,8 @@ export default function MyRewardsPage() {
     Promise.all([client.getMyRewards(), client.getMyInbox()])
       .then(([rewardData, inboxData]) => {
         if (cancelled) return;
-        setItems(rewardData.rewards ?? []);
-        setInbox(inboxData.inbox ?? []);
+        setItems(normalizeRewardRedemptionsResponse(rewardData).redemptions);
+        setInbox(normalizeRewardInboxResponse(inboxData).inbox);
       })
       .catch((err) => {
         if (!cancelled) setError(String(err));
@@ -107,8 +111,8 @@ export default function MyRewardsPage() {
                   >
                     <Stack spacing={1.5}>
                       <Stack direction="row" spacing={1} flexWrap="wrap">
-                        <Chip label={`${item.point_cost} 🍑`} sx={{ bgcolor: 'rgba(255,214,102,0.15)', color: '#fff2c0', border: '1px solid rgba(255,214,102,0.18)' }} />
-                        <Chip label={new Date(item.created_at).toLocaleString('vi-VN')} sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#d7e3d8', border: '1px solid rgba(255,255,255,0.08)' }} />
+                        <Chip label={`${item.pointCost} 🍑`} sx={{ bgcolor: 'rgba(255,214,102,0.15)', color: '#fff2c0', border: '1px solid rgba(255,214,102,0.18)' }} />
+                        <Chip label={new Date(item.createdAt).toLocaleString('vi-VN')} sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#d7e3d8', border: '1px solid rgba(255,255,255,0.08)' }} />
                       </Stack>
 
                       <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
@@ -125,7 +129,7 @@ export default function MyRewardsPage() {
                           Code / voucher
                         </Typography>
                         <Typography fontWeight={900} sx={{ letterSpacing: 0.4, mt: 0.5, color: '#fff6db' }}>
-                          {item.reward_codes?.code ?? 'Sẽ hiển thị khi có mã'}
+                          {item.rewardCodes?.code ?? 'Sẽ hiển thị khi có mã'}
                         </Typography>
                       </Box>
                     </Stack>
@@ -167,9 +171,9 @@ export default function MyRewardsPage() {
                     >
                       <Stack spacing={1.5}>
                         <Stack direction="row" spacing={1} flexWrap="wrap">
-                          <Chip label={item.source_type} sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#d7e3d8', border: '1px solid rgba(255,255,255,0.08)' }} />
+                          <Chip label={item.sourceType} sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#d7e3d8', border: '1px solid rgba(255,255,255,0.08)' }} />
                           <Chip label={item.kind} sx={{ bgcolor: 'rgba(255,214,102,0.15)', color: '#fff2c0', border: '1px solid rgba(255,214,102,0.18)' }} />
-                          <Chip label={new Date(item.created_at).toLocaleString('vi-VN')} sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#d7e3d8', border: '1px solid rgba(255,255,255,0.08)' }} />
+                          <Chip label={new Date(item.createdAt).toLocaleString('vi-VN')} sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#d7e3d8', border: '1px solid rgba(255,255,255,0.08)' }} />
                         </Stack>
 
                         <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
@@ -190,8 +194,8 @@ export default function MyRewardsPage() {
                           </Typography>
                         </Box>
 
-                        {item.claim_url ? (
-                          <Button variant="contained" href={item.claim_url} target="_blank" rel="noreferrer">
+                        {item.claimUrl ? (
+                          <Button variant="contained" href={item.claimUrl} target="_blank" rel="noreferrer">
                             Mở quà
                           </Button>
                         ) : null}

@@ -11,6 +11,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { normalizeRewardsResponse } from '@tele-member/shared';
 import { apiClient } from '../../lib/api';
 import { GameSection, HeroChip, PageShell, SectionButton } from '../shared-ui';
 
@@ -19,9 +20,9 @@ type Reward = {
   name: string;
   description: string | null;
   type: string;
-  point_cost: number;
+  pointCost: number;
   stock: number | null;
-  is_active: boolean;
+  isActive: boolean;
 };
 
 function stockLabel(stock: number | null) {
@@ -51,7 +52,7 @@ export default function RewardsPage() {
       .getRewards()
       .then((data) => {
         if (cancelled) return;
-        setRewards(data.rewards ?? []);
+        setRewards(normalizeRewardsResponse(data).rewards as Reward[]);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -73,7 +74,7 @@ export default function RewardsPage() {
       const result = await client.redeemReward(id);
       setMessage(result.code ? `Đổi thành công. Code: ${result.code}` : 'Đổi thành công');
       const refreshed = await client.getRewards();
-      setRewards(refreshed.rewards ?? []);
+      setRewards(normalizeRewardsResponse(refreshed).rewards as Reward[]);
     } catch (err) {
       setError(String(err));
     } finally {
@@ -91,7 +92,7 @@ export default function RewardsPage() {
             action={<HeroChip label="Reward Store" color="success" />}
           >
             <Stack direction="row" spacing={1} flexWrap="wrap">
-              <Chip label={`${rewards.filter((reward) => reward.is_active).length} món active`} sx={{ bgcolor: 'rgba(255,214,102,0.15)', color: '#fff2c0', border: '1px solid rgba(255,214,102,0.18)' }} />
+              <Chip label={`${rewards.filter((reward) => reward.isActive).length} món active`} sx={{ bgcolor: 'rgba(255,214,102,0.15)', color: '#fff2c0', border: '1px solid rgba(255,214,102,0.18)' }} />
               <Chip label="Voucher" sx={{ bgcolor: 'rgba(59,130,246,0.14)', color: '#dbeafe', border: '1px solid rgba(59,130,246,0.18)' }} />
               <Chip label="VIP Code" sx={{ bgcolor: 'rgba(168,85,247,0.14)', color: '#f3e8ff', border: '1px solid rgba(168,85,247,0.18)' }} />
               <Chip label="Spin Ticket" sx={{ bgcolor: 'rgba(16,185,129,0.14)', color: '#d1fae5', border: '1px solid rgba(16,185,129,0.18)' }} />
@@ -115,13 +116,13 @@ export default function RewardsPage() {
               ))
             ) : rewards.length ? (
               rewards.map((reward) => {
-                const isDisabled = !reward.is_active || reward.stock === 0;
+                const isDisabled = !reward.isActive || reward.stock === 0;
                 return (
                   <GameSection
                     key={reward.id}
                     title={reward.name}
                     subtitle={reward.description ?? 'Không có mô tả'}
-                    action={<Chip label={reward.type} size="small" sx={{ bgcolor: reward.is_active ? 'rgba(255,214,102,0.15)' : 'rgba(148,163,184,0.16)', color: reward.is_active ? '#fff2c0' : '#e2e8f0', border: '1px solid rgba(255,255,255,0.08)' }} />}
+                    action={<Chip label={reward.type} size="small" sx={{ bgcolor: reward.isActive ? 'rgba(255,214,102,0.15)' : 'rgba(148,163,184,0.16)', color: reward.isActive ? '#fff2c0' : '#e2e8f0', border: '1px solid rgba(255,255,255,0.08)' }} />}
                   >
                     <Stack spacing={1.5}>
                       <Stack direction="row" justifyContent="space-between" alignItems="start" spacing={2}>
@@ -133,7 +134,7 @@ export default function RewardsPage() {
                       </Stack>
 
                       <Stack direction="row" spacing={1} flexWrap="wrap">
-                        <Chip label={`${reward.point_cost} 🍑`} sx={{ bgcolor: 'rgba(255,214,102,0.15)', color: '#fff1bf', border: '1px solid rgba(255,214,102,0.18)' }} />
+                        <Chip label={`${reward.pointCost} 🍑`} sx={{ bgcolor: 'rgba(255,214,102,0.15)', color: '#fff1bf', border: '1px solid rgba(255,214,102,0.18)' }} />
                         <Chip label={stockLabel(reward.stock)} sx={{ bgcolor: 'rgba(255,255,255,0.05)', color: '#d7e3d8', border: '1px solid rgba(255,255,255,0.08)' }} />
                       </Stack>
 

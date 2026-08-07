@@ -347,6 +347,27 @@ export type WheelSpinsResponse = {
   total?: number;
 };
 
+export type RewardsResponse = {
+  rewards: Reward[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+};
+
+export type RewardRedemptionsResponse = {
+  redemptions: RewardRedemption[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+};
+
+export type RewardInboxResponse = {
+  inbox: RewardInboxItem[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+};
+
 function normalizeText(value: unknown) {
   return String(value ?? '').replace(/\s+/g, ' ').trim();
 }
@@ -512,6 +533,65 @@ function normalizeRewardShape(reward: Partial<Reward> & Record<string, unknown>)
   });
 }
 
+function normalizeRewardCodeShape(code: Partial<RewardCode> & Record<string, unknown>): RewardCode {
+  const status = String(code.status ?? code.codeStatus ?? 'AVAILABLE').toUpperCase();
+  return rewardCodeSchema.parse({
+    id: String(code.id ?? cryptoRandomId('reward_code')),
+    rewardId: String(code.rewardId ?? code.reward_id ?? ''),
+    code: normalizeText(code.code ?? ''),
+    status: rewardStatusSchema.safeParse(status).success ? status : 'AVAILABLE',
+    assignedTo: code.assignedTo ?? code.assigned_to ?? null,
+    assignedAt: code.assignedAt ?? code.assigned_at ?? null,
+    createdAt: String(code.createdAt ?? code.created_at ?? ''),
+  });
+}
+
+function normalizeRewardRedemptionShape(redemption: Partial<RewardRedemption> & Record<string, unknown>): RewardRedemption {
+  const metadata = (redemption.metadata ?? {}) as Record<string, unknown>;
+  return rewardRedemptionSchema.parse({
+    id: String(redemption.id ?? cryptoRandomId('redemption')),
+    userId: String(redemption.userId ?? redemption.user_id ?? ''),
+    rewardId: String(redemption.rewardId ?? redemption.reward_id ?? ''),
+    codeId: redemption.codeId ?? redemption.code_id ?? null,
+    pointCost: Number.isFinite(Number(redemption.pointCost ?? redemption.point_cost ?? 0)) ? Number(redemption.pointCost ?? redemption.point_cost ?? 0) : 0,
+    status: redemptionStatusSchema.safeParse(String(redemption.status ?? 'PENDING').toUpperCase()).success ? String(redemption.status ?? 'PENDING').toUpperCase() : 'PENDING',
+    metadata: normalizeSnakeCaseRecord({
+      ...metadata,
+      ...(redemption.metadata ?? {}),
+    }),
+    deliveryStatus: normalizeText(redemption.deliveryStatus ?? redemption.delivery_status ?? 'pending'),
+    deliveryMode: normalizeText(redemption.deliveryMode ?? redemption.delivery_mode ?? 'immediate'),
+    deliveryTarget: normalizeText(redemption.deliveryTarget ?? redemption.delivery_target ?? 'reward_inbox'),
+    deliveryPayload: (redemption.deliveryPayload ?? redemption.delivery_payload ?? {}) as Record<string, unknown>,
+    createdAt: String(redemption.createdAt ?? redemption.created_at ?? ''),
+  });
+}
+
+function normalizeRewardInboxShape(item: Partial<RewardInboxItem> & Record<string, unknown>): RewardInboxItem {
+  const payload = (item.payload ?? {}) as Record<string, unknown>;
+  return rewardInboxSchema.parse({
+    id: String(item.id ?? cryptoRandomId('inbox')),
+    userId: String(item.userId ?? item.user_id ?? ''),
+    sourceType: String(item.sourceType ?? item.source_type ?? 'manual').toLowerCase(),
+    sourceId: item.sourceId ?? item.source_id ?? null,
+    kind: String(item.kind ?? 'CUSTOM').toUpperCase(),
+    status: String(item.status ?? 'new').toLowerCase(),
+    claimable: Boolean(item.claimable ?? false),
+    title: normalizeText(item.title ?? payload.title ?? 'Quà mới'),
+    subtitle: item.subtitle === undefined ? (payload.subtitle === undefined ? null : normalizeText(payload.subtitle)) : (item.subtitle === null ? null : normalizeText(item.subtitle)),
+    payload: normalizeSnakeCaseRecord({
+      ...payload,
+      ...(item.payload ?? {}),
+    }),
+    claimUrl: item.claimUrl ?? item.claim_url ?? null,
+    expiresAt: item.expiresAt ?? item.expires_at ?? null,
+    viewedAt: item.viewedAt ?? item.viewed_at ?? null,
+    claimedAt: item.claimedAt ?? item.claimed_at ?? null,
+    createdAt: String(item.createdAt ?? item.created_at ?? ''),
+    updatedAt: String(item.updatedAt ?? item.updated_at ?? item.createdAt ?? item.created_at ?? ''),
+  });
+}
+
 function normalizeAdminTransactionShape(transaction: Partial<AdminTransactionRecord> & Record<string, unknown>): AdminTransactionRecord {
   const metadata = (transaction.metadata ?? {}) as Record<string, unknown>;
   return adminTransactionRowSchema.parse({
@@ -608,6 +688,36 @@ export function normalizeAdminRewardsResponse(input: Partial<AdminRewardsRespons
   const rewards = Array.isArray(input.rewards ?? (input as any).data) ? (input.rewards ?? (input as any).data) : [];
   return normalizeResponseEnvelope({
     rewards: rewards.map((reward: unknown) => normalizeRewardShape(reward as Partial<Reward> & Record<string, unknown>)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
+}
+
+export function normalizeRewardsResponse(input: Partial<RewardsResponse> & Record<string, unknown>): RewardsResponse {
+  const rewards = Array.isArray(input.rewards ?? (input as any).data) ? (input.rewards ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    rewards: rewards.map((reward: unknown) => normalizeRewardShape(reward as Partial<Reward> & Record<string, unknown>)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
+}
+
+export function normalizeRewardRedemptionsResponse(input: Partial<RewardRedemptionsResponse> & Record<string, unknown>): RewardRedemptionsResponse {
+  const redemptions = Array.isArray(input.redemptions ?? (input as any).data) ? (input.redemptions ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    redemptions: redemptions.map((redemption: unknown) => normalizeRewardRedemptionShape(redemption as Partial<RewardRedemption> & Record<string, unknown>)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
+}
+
+export function normalizeRewardInboxResponse(input: Partial<RewardInboxResponse> & Record<string, unknown>): RewardInboxResponse {
+  const inbox = Array.isArray(input.inbox ?? (input as any).data) ? (input.inbox ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    inbox: inbox.map((entry: unknown) => normalizeRewardInboxShape(entry as Partial<RewardInboxItem> & Record<string, unknown>)),
     limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
     offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
     total: input.total === undefined ? (input as any).total : Number(input.total),

@@ -11,6 +11,9 @@ import {
   normalizeAdminAuditLogsResponse,
   normalizeAdminRewardsResponse,
   normalizeAdminTransactionsResponse,
+  normalizeRewardInboxResponse,
+  normalizeRewardRedemptionsResponse,
+  normalizeRewardsResponse,
   normalizeWheelCampaignsResponse,
   normalizeWheelPrizesResponse,
 } from '@tele-member/shared';
@@ -200,7 +203,7 @@ app.get('/admin/debug/telegram-bot', async (request, reply) => {
   };
 });
 
-app.get('/api/rewards', async () => ({
+app.get('/api/rewards', async () => normalizeRewardsResponse({
   rewards: await context.rewards.listRewards(),
 }));
 
@@ -226,8 +229,8 @@ app.get('/api/me/rewards', async (request, reply) => {
   const telegramId = payload?.telegramId;
   if (!telegramId) return reply.code(401).send({ message: 'Unauthorized' });
   const user = await context.points.getUserByTelegramId(telegramId);
-  if (!user) return { rewards: [] };
-  return { rewards: await context.rewards.listMyRedemptions(user.id) };
+  if (!user) return normalizeRewardRedemptionsResponse({ redemptions: [] });
+  return normalizeRewardRedemptionsResponse({ redemptions: await context.rewards.listMyRedemptions(user.id) });
 });
 
 app.get('/api/me/inbox', async (request, reply) => {
@@ -235,8 +238,8 @@ app.get('/api/me/inbox', async (request, reply) => {
   const telegramId = payload?.telegramId;
   if (!telegramId) return reply.code(401).send({ message: 'Unauthorized' });
   const user = await context.points.getUserByTelegramId(telegramId);
-  if (!user) return { inbox: [] };
-  return { inbox: await context.rewards.listMyInbox(user.id) };
+  if (!user) return normalizeRewardInboxResponse({ inbox: [] });
+  return normalizeRewardInboxResponse({ inbox: await context.rewards.listMyInbox(user.id) });
 });
 
 app.get('/api/me/spins', async (request, reply) => {
