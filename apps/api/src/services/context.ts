@@ -3,6 +3,7 @@ import { createTelegramService } from './telegram-service.js';
 import { createAdminService } from './admin.js';
 import { createRewardService } from './rewards.js';
 import { createPolicyService } from './policies.js';
+import { createOpsService } from './ops.js';
 import { createWheelService } from './wheel.js';
 import { createSupabaseClient } from './supabase.js';
 
@@ -13,7 +14,8 @@ export function createServiceContext() {
   const telegram = createTelegramService(points);
   const rewards = createRewardService(supabase);
   const policies = createPolicyService(supabase);
+  const ops = createOpsService(supabase);
   const wheel = createWheelService(supabase);
 
-  return { supabase, points, admin, telegram, rewards, policies, wheel };
+  return { supabase, points, admin, telegram, rewards, policies, ops, wheel };
 }

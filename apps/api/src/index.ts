@@ -10,6 +10,8 @@ import {
   pointSummarySchema,
   normalizePolicyConfigsResponse,
   normalizePolicyVersionsResponse,
+  normalizeOpsEventsResponse,
+  normalizeOpsSummaryResponse,
   normalizeAdminAuditLogsResponse,
   normalizeAdminRewardsResponse,
   normalizeAdminTransactionsResponse,
@@ -108,6 +110,18 @@ app.addHook('onRequest', async (request, reply) => {
     if (expectedSecret) {
       const actualSecret = request.headers['x-telegram-bot-api-secret-token'];
       if (actualSecret !== expectedSecret) {
+        await context.ops.logEvent({
+          source: 'telegram_webhook',
+          category: 'security',
+          severity: 'error',
+          title: 'Webhook secret mismatch',
+          message: 'Telegram webhook secret header did not match expected secret.',
+          metadata: {
+            url: request.url,
+            method: request.method,
+            hasSecretHeader: Boolean(actualSecret),
+          },
+        }).catch(() => {});
         return reply.code(401).send({ message: 'Invalid webhook secret' });
       }
     }
@@ -368,6 +382,26 @@ app.get('/api/admin/redemptions', async (request) => {
     offset: z.coerce.number().int().min(0).default(0),
   }).parse(request.query);
   return { redemptions: await context.rewards.listAdminRedemptions(query) };
+});
+
+app.get('/api/admin/ops/summary', async () => {
+  return normalizeOpsSummaryResponse({ summary: await context.ops.getSummary() });
+});
+
+app.get('/api/admin/ops/events', async (request) => {
+  const query = z.object({
+    limit: z.coerce.number().int().min(1).max(200).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+    severity: z.enum(['info', 'warning', 'error', 'critical']).optional(),
+    category: z.string().optional(),
+    source: z.string().optional(),
+  }).parse(request.query);
+  const events = await context.ops.listEvents(query);
+  return normalizeOpsEventsResponse({
+    events,
+    limit: query.limit,
+    offset: query.offset,
+  });
 });
 
 app.get('/api/admin/policies', async (request) => {
@@ -654,10 +688,34 @@ app.post('/auth/telegram/webapp', async (request, reply) => {
   return { token, telegramId };
 });
 
-app.post('/bot/webhook', async (request) => {
+app.post('/bot/webhook', async (request, reply) => {
   const update = z.record(z.unknown()).parse(request.body);
-  const result = await context.telegram.handleUpdate(update);
-  return result;
+  try {
+    const result = await context.telegram.handleUpdate(update);
+    await context.ops.logEvent({
+      source: 'telegram_webhook',
+      category: 'webhook',
+      severity: 'info',
+      title: 'Webhook processed',
+      message: 'Telegram webhook update handled successfully.',
+      metadata: {
+        updateKeys: Object.keys(update),
+      },
+    }).catch(() => {});
+    return result;
+  } catch (error) {
+    await context.ops.logEvent({
+      source: 'telegram_webhook',
+      category: 'webhook',
+      severity: 'error',
+      title: 'Webhook processing failed',
+      message: error instanceof Error ? error.message : 'Unknown webhook error',
+      metadata: {
+        updateKeys: Object.keys(update),
+      },
+    }).catch(() => {});
+    return reply.code(500).send({ message: 'Webhook processing failed' });
+  }
 });
 
 app.post('/bot/checkin', async (request) => {

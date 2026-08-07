@@ -213,6 +213,19 @@ export const wheelSpinSchema = z.object({
   createdAt: z.string(),
 });
 
+export const opsEventSeveritySchema = z.enum(['info', 'warning', 'error', 'critical']);
+export const opsEventSchema = z.object({
+  id: z.string().uuid(),
+  source: z.string(),
+  category: z.string(),
+  severity: opsEventSeveritySchema,
+  title: z.string(),
+  message: z.string(),
+  targetTelegramId: z.string().nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+});
+
 export const telegramProfileSchema = z.object({
   telegramId: z.string(),
   username: z.string().nullable(),
@@ -240,6 +253,7 @@ export type SpinTransaction = z.infer<typeof spinTransactionSchema>;
 export type WheelCampaign = z.infer<typeof wheelCampaignSchema>;
 export type WheelPrize = z.infer<typeof wheelPrizeSchema>;
 export type WheelSpin = z.infer<typeof wheelSpinSchema>;
+export type OpsEvent = z.infer<typeof opsEventSchema>;
 
 export type WheelPreviewRenderMode = 'emoji-only' | 'label-only' | 'mixed';
 export type WheelPreviewPreset = 'five' | 'six' | 'eight' | 'tenPlus' | 'custom';
@@ -407,6 +421,33 @@ export type WheelSpinHistoryItem = {
 
 export type WheelHistoryResponse = {
   spins: WheelSpinHistoryItem[];
+  limit?: number;
+  offset?: number;
+  total?: number;
+};
+
+export type OpsSummary = {
+  apiStatus: 'ok' | 'degraded' | 'down';
+  databaseStatus: 'ok' | 'degraded' | 'down';
+  totalUsers: number;
+  activeUsers24h: number;
+  totalRewards: number;
+  totalCampaigns: number;
+  activeCampaigns: number;
+  pendingInboxItems: number;
+  failedDeliveries24h: number;
+  webhookErrors24h: number;
+  recentErrors: number;
+  uptimeSeconds: number;
+  lastCheckedAt: string;
+};
+
+export type OpsSummaryResponse = {
+  summary: OpsSummary;
+};
+
+export type OpsEventsResponse = {
+  events: OpsEvent[];
   limit?: number;
   offset?: number;
   total?: number;
@@ -891,6 +932,47 @@ function normalizePolicyConfigShape(policy: Partial<PolicyConfig> & Record<strin
   });
 }
 
+function normalizeOpsEventShape(event: Partial<OpsEvent> & Record<string, unknown>): OpsEvent {
+  const metadata = (event.metadata ?? {}) as Record<string, unknown>;
+  const severity = String(event.severity ?? metadata.severity ?? 'info').toLowerCase();
+  return opsEventSchema.parse({
+    id: String(event.id ?? metadata.id ?? cryptoRandomId('ops')),
+    source: normalizeText(event.source ?? metadata.source ?? 'system') || 'system',
+    category: normalizeText(event.category ?? metadata.category ?? 'general') || 'general',
+    severity: opsEventSeveritySchema.safeParse(severity).success ? severity : 'info',
+    title: normalizeText(event.title ?? metadata.title ?? 'Sự kiện vận hành') || 'Sự kiện vận hành',
+    message: normalizeText(event.message ?? metadata.message ?? ''),
+    targetTelegramId: event.targetTelegramId ?? event.target_telegram_id ?? metadata.targetTelegramId ?? metadata.target_telegram_id ?? null,
+    metadata: normalizeSnakeCaseRecord({
+      ...metadata,
+      ...(event.metadata ?? {}),
+    }),
+    createdAt: String(event.createdAt ?? event.created_at ?? metadata.createdAt ?? metadata.created_at ?? ''),
+  });
+}
+
+function normalizeOpsSummaryShape(summary: Partial<OpsSummary> & Record<string, unknown>): OpsSummary {
+  return {
+    apiStatus: ['ok', 'degraded', 'down'].includes(String(summary.apiStatus ?? summary.api_status ?? 'ok'))
+      ? String(summary.apiStatus ?? summary.api_status ?? 'ok') as OpsSummary['apiStatus']
+      : 'ok',
+    databaseStatus: ['ok', 'degraded', 'down'].includes(String(summary.databaseStatus ?? summary.database_status ?? 'ok'))
+      ? String(summary.databaseStatus ?? summary.database_status ?? 'ok') as OpsSummary['databaseStatus']
+      : 'ok',
+    totalUsers: normalizeNumber(summary.totalUsers ?? summary.total_users ?? 0),
+    activeUsers24h: normalizeNumber(summary.activeUsers24h ?? summary.active_users_24h ?? 0),
+    totalRewards: normalizeNumber(summary.totalRewards ?? summary.total_rewards ?? 0),
+    totalCampaigns: normalizeNumber(summary.totalCampaigns ?? summary.total_campaigns ?? 0),
+    activeCampaigns: normalizeNumber(summary.activeCampaigns ?? summary.active_campaigns ?? 0),
+    pendingInboxItems: normalizeNumber(summary.pendingInboxItems ?? summary.pending_inbox_items ?? 0),
+    failedDeliveries24h: normalizeNumber(summary.failedDeliveries24h ?? summary.failed_deliveries_24h ?? 0),
+    webhookErrors24h: normalizeNumber(summary.webhookErrors24h ?? summary.webhook_errors_24h ?? 0),
+    recentErrors: normalizeNumber(summary.recentErrors ?? summary.recent_errors ?? 0),
+    uptimeSeconds: normalizeNumber(summary.uptimeSeconds ?? summary.uptime_seconds ?? 0),
+    lastCheckedAt: String(summary.lastCheckedAt ?? summary.last_checked_at ?? new Date().toISOString()),
+  };
+}
+
 function normalizeResponseEnvelope<T>(value: T) {
   return value;
 }
@@ -1021,6 +1103,22 @@ export function normalizePolicyVersionsResponse(input: Partial<PolicyVersionsRes
   const versions = Array.isArray(input.versions ?? (input as any).data) ? (input.versions ?? (input as any).data) : [];
   return normalizeResponseEnvelope({
     versions: versions.map((version: unknown) => normalizePolicyVersionShape(version as Partial<PolicyVersion> & Record<string, unknown>)),
+    limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
+    offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
+    total: input.total === undefined ? (input as any).total : Number(input.total),
+  });
+}
+
+export function normalizeOpsSummaryResponse(input: Partial<OpsSummaryResponse> & Record<string, unknown>): OpsSummaryResponse {
+  return normalizeResponseEnvelope({
+    summary: normalizeOpsSummaryShape((input.summary ?? (input as any).data ?? {}) as Partial<OpsSummary> & Record<string, unknown>),
+  });
+}
+
+export function normalizeOpsEventsResponse(input: Partial<OpsEventsResponse> & Record<string, unknown>): OpsEventsResponse {
+  const events = Array.isArray(input.events ?? (input as any).data) ? (input.events ?? (input as any).data) : [];
+  return normalizeResponseEnvelope({
+    events: events.map((event: unknown) => normalizeOpsEventShape(event as Partial<OpsEvent> & Record<string, unknown>)),
     limit: input.limit === undefined ? (input as any).limit : Number(input.limit),
     offset: input.offset === undefined ? (input as any).offset : Number(input.offset),
     total: input.total === undefined ? (input as any).total : Number(input.total),

@@ -195,6 +195,113 @@ export function AuditSection({ auditLogs, handleDebugEnv, auditFilter, setAuditF
   return <AuditTable logs={auditLogs} onRefresh={handleDebugEnv} filter={auditFilter} onFilterChange={setAuditFilter} />;
 }
 
+function opsStatusLabel(value: string) {
+  if (value === 'ok') return 'Ổn định';
+  if (value === 'degraded') return 'Suy giảm';
+  if (value === 'down') return 'Lỗi';
+  return value;
+}
+
+function opsSeverityColor(value: string) {
+  if (value === 'critical') return 'error';
+  if (value === 'error') return 'error';
+  if (value === 'warning') return 'warning';
+  return 'default';
+}
+
+export function OpsSection({
+  opsSummary,
+  opsEvents,
+  opsSeverity,
+  setOpsSeverity,
+  opsCategory,
+  setOpsCategory,
+  opsSource,
+  setOpsSource,
+  opsLoading,
+  handleRefreshOps,
+}: any) {
+  const summary = opsSummary ?? {
+    apiStatus: 'ok',
+    databaseStatus: 'ok',
+    totalUsers: 0,
+    activeUsers24h: 0,
+    totalRewards: 0,
+    totalCampaigns: 0,
+    activeCampaigns: 0,
+    pendingInboxItems: 0,
+    failedDeliveries24h: 0,
+    webhookErrors24h: 0,
+    recentErrors: 0,
+    uptimeSeconds: 0,
+    lastCheckedAt: new Date().toISOString(),
+  };
+
+  return (
+    <Stack spacing={2}>
+      <AppSection
+        title="Vận hành & giám sát"
+        subtitle="Theo dõi trạng thái API, cơ sở dữ liệu, lỗi webhook và các sự kiện vận hành gần nhất."
+        accent="cyan"
+        action={
+          <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
+            <Button variant="outlined" onClick={handleRefreshOps} disabled={opsLoading}>
+              {opsLoading ? 'Đang tải...' : 'Làm mới'}
+            </Button>
+          </Stack>
+        }
+      >
+        <CardContent sx={{ pt: 0 }}>
+          <Stack spacing={2}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 1.5 }}>
+              <MetricCard label="API" value={opsStatusLabel(summary.apiStatus)} note={`Webhook lỗi ${summary.webhookErrors24h}`} accent="blue" />
+              <MetricCard label="CSDL" value={opsStatusLabel(summary.databaseStatus)} note={`Lỗi giao quà ${summary.failedDeliveries24h}`} accent="emerald" />
+              <MetricCard label="Người dùng" value={String(summary.totalUsers)} note={`Hoạt động 24h: ${summary.activeUsers24h}`} accent="cyan" />
+              <MetricCard label="Hộp quà" value={String(summary.pendingInboxItems)} note={`Quà / chiến dịch: ${summary.totalRewards} / ${summary.totalCampaigns}`} accent="violet" />
+            </Box>
+
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} flexWrap="wrap">
+              <TextField fullWidth label="Lọc category" value={opsCategory} onChange={(e) => setOpsCategory(e.target.value)} />
+              <TextField fullWidth label="Lọc source" value={opsSource} onChange={(e) => setOpsSource(e.target.value)} />
+              <FormControl sx={{ minWidth: 180 }}>
+                <InputLabel>Mức độ</InputLabel>
+                <Select label="Mức độ" value={opsSeverity} onChange={(e) => setOpsSeverity(e.target.value)}>
+                  <MenuItem value="all">Tất cả</MenuItem>
+                  <MenuItem value="info">Info</MenuItem>
+                  <MenuItem value="warning">Warning</MenuItem>
+                  <MenuItem value="error">Error</MenuItem>
+                  <MenuItem value="critical">Critical</MenuItem>
+                </Select>
+              </FormControl>
+            </Stack>
+
+            <Stack spacing={1}>
+              {opsEvents.length ? opsEvents.map((event: any) => (
+                <Box key={event.id} sx={{ p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider', bgcolor: '#fff' }}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1.5} alignItems={{ xs: 'start', md: 'center' }}>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center" sx={{ mb: 0.5 }}>
+                        <Chip label={event.severity} size="small" color={opsSeverityColor(event.severity)} />
+                        <Chip label={event.category} size="small" variant="outlined" />
+                        <Chip label={event.source} size="small" variant="outlined" />
+                      </Stack>
+                      <Typography fontWeight={900}>{event.title}</Typography>
+                      <Typography variant="body2" color="text.secondary">{event.message}</Typography>
+                    </Box>
+                    <Chip label={new Date(event.createdAt).toLocaleString('vi-VN')} size="small" variant="outlined" />
+                  </Stack>
+                </Box>
+              )) : (
+                <Typography color="text.secondary">Chưa có sự kiện vận hành nào.</Typography>
+              )}
+            </Stack>
+          </Stack>
+        </CardContent>
+      </AppSection>
+    </Stack>
+  );
+}
+
 export function PolicySection(props: any) {
   const selectedPolicy = props.policies.find((policy: any) => policy.policyKey === props.selectedPolicyKey) ?? props.policies[0] ?? null;
   const versions = props.policyVersions ?? [];

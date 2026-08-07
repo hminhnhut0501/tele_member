@@ -6,11 +6,15 @@ import {
   normalizeAdminAuditLogsResponse,
   normalizeAdminRewardsResponse,
   normalizeAdminTransactionsResponse,
+  normalizeOpsEventsResponse,
+  normalizeOpsSummaryResponse,
   normalizePolicyConfigsResponse,
   normalizePolicyVersionsResponse,
   normalizeWheelCampaignsResponse,
   normalizeWheelHistoryResponse,
   normalizeWheelPrizesResponse,
+  type OpsEvent,
+  type OpsSummary,
   type PolicyConfig,
   type PolicyVersion,
   type WheelCampaign,
@@ -21,7 +25,7 @@ import {
 import { createAdminService } from './admin-service';
 import type { AdminAuditLog, AdminTransaction, AdminUser } from './components/admin-tables';
 
-type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'policies' | 'settings';
+type SectionKey = 'overview' | 'users' | 'transactions' | 'audit' | 'rewards' | 'wheel' | 'policies' | 'ops' | 'settings';
 
 export function useAdminDashboard() {
   const [token, setToken] = useState<string | null>(null);
@@ -45,6 +49,12 @@ export function useAdminDashboard() {
   const [campaigns, setCampaigns] = useState<WheelCampaign[]>([]);
   const [policies, setPolicies] = useState<PolicyConfig[]>([]);
   const [policyVersions, setPolicyVersions] = useState<PolicyVersion[]>([]);
+  const [opsSummary, setOpsSummary] = useState<OpsSummary | null>(null);
+  const [opsEvents, setOpsEvents] = useState<OpsEvent[]>([]);
+  const [opsSeverity, setOpsSeverity] = useState<'all' | 'info' | 'warning' | 'error' | 'critical'>('all');
+  const [opsCategory, setOpsCategory] = useState('');
+  const [opsSource, setOpsSource] = useState('');
+  const [opsLoading, setOpsLoading] = useState(false);
   const [selectedPolicyKey, setSelectedPolicyKey] = useState('');
   const [policyEditorOpen, setPolicyEditorOpen] = useState(false);
   const [editingPolicy, setEditingPolicy] = useState<PolicyConfig | null>(null);
@@ -144,6 +154,7 @@ export function useAdminDashboard() {
         setSelectedPolicyKey((current) => current || normalized[0]?.policyKey || '');
       })
       .catch(() => setPolicies([]));
+    refreshOps();
   }, [page, pageSize, search, service, token]);
 
   useEffect(() => {
@@ -191,6 +202,11 @@ export function useAdminDashboard() {
       .then((data) => setWheelSpins(normalizeWheelHistoryResponse(data).spins))
       .catch(() => setWheelSpins([]));
   }, [service, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    refreshOps();
+  }, [opsSeverity, opsCategory, opsSource, service, token]);
 
   async function login() {
     try {
@@ -265,6 +281,29 @@ export function useAdminDashboard() {
       setError('Không thể tải debug biến môi trường');
     } finally {
       setDebugLoading(false);
+    }
+  }
+
+  async function refreshOps() {
+    if (!token) return;
+    try {
+      setOpsLoading(true);
+      const [summary, events] = await Promise.all([
+        service.getOpsSummary(),
+        service.getOpsEvents({
+          limit: 20,
+          severity: opsSeverity === 'all' ? undefined : opsSeverity,
+          category: opsCategory.trim() || undefined,
+          source: opsSource.trim() || undefined,
+        }),
+      ]);
+      setOpsSummary(normalizeOpsSummaryResponse(summary).summary);
+      setOpsEvents(normalizeOpsEventsResponse(events).events);
+    } catch {
+      setOpsSummary(null);
+      setOpsEvents([]);
+    } finally {
+      setOpsLoading(false);
     }
   }
 
@@ -538,6 +577,15 @@ export function useAdminDashboard() {
     campaigns,
     policies,
     policyVersions,
+    opsSummary,
+    opsEvents,
+    opsSeverity,
+    setOpsSeverity,
+    opsCategory,
+    setOpsCategory,
+    opsSource,
+    setOpsSource,
+    opsLoading,
     selectedPolicyKey,
     setSelectedPolicyKey,
     policyEditorOpen,
@@ -617,6 +665,7 @@ export function useAdminDashboard() {
     wheelPrizes,
     wheelSpins,
     wheelPreview,
+    refreshOps,
     editingReward,
     setEditingReward,
     editingCampaign,

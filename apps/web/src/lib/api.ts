@@ -1,8 +1,10 @@
 import {
   normalizeWheelCurrentResponse,
   normalizeWheelHistoryResponse,
+  normalizeOpsEventsResponse,
   normalizePolicyConfigsResponse,
   normalizePolicyVersionsResponse,
+  normalizeOpsSummaryResponse,
 } from '@tele-member/shared';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
@@ -97,6 +99,12 @@ export function apiClient(token?: string | null) {
       request(`/api/admin/rewards/${id}/codes/import`, { method: 'POST', body: JSON.stringify({ codes }) }, token),
     adminGetRewardCodes: (id: string) => request(`/api/admin/rewards/${id}/codes`, {}, token),
     adminGetRedemptions: () => request('/api/admin/redemptions', {}, token),
+    adminGetOpsSummary: async () => normalizeOpsSummaryResponse(await request('/api/admin/ops/summary', {}, token)),
+    adminGetOpsEvents: async (params: { limit?: number; offset?: number; severity?: string; category?: string; source?: string } = {}) =>
+      normalizeOpsEventsResponse(await request(`/api/admin/ops/events?${new URLSearchParams(Object.entries(params).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== null && value !== '') acc[key] = String(value);
+        return acc;
+      }, {} as Record<string, string>)).toString()}`, {}, token)),
     adminGetPolicies: async () => normalizePolicyConfigsResponse(await request('/api/admin/policies', {}, token)),
     adminGetPolicy: (key: string) => request(`/api/admin/policies/${encodeURIComponent(key)}`, {}, token),
     adminGetPolicyVersions: async (key: string) => normalizePolicyVersionsResponse(await request(`/api/admin/policies/${encodeURIComponent(key)}/versions`, {}, token)),

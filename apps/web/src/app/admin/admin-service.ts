@@ -21,6 +21,8 @@ export function createAdminService(token: string | null) {
     importRewardCodes: client.adminImportRewardCodes,
     getRewardCodes: client.adminGetRewardCodes,
     getRedemptions: client.adminGetRedemptions,
+    getOpsSummary: client.adminGetOpsSummary,
+    getOpsEvents: client.adminGetOpsEvents,
     getPolicies: client.adminGetPolicies,
     getPolicy: client.adminGetPolicy,
     getPolicyVersions: client.adminGetPolicyVersions,
