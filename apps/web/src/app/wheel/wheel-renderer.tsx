@@ -125,85 +125,85 @@ export function WheelRenderer({
           />
 
           <Box
-            component="svg"
-            viewBox="0 0 1000 1000"
-            preserveAspectRatio="xMidYMid meet"
             sx={{
               position: 'absolute',
               inset: 0,
-              width: '100%',
-              height: '100%',
-              overflow: 'visible',
               pointerEvents: 'none',
             }}
-            aria-hidden
           >
             {plan.tokenPlacements.map((token) => {
               const tokenSize = token.size;
-              const badgeRadius = token.renderMode === 'label-only' ? tokenSize * 0.50 : tokenSize * 0.52;
               const finalX = token.x + token.offsetX;
               const finalY = token.y + token.offsetY;
               const shouldUseLabel = token.renderMode === 'label-only';
-              const tokenFontSize = Math.max(18, tokenSize * (shouldUseLabel ? 0.42 : 0.58));
-              const tokenLabel = shouldUseLabel ? token.label : token.token;
-              const dy = shouldUseLabel ? '0.03em' : '0.08em';
+              const radius = shouldUseLabel ? tokenSize * 0.54 : tokenSize * 0.6;
+              const assetSize = shouldUseLabel ? tokenSize * 0.92 : tokenSize * 1.08;
+              const assetFontSize = Math.max(18, tokenSize * (shouldUseLabel ? 0.40 : 0.66));
               return (
-              <g key={token.prizeId} transform={`translate(${finalX}, ${finalY}) rotate(${token.counterRotate})`}>
-                <circle
-                  cx="0"
-                  cy="0"
-                  r={badgeRadius}
-                  fill={shouldUseLabel ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.14)'}
-                  stroke="rgba(255,255,255,0.14)"
-                  strokeWidth="1"
-                  filter="url(#wheelTokenShadow)"
-                />
-                <circle
-                  cx="0"
-                  cy="0"
-                  r={Math.max(2, badgeRadius - 2)}
-                  fill={shouldUseLabel ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)'}
-                />
-                {token.assetUrl && !shouldUseLabel ? (
-                  <image
-                    href={token.assetUrl}
-                    x={-badgeRadius * 0.78}
-                    y={-badgeRadius * 0.78}
-                    width={badgeRadius * 1.56}
-                    height={badgeRadius * 1.56}
-                    preserveAspectRatio="xMidYMid meet"
-                    style={{ imageRendering: 'auto' }}
-                  />
-                ) : (
-                  <text
-                    x="0"
-                    y="0"
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    style={{
-                      fontSize: `${tokenFontSize}px`,
-                      lineHeight: 1,
-                      fontWeight: 900,
-                      fill: token.textTone,
-                      fontFamily: shouldUseLabel
-                        ? 'Inter, ui-sans-serif, system-ui, sans-serif'
-                        : '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Noto Sans Symbols 2", sans-serif',
-                      textShadow: '0 1px 2px rgba(0,0,0,0.18)',
-                      letterSpacing: shouldUseLabel ? '0.02em' : '0',
-                      userSelect: 'none',
+                <Box
+                  key={token.prizeId}
+                  sx={{
+                    position: 'absolute',
+                    left: `${finalX / 10}%`,
+                    top: `${finalY / 10}%`,
+                    transform: `translate(-50%, -50%) rotate(${token.counterRotate}deg)`,
+                    width: `${tokenSize}px`,
+                    height: `${tokenSize}px`,
+                    display: 'grid',
+                    placeItems: 'center',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      inset: 0,
+                      margin: 'auto',
+                      width: `${radius * 2}px`,
+                      height: `${radius * 2}px`,
+                      borderRadius: shouldUseLabel ? 1 : '50%',
+                      background: shouldUseLabel ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.12)',
+                      border: '1px solid rgba(255,255,255,0.14)',
+                      boxShadow: '0 8px 16px rgba(0,0,0,0.16)',
+                      backdropFilter: 'blur(4px)',
                     }}
-                  >
-                    <tspan dy={dy}>{tokenLabel}</tspan>
-                  </text>
-                )}
-              </g>
-            );
-          })}
-            <defs>
-              <filter id="wheelTokenShadow" x="-30%" y="-30%" width="160%" height="160%">
-                <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="rgba(0,0,0,0.18)" />
-              </filter>
-            </defs>
+                  />
+                  {token.assetUrl && !shouldUseLabel ? (
+                    <Box
+                      component="img"
+                      src={token.assetUrl}
+                      alt=""
+                      sx={{
+                        position: 'relative',
+                        width: `${assetSize}px`,
+                        height: `${assetSize}px`,
+                        objectFit: 'contain',
+                        imageRendering: 'auto',
+                        filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.18))',
+                      }}
+                    />
+                  ) : (
+                    <Typography
+                      component="span"
+                      sx={{
+                        position: 'relative',
+                        fontSize: `${assetFontSize}px`,
+                        lineHeight: 1,
+                        fontWeight: 900,
+                        color: token.textTone,
+                        fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+                        textShadow: '0 1px 2px rgba(0,0,0,0.18)',
+                        whiteSpace: 'nowrap',
+                        letterSpacing: '0.01em',
+                        transform: shouldUseLabel ? 'translateY(-1px)' : 'translateY(0)',
+                      }}
+                    >
+                      {token.label}
+                    </Typography>
+                  )}
+                </Box>
+              );
+            })}
           </Box>
 
           <Box
