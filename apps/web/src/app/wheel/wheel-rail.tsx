@@ -17,7 +17,7 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
     const source = [...items]
       .filter((item) => item.prizeName || item.resultLabel)
       .sort(() => Math.random() - 0.5)
-      .slice(0, 10);
+      .slice(0, 6);
     return source.length ? [...source, ...source] : [];
   }, [items]);
 
@@ -36,16 +36,16 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
     >
       <Box
         sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 1,
-        px: 1.5,
-        py: 1,
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        position: 'relative',
-      }}
-    >
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          px: 1.5,
+          py: 1,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
         <Chip
           label="Trúng gần đây"
           size="small"
@@ -61,9 +61,9 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 1.5,
+            gap: 1,
             minWidth: 'max-content',
-            animation: `wheelTicker ${Math.max(18, tickerItems.length * 3.2)}s linear infinite`,
+            animation: `wheelTicker ${Math.max(16, tickerItems.length * 2.8)}s linear infinite`,
             willChange: 'transform',
             transform: 'translate3d(0, 0, 0)',
             '@keyframes wheelTicker': {
@@ -82,19 +82,19 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 0.85,
-                  px: 1.2,
-                  py: 0.6,
+                  gap: 0.7,
+                  px: 1,
+                  py: 0.55,
                   borderRadius: 1,
                   bgcolor: 'rgba(255,255,255,0.04)',
                   border: '1px solid rgba(255,255,255,0.06)',
                   color: '#f4f8ff',
-                  fontSize: '0.86rem',
+                  fontSize: '0.84rem',
                   fontWeight: 700,
                   flex: '0 0 auto',
                 }}
               >
-                <Box component="span" sx={{ fontSize: '1rem', lineHeight: 1 }}>
+                <Box component="span" sx={{ fontSize: '0.96rem', lineHeight: 1 }}>
                   {glyph}
                 </Box>
                 <Box component="span" sx={{ color: '#dbeafe' }}>
@@ -179,7 +179,7 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                 Lịch sử trúng của bạn
               </Typography>
               <Typography sx={{ color: 'rgba(226,234,255,0.64)', fontSize: '0.84rem' }}>
-                Hiển thị các quà đã trúng gần nhất, ưu tiên làm rõ phần thưởng.
+                Mỗi dòng ưu tiên tên quà trước, người nhận và thời gian ở sau.
               </Typography>
             </Box>
             <Chip
@@ -203,9 +203,8 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                   key={item.id}
                   sx={{
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    gap: 1.5,
-                    alignItems: 'center',
+                    flexDirection: 'column',
+                    gap: 1,
                     px: 1.5,
                     py: 1.2,
                     borderRadius: 1,
@@ -213,7 +212,7 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                     border: '1px solid rgba(255,255,255,0.06)',
                   }}
                 >
-                  <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
+                  <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 0, width: '100%' }}>
                     <Box
                       sx={{
                         width: 42,
@@ -234,9 +233,9 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                       <Typography sx={{ color: '#f4f8ff', fontWeight: 900, lineHeight: 1.1 }} noWrap>
                         {prizeName}
                       </Typography>
-                      <Typography sx={{ color: 'rgba(226,234,255,0.72)', fontSize: '0.84rem' }} noWrap>
+                      <Typography sx={{ color: 'rgba(226,234,255,0.72)', fontSize: '0.83rem' }} noWrap>
                         {item.displayName ? `${item.displayName} • ` : ''}
-                        {item.resultLabel || item.resultType}
+                        {item.status === 'won' ? 'Đã trúng' : item.status === 'claimed' ? 'Đã nhận' : item.status === 'pending' ? 'Chờ xử lý' : 'Không trúng'}
                       </Typography>
                     </Box>
                     <Chip
@@ -250,7 +249,7 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                       }}
                     />
                   </Stack>
-                  <Typography sx={{ color: 'rgba(226,234,255,0.56)', fontSize: '0.8rem', flex: '0 0 auto' }}>
+                  <Typography sx={{ color: 'rgba(226,234,255,0.56)', fontSize: '0.78rem', flex: '0 0 auto', alignSelf: 'flex-end' }}>
                     {createdAt ? new Date(createdAt).toLocaleString('vi-VN') : '—'}
                   </Typography>
                 </Box>

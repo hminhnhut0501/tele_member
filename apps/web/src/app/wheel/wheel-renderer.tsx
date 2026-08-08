@@ -124,7 +124,7 @@ export function WheelRenderer({
             }}
           />
 
-          {plan.tokenPlacements.map((token, index) => (
+          {plan.tokenPlacements.map((token) => (
             <Box
               key={token.prizeId}
               sx={{
@@ -138,30 +138,32 @@ export function WheelRenderer({
                 height: `${token.size}px`,
                 display: 'grid',
                 placeItems: 'center',
-                borderRadius: 999,
-                bgcolor: token.renderMode === 'label-only' ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.10)',
-                border: '1px solid rgba(255,255,255,0.10)',
+                borderRadius: token.renderMode === 'label-only' ? 1 : 999,
+                bgcolor: token.renderMode === 'label-only' ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.12)',
                 color: token.textTone,
-                boxShadow: index % 2 === 0 ? '0 8px 16px rgba(0,0,0,0.16)' : '0 6px 12px rgba(0,0,0,0.12)',
+                boxShadow: '0 8px 16px rgba(0,0,0,0.16)',
                 backdropFilter: 'blur(4px)',
-                px: token.renderMode === 'label-only' ? 1 : 0.5,
-                py: 0.5,
+                px: token.renderMode === 'label-only' ? 1 : 0.25,
+                py: token.renderMode === 'label-only' ? 0.45 : 0.2,
                 textAlign: 'center',
                 pointerEvents: 'none',
+                overflow: 'hidden',
               }}
             >
               <Typography
                 component="span"
                 sx={{
                   fontSize: {
-                    xs: `${Math.max(16, token.size * 0.46)}px`,
-                    sm: `${Math.max(18, token.size * 0.48)}px`,
+                    xs: `${Math.max(18, token.size * 0.52)}px`,
+                    sm: `${Math.max(20, token.size * 0.54)}px`,
                   },
                   lineHeight: 1,
                   fontWeight: 900,
                   whiteSpace: 'nowrap',
                   textShadow: '0 1px 2px rgba(0,0,0,0.18)',
                   letterSpacing: token.renderMode === 'label-only' ? 0.02 : 0,
+                  transform: token.renderMode === 'label-only' ? 'translateY(-1px)' : 'translateY(0)',
                 }}
               >
                 {token.renderMode === 'label-only' ? token.label : token.token}

@@ -1,7 +1,10 @@
 'use client';
 
-import { getWheelSegmentAngle } from './wheel-engine';
-import type { WheelRenderSegment } from './wheel-contract';
+import type { WheelRenderSegment } from './wheel-types';
+
+export function getWheelSegmentAngle(segmentCount: number) {
+  return 360 / Math.max(segmentCount, 1);
+}
 
 export type WheelMotionPhase = 'idle' | 'arming' | 'spinning' | 'slowing' | 'settling' | 'result';
 
@@ -24,4 +27,3 @@ export function getWheelSpinTransition(phase: WheelMotionPhase) {
   if (phase === 'settling') return 'transform 0.34s cubic-bezier(0.24, 1.22, 0.34, 1)';
   return 'transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)';
 }
-

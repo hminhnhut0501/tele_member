@@ -1,8 +1,8 @@
 'use client';
 
 import { getDefaultWheelPrizes, getWheelPrizeGlyph, getWheelPrizeShortLabel, normalizeWheelPrize, type WheelPrize } from './wheel-model';
-import { getWheelSegmentAngle } from './wheel-engine';
-import type { WheelRenderSegment } from './wheel-contract';
+import { getWheelSegmentAngle } from './wheel-motion';
+import type { WheelRenderSegment } from './wheel-types';
 
 export type WheelRenderPreset = 'five' | 'six' | 'eight' | 'tenPlus' | 'custom';
 
@@ -99,34 +99,34 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
   const compact = source.length >= 8;
   const wheelSize = isMobile
     ? dense
-      ? 'min(76vw, 340px)'
+      ? 'min(74vw, 332px)'
       : compact
-        ? 'min(80vw, 360px)'
-        : 'min(82vw, 390px)'
+        ? 'min(78vw, 354px)'
+        : 'min(80vw, 382px)'
     : dense
-      ? 'min(70vw, 520px)'
+      ? 'min(68vw, 500px)'
       : compact
-        ? 'min(74vw, 560px)'
-        : 'min(72vw, 580px)';
+        ? 'min(72vw, 540px)'
+        : 'min(70vw, 560px)';
 
   const tokenRadius = isMobile
     ? dense
-      ? 265
+      ? 258
       : compact
-        ? 287
-        : 304
+        ? 280
+        : 300
     : dense
-      ? 292
+      ? 286
       : compact
-        ? 315
-        : 338;
+        ? 308
+        : 330;
 
   const pointerInset = isMobile ? (isCompactHeight ? 5 : 8) : 12;
   const centerSize = isMobile ? (isCompactHeight ? 0.34 : 0.36) : 0.38;
-  const historyTickerCount = Math.min(10, source.length + 3);
+  const historyTickerCount = Math.min(8, source.length + 2);
 
   const slotOffsetByPreset: Record<WheelRenderPreset, number[]> = {
-    five: [3.5, -1.5, -4, 1.5, 2],
+    five: [5, -2, -5, 2, 1],
     six: [2.5, -1, -2.5, 0.5, 1.25, -0.5],
     eight: [2, 1, -1, -2, -1.25, 0.75, 1.5, -0.75],
     tenPlus: [1.5, 0.75, -0.25, -1, -1.5, -0.5, 0.2, 0.9, 1.1, -0.35],
@@ -208,7 +208,7 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
       : preset === 'six'
         ? 8
         : 0;
-    const tokenRadiusEffective = tokenRadius + tokenRadiusNudge + segment.slotBias * 0.45 + (isFive ? (index % 2 === 0 ? 4 : -2) : 0);
+    const tokenRadiusEffective = tokenRadius + tokenRadiusNudge + segment.slotBias * 0.38 + (isFive ? (index === 0 ? 4 : index === 1 ? -1 : index === 2 ? -6 : index === 3 ? 3 : 1) : 0);
     const point = polarToCartesian(500, 500, tokenRadiusEffective, midAngle + (isMobile ? -1 : 0));
     const tokenSize = Math.max(
       isFive ? 32 : isMobile ? 24 : 28,
@@ -221,8 +221,8 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
       y: point.y,
       angle: midAngle,
       size: tokenSize,
-      offsetX: isFive ? (index === 0 ? -8 : index === 1 ? 4 : index === 2 ? 8 : index === 3 ? 2 : -4) : 0,
-      offsetY: isFive ? (index === 0 ? -2 : index === 1 ? -1 : index === 2 ? 4 : index === 3 ? 0 : 1) : 0,
+      offsetX: isFive ? (index === 0 ? -10 : index === 1 ? 4 : index === 2 ? 10 : index === 3 ? 2 : -2) : 0,
+      offsetY: isFive ? (index === 0 ? -4 : index === 1 ? -2 : index === 2 ? 5 : index === 3 ? 0 : 2) : 0,
       counterRotate: 0,
       token: segment.glyph || '✦',
       label: segment.displayLabel,
@@ -244,4 +244,3 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
     tokenPlacements,
   };
 }
-
