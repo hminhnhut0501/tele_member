@@ -1,7 +1,116 @@
 'use client';
 
 import { Box, Card, CardContent, Chip, Stack, Typography } from '@mui/material';
+import { useMemo } from 'react';
 import { getWheelPrizeGlyph, getWheelPrizeShortLabel, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
+
+function formatCompactTime(value: string | null | undefined) {
+  if (!value) return '—';
+  return new Intl.DateTimeFormat('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
+}
+
+export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] }) {
+  const tickerItems = useMemo(() => {
+    const source = [...items]
+      .filter((item) => item.prizeName || item.resultLabel)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 10);
+    return source.length ? [...source, ...source] : [];
+  }, [items]);
+
+  if (!tickerItems.length) return null;
+
+  return (
+    <Box
+      sx={{
+        width: 'min(92vw, 560px)',
+        overflow: 'hidden',
+        borderRadius: 1,
+        border: '1px solid rgba(105, 147, 255, 0.10)',
+        background: 'linear-gradient(180deg, rgba(7,14,30,0.88), rgba(9,16,34,0.96))',
+        boxShadow: '0 16px 42px rgba(0,0,0,0.18)',
+      }}
+    >
+      <Box
+        sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1,
+        px: 1.5,
+        py: 1,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        position: 'relative',
+      }}
+    >
+        <Chip
+          label="Trúng gần đây"
+          size="small"
+          sx={{
+            flex: '0 0 auto',
+            bgcolor: 'rgba(102,168,255,0.16)',
+            color: '#ecf4ff',
+            border: '1px solid rgba(102,168,255,0.20)',
+            fontWeight: 800,
+          }}
+        />
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            minWidth: 'max-content',
+            animation: `wheelTicker ${Math.max(18, tickerItems.length * 3.2)}s linear infinite`,
+            willChange: 'transform',
+            transform: 'translate3d(0, 0, 0)',
+            '@keyframes wheelTicker': {
+              '0%': { transform: 'translate3d(0, 0, 0)' },
+              '100%': { transform: 'translate3d(-50%, 0, 0)' },
+            },
+          }}
+        >
+          {tickerItems.map((item, index) => {
+            const glyph = item.prizeToken || item.resultLabel || getWheelPrizeGlyph({ type: item.resultType, metadata: item.resultMetadata });
+            const prizeText = item.prizeName || item.resultLabel || 'Không trúng';
+            const timeText = formatCompactTime(item.createdAt);
+            return (
+              <Box
+                key={`${item.id}-${index}`}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.85,
+                  px: 1.2,
+                  py: 0.6,
+                  borderRadius: 1,
+                  bgcolor: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  color: '#f4f8ff',
+                  fontSize: '0.86rem',
+                  fontWeight: 700,
+                  flex: '0 0 auto',
+                }}
+              >
+                <Box component="span" sx={{ fontSize: '1rem', lineHeight: 1 }}>
+                  {glyph}
+                </Box>
+                <Box component="span" sx={{ color: '#dbeafe' }}>
+                  {prizeText}
+                </Box>
+                <Box component="span" sx={{ color: 'rgba(226,234,255,0.56)' }}>
+                  {timeText}
+                </Box>
+              </Box>
+            );
+          })}
+        </Box>
+      </Box>
+    </Box>
+  );
+}
 
 export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
   return (
@@ -67,23 +176,22 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
             <Box>
               <Typography sx={{ color: '#eef4ff', fontWeight: 900, letterSpacing: '-0.04em', fontSize: '1.1rem' }}>
-                Lịch sử trúng gần đây
+                Lịch sử trúng của bạn
               </Typography>
               <Typography sx={{ color: 'rgba(226,234,255,0.64)', fontSize: '0.84rem' }}>
-                Tăng độ tin cậy và cho thấy wheel đang hoạt động thật.
+                Hiển thị các quà đã trúng gần nhất, ưu tiên làm rõ phần thưởng.
               </Typography>
             </Box>
             <Chip
-              label={`${items.length} latest`}
+              label={`${items.length} mục`}
               sx={{ bgcolor: 'rgba(102,168,255,0.14)', color: '#ecf4ff', border: '1px solid rgba(102,168,255,0.18)', fontWeight: 800 }}
             />
           </Box>
 
           <Stack spacing={1}>
             {items.length ? items.map((item) => {
-              const name = item.displayName ?? (item.username ? `@${item.username}` : 'Người chơi');
               const createdAt = item.createdAt ?? '';
-              const prizeName = item.prizeName || 'Không trúng';
+              const prizeName = item.prizeName || item.resultLabel || 'Không trúng';
               const glyph = item.prizeToken || item.resultLabel || getWheelPrizeGlyph({ type: item.resultType, metadata: item.resultMetadata });
               const statusLabel =
                 item.status === 'won' ? 'Đã trúng' :
@@ -96,7 +204,7 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                   sx={{
                     display: 'flex',
                     justifyContent: 'space-between',
-                    gap: 2,
+                    gap: 1.5,
                     alignItems: 'center',
                     px: 1.5,
                     py: 1.2,
@@ -105,11 +213,11 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                     border: '1px solid rgba(255,255,255,0.06)',
                   }}
                 >
-                  <Stack direction="row" spacing={1.4} alignItems="center" sx={{ minWidth: 0 }}>
+                  <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
                     <Box
                       sx={{
-                        width: 38,
-                        height: 38,
+                        width: 42,
+                        height: 42,
                         borderRadius: '50%',
                         display: 'grid',
                         placeItems: 'center',
@@ -119,15 +227,16 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                         fontSize: '1rem',
                         fontWeight: 900,
                       }}
-                  >
-                    {glyph}
-                  </Box>
+                    >
+                      {glyph}
+                    </Box>
                     <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Typography sx={{ color: '#f4f8ff', fontWeight: 800, lineHeight: 1.2 }} noWrap>
-                        {name}
-                      </Typography>
-                      <Typography sx={{ color: 'rgba(226,234,255,0.70)', fontSize: '0.84rem' }} noWrap>
+                      <Typography sx={{ color: '#f4f8ff', fontWeight: 900, lineHeight: 1.1 }} noWrap>
                         {prizeName}
+                      </Typography>
+                      <Typography sx={{ color: 'rgba(226,234,255,0.72)', fontSize: '0.84rem' }} noWrap>
+                        {item.displayName ? `${item.displayName} • ` : ''}
+                        {item.resultLabel || item.resultType}
                       </Typography>
                     </Box>
                     <Chip

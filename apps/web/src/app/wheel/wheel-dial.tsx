@@ -70,6 +70,46 @@ function getWheelLayout(segmentCount: number, isMobile: boolean) {
         : compact
           ? 1.04
           : 1.12,
+    tokenRadius: isMobile
+      ? dense
+        ? 286
+        : compact
+          ? 304
+          : 320
+      : dense
+        ? 300
+        : compact
+          ? 322
+          : 340,
+    tokenFontSize: isMobile
+      ? dense
+        ? 28
+        : compact
+          ? 31
+          : 34
+      : dense
+        ? 30
+        : compact
+          ? 36
+          : 42,
+    tokenAngleOffset: segmentCount === 5
+      ? isMobile
+        ? -2.2
+        : -1.6
+      : segmentCount === 6
+        ? isMobile
+          ? -1.4
+          : -1
+        : 0,
+    tokenRadiusNudge: segmentCount === 5
+      ? isMobile
+        ? 10
+        : 14
+      : segmentCount === 6
+        ? isMobile
+          ? 8
+          : 11
+        : 0,
   };
 }
 
@@ -114,6 +154,7 @@ export function WheelDial({
   const arc = `conic-gradient(from -90deg, ${segments.map((segment, index) => `${segment.tone} ${index * segmentAngle}deg ${(index + 1) * segmentAngle}deg`).join(', ')})`;
   const isSpinning = spinPhase === 'spinning';
   const isSettling = spinPhase === 'settling';
+  const isFiveSlot = segments.length === 5;
   return (
     <Box
       sx={{
@@ -313,27 +354,81 @@ export function WheelDial({
                   : segment.labelPolicy.kind === 'badge'
                     ? '-0.03em'
                     : '0.00em'
-                : segment.labelPolicy.kind === 'value'
-                  ? '-0.02em'
+                  : segment.labelPolicy.kind === 'value'
+                    ? '-0.02em'
+                    : segment.labelPolicy.kind === 'badge'
+                      ? '-0.01em'
+                      : '0.01em';
+              const midAngle = (index + 0.5) * segmentAngle + layout.tokenAngleOffset + (isFiveSlot ? (index === 0 ? 0.6 : index === 1 ? -0.4 : index === 2 ? -0.8 : index === 3 ? 0.35 : 0.15) : 0);
+              const tokenPosition = polarToCartesian(
+                500,
+                500,
+                layout.tokenRadius + layout.tokenRadiusNudge + segment.slotBias * 0.55 + (isFiveSlot ? (index === 0 ? -4 : index === 1 ? 2 : index === 2 ? 6 : index === 3 ? 0 : -2) : 0),
+                midAngle,
+              );
+              const tokenLabel = mode === 'label-only' ? segment.displayLabel : glyph;
+              const tokenFontSize = Math.max(
+                isFiveSlot ? 28 : 24,
+                layout.tokenFontSize *
+                  wheelLabelScale *
+                  segment.labelPolicy.fontScale *
+                  (segment.labelPolicy.kind === 'value'
+                    ? 1.12
+                    : segment.labelPolicy.kind === 'badge'
+                      ? 1.05
+                      : segment.labelPolicy.kind === 'phrase'
+                        ? 0.92
+                        : 1),
+              );
+              const tokenFontShift =
+                segment.labelPolicy.kind === 'value'
+                  ? tokenFontSize * 0.04
                   : segment.labelPolicy.kind === 'badge'
-                    ? '-0.01em'
-                    : '0.01em';
+                    ? tokenFontSize * 0.02
+                    : tokenFontSize * 0.015;
               return (
-                <text
-                  key={`${segment.id}-svg-label`}
-                  fill={segment.textTone}
-                  fontFamily='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'
-                  fontWeight={900}
-                  fontSize={labelFontSize}
-                  letterSpacing={mode === 'label-only' ? 0.06 : segment.labelPolicy.kind === 'value' ? 0.4 : 0.2}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  filter={isSpinning ? 'drop-shadow(0 0 6px rgba(255,255,255,0.16))' : 'drop-shadow(0 1px 3px rgba(0,0,0,0.14))'}
-                >
-                  <textPath href={`#${labelPathId}`} startOffset="50%" method="align" spacing="auto" dy={labelDy}>
-                    {tokenRow}
-                  </textPath>
-                </text>
+                <g key={`${segment.id}-svg-label`}>
+                  {mode === 'label-only' ? (
+                    <text
+                      fill={segment.textTone}
+                      fontFamily='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'
+                      fontWeight={900}
+                      fontSize={labelFontSize}
+                      letterSpacing={mode === 'label-only' ? 0.06 : segment.labelPolicy.kind === 'value' ? 0.4 : 0.2}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      filter={isSpinning ? 'drop-shadow(0 0 6px rgba(255,255,255,0.16))' : 'drop-shadow(0 1px 3px rgba(0,0,0,0.14))'}
+                    >
+                      <textPath href={`#${labelPathId}`} startOffset="50%" method="align" spacing="auto" dy={labelDy}>
+                        {tokenRow}
+                      </textPath>
+                    </text>
+                  ) : (
+                    <>
+                      <circle
+                        cx={tokenPosition.x}
+                        cy={tokenPosition.y}
+                        r={Math.max(16, tokenFontSize * 0.41)}
+                        fill="rgba(255,255,255,0.08)"
+                        opacity={segment.labelPolicy.kind === 'phrase' ? 0.72 : 0.9}
+                      />
+                      <text
+                        x={tokenPosition.x}
+                        y={tokenPosition.y + tokenFontShift}
+                        fill={segment.textTone}
+                        fontFamily='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'
+                        fontWeight={900}
+                        fontSize={tokenFontSize}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        style={{ paintOrder: 'stroke fill', stroke: 'rgba(0,0,0,0.10)', strokeWidth: tokenFontSize * 0.04 }}
+                        filter={isSpinning ? 'drop-shadow(0 0 10px rgba(255,255,255,0.22))' : 'drop-shadow(0 1px 4px rgba(0,0,0,0.18))'}
+                      >
+                        {tokenLabel}
+                      </text>
+                    </>
+                  )}
+                </g>
               );
             })}
           </Box>

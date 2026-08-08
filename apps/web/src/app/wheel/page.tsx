@@ -8,7 +8,7 @@ import { WheelDial } from './wheel-dial';
 import { buildWheelRenderContract } from './wheel-contract';
 import { getDefaultWheelPrizes, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
 import { getWheelStartSpinRotation, getWheelTargetRotation } from './wheel-engine';
-import { WheelHistoryRail, WheelRewardRail } from './wheel-rail';
+import { WheelHistoryRail, WheelHistoryTicker, WheelRewardRail } from './wheel-rail';
 
 export default function WheelPage() {
   const [token, setToken] = useState<string | null>(null);
@@ -125,6 +125,8 @@ export default function WheelPage() {
               Blue lobby
             </Box>
           </Box>
+
+          <WheelHistoryTicker items={history} />
 
           <WheelDial
             segments={segments}
