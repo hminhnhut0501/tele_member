@@ -226,9 +226,9 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
         : 0;
     const tokenRadiusEffective = tokenRadius + tokenRadiusNudge + segment.slotBias * 0.38 + (isFive ? (index === 0 ? 4 : index === 1 ? -1 : index === 2 ? -6 : index === 3 ? 3 : 1) : 0);
     const point = polarToCartesian(500, 500, tokenRadiusEffective, midAngle + (isMobile ? -1 : 0));
-    const baseTokenSize = isFive ? (isMobile ? 82 : 94) : isMobile ? 52 : 62;
+    const baseTokenSize = isFive ? (isMobile ? 58 : 66) : isMobile ? 44 : 52;
     const tokenSize = Math.max(
-      isFive ? 54 : isMobile ? 34 : 40,
+      isFive ? 40 : isMobile ? 30 : 34,
       baseTokenSize * (segment.labelPolicy.kind === 'phrase' ? 0.92 : segment.labelPolicy.kind === 'badge' ? 0.98 : 1),
     );
     const assetUrl = resolveAssetUrl(segment as unknown as WheelPrize, segment.glyph || '✦');

@@ -136,9 +136,9 @@ export function WheelRenderer({
               const finalX = token.x + token.offsetX;
               const finalY = token.y + token.offsetY;
               const shouldUseLabel = token.renderMode === 'label-only';
-              const radius = shouldUseLabel ? tokenSize * 0.54 : tokenSize * 0.6;
-              const assetSize = shouldUseLabel ? tokenSize * 0.92 : tokenSize * 1.02;
-              const assetFontSize = Math.max(22, tokenSize * (shouldUseLabel ? 0.36 : 0.76));
+              const radius = shouldUseLabel ? tokenSize * 0.48 : tokenSize * 0.46;
+              const iconSize = shouldUseLabel ? tokenSize * 0.56 : tokenSize * 0.62;
+              const fallbackFontSize = Math.max(18, tokenSize * 0.42);
               return (
                 <Box
                   key={token.prizeId}
@@ -162,7 +162,7 @@ export function WheelRenderer({
                       width: `${radius * 2}px`,
                       height: `${radius * 2}px`,
                       borderRadius: shouldUseLabel ? 1 : '50%',
-                      background: shouldUseLabel ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.16)',
+                      background: shouldUseLabel ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.14)',
                       border: '1px solid rgba(255,255,255,0.14)',
                       boxShadow: '0 8px 16px rgba(0,0,0,0.16)',
                       backdropFilter: 'blur(4px)',
@@ -175,8 +175,8 @@ export function WheelRenderer({
                       alt=""
                       sx={{
                         position: 'relative',
-                        width: `${assetSize}px`,
-                        height: `${assetSize}px`,
+                        width: `${iconSize}px`,
+                        height: `${iconSize}px`,
                         objectFit: 'contain',
                         imageRendering: 'auto',
                         filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.18))',
@@ -187,7 +187,7 @@ export function WheelRenderer({
                       component="span"
                       sx={{
                         position: 'relative',
-                        fontSize: `${assetFontSize}px`,
+                        fontSize: `${fallbackFontSize}px`,
                         lineHeight: 1,
                         fontWeight: 900,
                         color: token.textTone,
