@@ -140,16 +140,15 @@ export function WheelRenderer({
           >
             {plan.tokenPlacements.map((token) => {
               const tokenSize = token.size;
-              const glyphFontSize = Math.max(18, tokenSize * (token.renderMode === 'label-only' ? 0.46 : 0.58));
-              const badgeRadius = token.renderMode === 'label-only' ? tokenSize * 0.46 : tokenSize * 0.5;
+              const badgeRadius = token.renderMode === 'label-only' ? tokenSize * 0.50 : tokenSize * 0.52;
               const finalX = token.x + token.offsetX;
               const finalY = token.y + token.offsetY;
               const shouldUseLabel = token.renderMode === 'label-only';
+              const tokenFontSize = Math.max(18, tokenSize * (shouldUseLabel ? 0.42 : 0.58));
+              const tokenLabel = shouldUseLabel ? token.label : token.token;
+              const dy = shouldUseLabel ? '0.03em' : '0.08em';
               return (
-                <g
-                  key={token.prizeId}
-                  transform={`translate(${finalX}, ${finalY}) rotate(${token.counterRotate})`}
-                >
+                <g key={token.prizeId} transform={`translate(${finalX}, ${finalY}) rotate(${token.counterRotate})`}>
                   <circle
                     cx="0"
                     cy="0"
@@ -159,50 +158,36 @@ export function WheelRenderer({
                     strokeWidth="1"
                     filter="url(#wheelTokenShadow)"
                   />
-                  <foreignObject
-                    x={-tokenSize / 2}
-                    y={-tokenSize / 2}
-                    width={tokenSize}
-                    height={tokenSize}
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r={Math.max(2, badgeRadius - 2)}
+                    fill={shouldUseLabel ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.03)'}
+                  />
+                  <text
+                    x="0"
+                    y="0"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    style={{
+                      fontSize: `${tokenFontSize}px`,
+                      lineHeight: 1,
+                      fontWeight: 900,
+                      fill: token.textTone,
+                      fontFamily: shouldUseLabel
+                        ? 'Inter, ui-sans-serif, system-ui, sans-serif'
+                        : '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Noto Sans Symbols 2", sans-serif',
+                      textShadow: '0 1px 2px rgba(0,0,0,0.18)',
+                      letterSpacing: shouldUseLabel ? '0.02em' : '0',
+                      userSelect: 'none',
+                    }}
                   >
-                    <Box
-                      component="div"
-                      sx={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'grid',
-                        placeItems: 'center',
-                        color: token.textTone,
-                        textAlign: 'center',
-                        overflow: 'hidden',
-                        borderRadius: shouldUseLabel ? 1 : 999,
-                        px: shouldUseLabel ? 0.35 : 0,
-                        py: shouldUseLabel ? 0.15 : 0,
-                        fontWeight: 900,
-                        backdropFilter: 'blur(4px)',
-                      }}
-                    >
-                      <Typography
-                        component="span"
-                        sx={{
-                          fontSize: `${glyphFontSize}px`,
-                          lineHeight: 1,
-                          fontWeight: 900,
-                          whiteSpace: 'nowrap',
-                          display: 'block',
-                          width: '100%',
-                          transform: shouldUseLabel ? 'translateY(-1px)' : 'translateY(0)',
-                          fontFamily:
-                            token.renderMode === 'label-only'
-                              ? 'Inter, ui-sans-serif, system-ui, sans-serif'
-                              : '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
-                          textShadow: '0 1px 2px rgba(0,0,0,0.18)',
-                        }}
-                      >
-                        {shouldUseLabel ? token.label : token.token}
-                      </Typography>
-                    </Box>
-                  </foreignObject>
+                    {shouldUseLabel ? (
+                      <tspan dy={dy}>{tokenLabel}</tspan>
+                    ) : (
+                      <tspan dy={dy}>{tokenLabel}</tspan>
+                    )}
+                  </text>
                 </g>
               );
             })}
