@@ -92,14 +92,6 @@ function shortText(value: string, max = 12) {
   return `${normalized.slice(0, Math.max(1, max - 1)).trimEnd()}…`;
 }
 
-function toCodePoints(input: string) {
-  return Array.from(input)
-    .filter((char) => char.trim().length > 0)
-    .map((char) => char.codePointAt(0)?.toString(16))
-    .filter(Boolean)
-    .join('-');
-}
-
 function resolveAssetUrl(prize: WheelPrize, fallbackGlyph: string) {
   const direct = String(
     prize.metadata?.assetUrl ??
@@ -112,18 +104,7 @@ function resolveAssetUrl(prize: WheelPrize, fallbackGlyph: string) {
   ).trim();
   if (direct) return direct;
 
-  const glyph = String(
-    prize.metadata?.glyph ??
-      prize.metadata?.wheelGlyph ??
-      prize.metadata?.icon ??
-      prize.metadata?.emoji ??
-      fallbackGlyph ??
-      '',
-  ).trim();
-  if (!glyph) return null;
-  const codePoints = toCodePoints(glyph);
-  if (!codePoints) return null;
-  return `https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/svg/${codePoints}.svg`;
+  return direct || null;
 }
 
 export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompactHeight: boolean): WheelRenderPlan {
@@ -245,9 +226,9 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
         : 0;
     const tokenRadiusEffective = tokenRadius + tokenRadiusNudge + segment.slotBias * 0.38 + (isFive ? (index === 0 ? 4 : index === 1 ? -1 : index === 2 ? -6 : index === 3 ? 3 : 1) : 0);
     const point = polarToCartesian(500, 500, tokenRadiusEffective, midAngle + (isMobile ? -1 : 0));
-    const baseTokenSize = isFive ? (isMobile ? 68 : 78) : isMobile ? 44 : 54;
+    const baseTokenSize = isFive ? (isMobile ? 82 : 94) : isMobile ? 52 : 62;
     const tokenSize = Math.max(
-      isFive ? 48 : isMobile ? 32 : 36,
+      isFive ? 54 : isMobile ? 34 : 40,
       baseTokenSize * (segment.labelPolicy.kind === 'phrase' ? 0.92 : segment.labelPolicy.kind === 'badge' ? 0.98 : 1),
     );
     const assetUrl = resolveAssetUrl(segment as unknown as WheelPrize, segment.glyph || '✦');

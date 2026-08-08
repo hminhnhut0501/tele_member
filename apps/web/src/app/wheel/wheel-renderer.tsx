@@ -137,8 +137,8 @@ export function WheelRenderer({
               const finalY = token.y + token.offsetY;
               const shouldUseLabel = token.renderMode === 'label-only';
               const radius = shouldUseLabel ? tokenSize * 0.54 : tokenSize * 0.6;
-              const assetSize = shouldUseLabel ? tokenSize * 0.92 : tokenSize * 1.08;
-              const assetFontSize = Math.max(18, tokenSize * (shouldUseLabel ? 0.40 : 0.66));
+              const assetSize = shouldUseLabel ? tokenSize * 0.92 : tokenSize * 1.02;
+              const assetFontSize = Math.max(22, tokenSize * (shouldUseLabel ? 0.36 : 0.76));
               return (
                 <Box
                   key={token.prizeId}
@@ -162,7 +162,7 @@ export function WheelRenderer({
                       width: `${radius * 2}px`,
                       height: `${radius * 2}px`,
                       borderRadius: shouldUseLabel ? 1 : '50%',
-                      background: shouldUseLabel ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.12)',
+                      background: shouldUseLabel ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.16)',
                       border: '1px solid rgba(255,255,255,0.14)',
                       boxShadow: '0 8px 16px rgba(0,0,0,0.16)',
                       backdropFilter: 'blur(4px)',
@@ -191,14 +191,16 @@ export function WheelRenderer({
                         lineHeight: 1,
                         fontWeight: 900,
                         color: token.textTone,
-                        fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+                        fontFamily: shouldUseLabel
+                          ? 'Inter, ui-sans-serif, system-ui, sans-serif'
+                          : '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
                         textShadow: '0 1px 2px rgba(0,0,0,0.18)',
                         whiteSpace: 'nowrap',
                         letterSpacing: '0.01em',
                         transform: shouldUseLabel ? 'translateY(-1px)' : 'translateY(0)',
                       }}
                     >
-                      {token.label}
+                      {shouldUseLabel ? token.label : token.token}
                     </Typography>
                   )}
                 </Box>
