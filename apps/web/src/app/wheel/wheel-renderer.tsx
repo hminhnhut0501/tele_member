@@ -148,22 +148,33 @@ export function WheelRenderer({
               const tokenLabel = shouldUseLabel ? token.label : token.token;
               const dy = shouldUseLabel ? '0.03em' : '0.08em';
               return (
-                <g key={token.prizeId} transform={`translate(${finalX}, ${finalY}) rotate(${token.counterRotate})`}>
-                  <circle
-                    cx="0"
-                    cy="0"
-                    r={badgeRadius}
-                    fill={shouldUseLabel ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.12)'}
-                    stroke="rgba(255,255,255,0.14)"
-                    strokeWidth="1"
-                    filter="url(#wheelTokenShadow)"
+              <g key={token.prizeId} transform={`translate(${finalX}, ${finalY}) rotate(${token.counterRotate})`}>
+                <circle
+                  cx="0"
+                  cy="0"
+                  r={badgeRadius}
+                  fill={shouldUseLabel ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.14)'}
+                  stroke="rgba(255,255,255,0.14)"
+                  strokeWidth="1"
+                  filter="url(#wheelTokenShadow)"
+                />
+                <circle
+                  cx="0"
+                  cy="0"
+                  r={Math.max(2, badgeRadius - 2)}
+                  fill={shouldUseLabel ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)'}
+                />
+                {token.assetUrl && !shouldUseLabel ? (
+                  <image
+                    href={token.assetUrl}
+                    x={-badgeRadius * 0.78}
+                    y={-badgeRadius * 0.78}
+                    width={badgeRadius * 1.56}
+                    height={badgeRadius * 1.56}
+                    preserveAspectRatio="xMidYMid meet"
+                    style={{ imageRendering: 'auto' }}
                   />
-                  <circle
-                    cx="0"
-                    cy="0"
-                    r={Math.max(2, badgeRadius - 2)}
-                    fill={shouldUseLabel ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.03)'}
-                  />
+                ) : (
                   <text
                     x="0"
                     y="0"
@@ -182,15 +193,12 @@ export function WheelRenderer({
                       userSelect: 'none',
                     }}
                   >
-                    {shouldUseLabel ? (
-                      <tspan dy={dy}>{tokenLabel}</tspan>
-                    ) : (
-                      <tspan dy={dy}>{tokenLabel}</tspan>
-                    )}
+                    <tspan dy={dy}>{tokenLabel}</tspan>
                   </text>
-                </g>
-              );
-            })}
+                )}
+              </g>
+            );
+          })}
             <defs>
               <filter id="wheelTokenShadow" x="-30%" y="-30%" width="160%" height="160%">
                 <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="rgba(0,0,0,0.18)" />

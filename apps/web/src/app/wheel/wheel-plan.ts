@@ -16,6 +16,7 @@ export interface WheelTokenPlacement {
   offsetY: number;
   counterRotate: number;
   token: string;
+  assetUrl: string | null;
   label: string;
   renderMode: 'emoji-only' | 'label-only' | 'mixed';
   tone: string;
@@ -91,6 +92,40 @@ function shortText(value: string, max = 12) {
   return `${normalized.slice(0, Math.max(1, max - 1)).trimEnd()}…`;
 }
 
+function toCodePoints(input: string) {
+  return Array.from(input)
+    .filter((char) => char.trim().length > 0)
+    .map((char) => char.codePointAt(0)?.toString(16))
+    .filter(Boolean)
+    .join('-');
+}
+
+function resolveAssetUrl(prize: WheelPrize, fallbackGlyph: string) {
+  const direct = String(
+    prize.metadata?.assetUrl ??
+      prize.metadata?.tokenAssetUrl ??
+      prize.metadata?.emojiAssetUrl ??
+      prize.metadata?.iconUrl ??
+      prize.metadata?.imageUrl ??
+      prize.metadata?.wheelAssetUrl ??
+      '',
+  ).trim();
+  if (direct) return direct;
+
+  const glyph = String(
+    prize.metadata?.glyph ??
+      prize.metadata?.wheelGlyph ??
+      prize.metadata?.icon ??
+      prize.metadata?.emoji ??
+      fallbackGlyph ??
+      '',
+  ).trim();
+  if (!glyph) return null;
+  const codePoints = toCodePoints(glyph);
+  if (!codePoints) return null;
+  return `https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/svg/${codePoints}.svg`;
+}
+
 export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompactHeight: boolean): WheelRenderPlan {
   const source = (prizes.length ? prizes : getDefaultWheelPrizes()).map((prize) => normalizeWheelPrize(prize));
   const segmentAngle = getWheelSegmentAngle(source.length);
@@ -111,15 +146,15 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
 
   const tokenRadius = isMobile
     ? dense
-      ? 258
+      ? 274
       : compact
-        ? 280
-        : 300
+        ? 292
+        : 314
     : dense
-      ? 286
+      ? 298
       : compact
-        ? 308
-        : 330;
+        ? 322
+        : 342;
 
   const pointerInset = isMobile ? (isCompactHeight ? 5 : 8) : 12;
   const centerSize = isMobile ? (isCompactHeight ? 0.34 : 0.36) : 0.38;
@@ -210,10 +245,12 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
         : 0;
     const tokenRadiusEffective = tokenRadius + tokenRadiusNudge + segment.slotBias * 0.38 + (isFive ? (index === 0 ? 4 : index === 1 ? -1 : index === 2 ? -6 : index === 3 ? 3 : 1) : 0);
     const point = polarToCartesian(500, 500, tokenRadiusEffective, midAngle + (isMobile ? -1 : 0));
+    const baseTokenSize = isFive ? (isMobile ? 68 : 78) : isMobile ? 44 : 54;
     const tokenSize = Math.max(
-      isFive ? 32 : isMobile ? 24 : 28,
-      (isFive ? 42 : isMobile ? 30 : 34) * segment.labelPolicy.fontScale,
+      isFive ? 48 : isMobile ? 32 : 36,
+      baseTokenSize * (segment.labelPolicy.kind === 'phrase' ? 0.92 : segment.labelPolicy.kind === 'badge' ? 0.98 : 1),
     );
+    const assetUrl = resolveAssetUrl(segment as unknown as WheelPrize, segment.glyph || '✦');
 
     return {
       prizeId: segment.id,
@@ -225,6 +262,7 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
       offsetY: isFive ? (index === 0 ? -4 : index === 1 ? -2 : index === 2 ? 5 : index === 3 ? 0 : 2) : 0,
       counterRotate: 0,
       token: segment.glyph || '✦',
+      assetUrl,
       label: segment.displayLabel,
       renderMode: segment.labelPolicy.renderMode,
       tone: segment.tone,
