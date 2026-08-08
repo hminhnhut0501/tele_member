@@ -124,52 +124,94 @@ export function WheelRenderer({
             }}
           />
 
-          {plan.tokenPlacements.map((token) => (
-            <Box
-              key={token.prizeId}
-              sx={{
-                position: 'absolute',
-                left: `${token.x / 10}%`,
-                top: `${token.y / 10}%`,
-                transform: `translate(-50%, -50%) rotate(${token.counterRotate}deg) translate(${token.offsetX}px, ${token.offsetY}px)`,
-                transformOrigin: 'center',
-                width: `${token.size}px`,
-                minWidth: `${token.size}px`,
-                height: `${token.size}px`,
-                display: 'grid',
-                placeItems: 'center',
-                borderRadius: token.renderMode === 'label-only' ? 1 : 999,
-                bgcolor: token.renderMode === 'label-only' ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.12)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                color: token.textTone,
-                boxShadow: '0 8px 16px rgba(0,0,0,0.16)',
-                backdropFilter: 'blur(4px)',
-                px: token.renderMode === 'label-only' ? 1 : 0.25,
-                py: token.renderMode === 'label-only' ? 0.45 : 0.2,
-                textAlign: 'center',
-                pointerEvents: 'none',
-                overflow: 'hidden',
-              }}
-            >
-              <Typography
-                component="span"
-                sx={{
-                  fontSize: {
-                    xs: `${Math.max(18, token.size * 0.52)}px`,
-                    sm: `${Math.max(20, token.size * 0.54)}px`,
-                  },
-                  lineHeight: 1,
-                  fontWeight: 900,
-                  whiteSpace: 'nowrap',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.18)',
-                  letterSpacing: token.renderMode === 'label-only' ? 0.02 : 0,
-                  transform: token.renderMode === 'label-only' ? 'translateY(-1px)' : 'translateY(0)',
-                }}
-              >
-                {token.renderMode === 'label-only' ? token.label : token.token}
-              </Typography>
-            </Box>
-          ))}
+          <Box
+            component="svg"
+            viewBox="0 0 1000 1000"
+            preserveAspectRatio="xMidYMid meet"
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              overflow: 'visible',
+              pointerEvents: 'none',
+            }}
+            aria-hidden
+          >
+            {plan.tokenPlacements.map((token) => {
+              const tokenSize = token.size;
+              const glyphFontSize = Math.max(18, tokenSize * (token.renderMode === 'label-only' ? 0.46 : 0.58));
+              const badgeRadius = token.renderMode === 'label-only' ? tokenSize * 0.46 : tokenSize * 0.5;
+              const finalX = token.x + token.offsetX;
+              const finalY = token.y + token.offsetY;
+              const shouldUseLabel = token.renderMode === 'label-only';
+              return (
+                <g
+                  key={token.prizeId}
+                  transform={`translate(${finalX}, ${finalY}) rotate(${token.counterRotate})`}
+                >
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r={badgeRadius}
+                    fill={shouldUseLabel ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.12)'}
+                    stroke="rgba(255,255,255,0.14)"
+                    strokeWidth="1"
+                    filter="url(#wheelTokenShadow)"
+                  />
+                  <foreignObject
+                    x={-tokenSize / 2}
+                    y={-tokenSize / 2}
+                    width={tokenSize}
+                    height={tokenSize}
+                  >
+                    <Box
+                      component="div"
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'grid',
+                        placeItems: 'center',
+                        color: token.textTone,
+                        textAlign: 'center',
+                        overflow: 'hidden',
+                        borderRadius: shouldUseLabel ? 1 : 999,
+                        px: shouldUseLabel ? 0.35 : 0,
+                        py: shouldUseLabel ? 0.15 : 0,
+                        fontWeight: 900,
+                        backdropFilter: 'blur(4px)',
+                      }}
+                    >
+                      <Typography
+                        component="span"
+                        sx={{
+                          fontSize: `${glyphFontSize}px`,
+                          lineHeight: 1,
+                          fontWeight: 900,
+                          whiteSpace: 'nowrap',
+                          display: 'block',
+                          width: '100%',
+                          transform: shouldUseLabel ? 'translateY(-1px)' : 'translateY(0)',
+                          fontFamily:
+                            token.renderMode === 'label-only'
+                              ? 'Inter, ui-sans-serif, system-ui, sans-serif'
+                              : '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
+                          textShadow: '0 1px 2px rgba(0,0,0,0.18)',
+                        }}
+                      >
+                        {shouldUseLabel ? token.label : token.token}
+                      </Typography>
+                    </Box>
+                  </foreignObject>
+                </g>
+              );
+            })}
+            <defs>
+              <filter id="wheelTokenShadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="rgba(0,0,0,0.18)" />
+              </filter>
+            </defs>
+          </Box>
 
           <Box
             sx={{
