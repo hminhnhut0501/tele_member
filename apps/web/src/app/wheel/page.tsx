@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Box, Button, Container, Stack } from '@mui/material';
 import { apiClient } from '../../lib/api';
 import { PageShell } from '../shared-ui';
-import { WheelDial } from './wheel-dial';
-import { buildWheelRenderContract } from './wheel-contract';
 import { getDefaultWheelPrizes, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
-import { getWheelStartSpinRotation, getWheelTargetRotation } from './wheel-engine';
+import { buildWheelPlan } from './wheel-plan';
+import { getWheelStartRotation, getWheelTargetRotation } from './wheel-motion';
+import { WheelRenderer } from './wheel-renderer';
 import { WheelHistoryRail, WheelHistoryTicker, WheelRewardRail } from './wheel-rail';
 
 export default function WheelPage() {
@@ -53,8 +53,7 @@ export default function WheelPage() {
 
   const demoFallbackPrizes = getDefaultWheelPrizes();
   const effectivePrizes = prizes.length ? prizes : demoFallbackPrizes;
-  const renderContractWithFallback = buildWheelRenderContract(effectivePrizes);
-  const segments = renderContractWithFallback.segments;
+  const wheelSegments = useMemo(() => buildWheelPlan(effectivePrizes, false, false).segments, [effectivePrizes]);
 
   async function handleSpin() {
     if (spinning) return;
@@ -62,19 +61,20 @@ export default function WheelPage() {
       setSpinning(true);
       setSpinPhase('spinning');
 
-      const spinStart = getWheelStartSpinRotation(rotation);
+      const spinStart = getWheelStartRotation(rotation);
       setRotation(spinStart);
 
       const data = await client.spinWheel();
 
       const prizeId = data?.prize?.id;
-      const finalRotation = spinStart + getWheelTargetRotation(segments, prizeId);
+      const finalRotation = spinStart + getWheelTargetRotation(wheelSegments, prizeId);
       if (prizeId && finalRotation !== spinStart) {
         setSpinPhase('settling');
-        setRotation(finalRotation + 10);
-        window.setTimeout(() => setRotation(finalRotation - 3), 180);
-        window.setTimeout(() => setRotation(finalRotation), 360);
+        setRotation(finalRotation + 8);
+        window.setTimeout(() => setRotation(finalRotation), 220);
         window.setTimeout(() => setSpinPhase('idle'), 620);
+      } else {
+        setTimeout(() => setSpinPhase('idle'), 150);
       }
 
       const updatedSpins = await client.getMySpins();
@@ -128,16 +128,7 @@ export default function WheelPage() {
 
           <WheelHistoryTicker items={history} />
 
-          <WheelDial
-            segments={segments}
-            spinning={spinning}
-            spinPhase={spinPhase}
-            rotation={rotation}
-            centerLabel=""
-            labelRadius={renderContractWithFallback.labelRadius}
-            wheelLabelScale={renderContractWithFallback.wheelLabelScale}
-            labelInset={renderContractWithFallback.labelInset}
-          />
+          <WheelRenderer prizes={effectivePrizes} spinning={spinning} phase={spinPhase} rotation={rotation} />
 
           <Button
             onClick={handleSpin}
