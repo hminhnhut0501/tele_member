@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Container, Stack } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
 import { apiClient } from '../../lib/api';
 import { PageShell } from '../shared-ui';
 import { getDefaultWheelPrizes, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
@@ -11,6 +12,7 @@ import { WheelRenderer } from './wheel-renderer';
 import { WheelHistoryRail, WheelHistoryTicker, WheelRewardRail } from './wheel-rail';
 
 export default function WheelPage() {
+  const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [prizes, setPrizes] = useState<WheelPrize[]>([]);
   const [history, setHistory] = useState<WheelSpinHistoryItem[]>([]);
@@ -19,6 +21,17 @@ export default function WheelPage() {
   const [spinning, setSpinning] = useState(false);
   const [spinPhase, setSpinPhase] = useState<'idle' | 'spinning' | 'settling'>('idle');
   const [rotation, setRotation] = useState(0);
+  const [resultOpen, setResultOpen] = useState(false);
+  const [lastResult, setLastResult] = useState<{
+    prizeName: string;
+    prizeType: string;
+    glyph: string;
+    code: string | null;
+    deliveryMode?: string | null;
+    deliveryTarget?: string | null;
+    status: 'won' | 'missed' | 'pending' | 'claimed';
+    createdAt?: string | null;
+  } | null>(null);
 
   const client = useMemo(() => apiClient(token), [token]);
 
@@ -67,6 +80,21 @@ export default function WheelPage() {
       const data = await client.spinWheel();
 
       const prizeId = data?.prize?.id;
+      const prizeName = String(data?.prize?.name ?? data?.prizeName ?? data?.resultLabel ?? (prizeId ? 'Đã trúng' : 'Không trúng'));
+      const prizeType = String(data?.prize?.type ?? data?.prizeType ?? (prizeId ? 'CUSTOM' : 'NOTHING')).toUpperCase();
+      const glyph = String(data?.prize?.glyph ?? data?.glyph ?? (prizeType === 'POINT' ? '🍑' : prizeType === 'SPIN_TICKET' ? '🎞' : prizeType === 'VOUCHER' ? '🎁' : prizeType === 'VIP_CODE' ? '👑' : prizeType === 'NOTHING' ? '😢' : '✦'));
+      const code = data?.prize?.code ? String(data.prize.code) : data?.code ? String(data.code) : null;
+      setLastResult({
+        prizeName,
+        prizeType,
+        glyph,
+        code,
+        deliveryMode: data?.deliveryMode ?? null,
+        deliveryTarget: data?.deliveryTarget ?? null,
+        status: prizeId ? 'won' : 'missed',
+        createdAt: new Date().toISOString(),
+      });
+      setResultOpen(true);
       const finalRotation = spinStart + getWheelTargetRotation(wheelSegments, prizeId);
       if (prizeId && finalRotation !== spinStart) {
         setSpinPhase('settling');
@@ -154,12 +182,184 @@ export default function WheelPage() {
             {spinning ? 'ĐANG QUAY...' : spins > 0 ? 'QUAY NGAY' : 'HẾT LƯỢT QUAY'}
           </Button>
 
+          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ justifyContent: 'center' }}>
+            <Button
+              onClick={() => router.push('/my-rewards')}
+              variant="outlined"
+              sx={{
+                minWidth: { xs: 150, sm: 180 },
+                px: 2.2,
+                py: 1.05,
+                borderRadius: 999,
+                fontWeight: 900,
+                color: '#dbeafe',
+                borderColor: 'rgba(123,174,255,0.34)',
+                bgcolor: 'rgba(255,255,255,0.03)',
+                '&:hover': {
+                  borderColor: 'rgba(123,174,255,0.52)',
+                  bgcolor: 'rgba(123,174,255,0.08)',
+                },
+              }}
+            >
+              Quà của tôi
+            </Button>
+            <Button
+              onClick={() => router.push('/my-rewards')}
+              variant="text"
+              sx={{
+                minWidth: { xs: 150, sm: 180 },
+                px: 2.2,
+                py: 1.05,
+                borderRadius: 999,
+                fontWeight: 800,
+                color: 'rgba(226,234,255,0.82)',
+              }}
+            >
+              Xem inbox quà
+            </Button>
+          </Stack>
+
           <Box sx={{ width: 'min(92vw, 560px)', display: 'grid', gap: 1.5, mt: 1.5 }}>
             <WheelRewardRail prizes={effectivePrizes} />
             <WheelHistoryRail items={history} />
           </Box>
         </Stack>
       </Container>
+
+      <Dialog
+        open={resultOpen}
+        onClose={() => setResultOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            borderRadius: 1.5,
+            border: '1px solid rgba(105, 147, 255, 0.14)',
+            background: 'linear-gradient(180deg, rgba(7,14,30,0.98), rgba(12,21,44,0.98))',
+            color: '#eef4ff',
+            boxShadow: '0 30px 80px rgba(0,0,0,0.45)',
+          },
+        }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Stack direction="row" spacing={1.2} alignItems="center">
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                display: 'grid',
+                placeItems: 'center',
+                background: 'linear-gradient(180deg, rgba(102,168,255,0.36), rgba(18,45,154,0.72))',
+                border: '1px solid rgba(123,174,255,0.26)',
+                fontSize: '1.3rem',
+                flex: '0 0 auto',
+              }}
+            >
+              {lastResult?.glyph ?? '✦'}
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontWeight: 900, letterSpacing: '-0.03em', color: '#f7fbff' }}>
+                {lastResult?.status === 'won' ? 'Chúc mừng bạn!' : 'Chưa trúng'}
+              </Typography>
+              <Typography sx={{ color: 'rgba(226,234,255,0.66)', fontSize: '0.84rem' }}>
+                Kết quả vừa quay xong
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 0.5 }}>
+          <Stack spacing={1.5}>
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 1.25,
+                bgcolor: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.08)',
+              }}
+            >
+              <Typography sx={{ color: 'rgba(226,234,255,0.72)', fontSize: '0.8rem' }}>Phần quà</Typography>
+              <Typography sx={{ fontWeight: 900, color: '#f7fbff', mt: 0.4 }}>
+                {lastResult?.prizeName ?? 'Không trúng'}
+              </Typography>
+              <Typography sx={{ color: 'rgba(226,234,255,0.66)', fontSize: '0.84rem', mt: 0.25 }}>
+                {lastResult?.prizeType ?? 'UNKNOWN'}
+              </Typography>
+            </Box>
+
+            {lastResult?.code ? (
+              <Box
+                sx={{
+                  p: 1.5,
+                  borderRadius: 1.25,
+                  bgcolor: 'rgba(255,214,102,0.08)',
+                  border: '1px solid rgba(255,214,102,0.16)',
+                }}
+              >
+                <Typography sx={{ color: 'rgba(255,244,209,0.76)', fontSize: '0.8rem' }}>Mã nhận quà</Typography>
+                <Typography sx={{ fontWeight: 900, color: '#fff2c0', letterSpacing: 0.5, mt: 0.4 }}>
+                  {lastResult.code}
+                </Typography>
+              </Box>
+            ) : null}
+
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 1,
+                p: 1.5,
+                borderRadius: 1.25,
+                bgcolor: 'rgba(102,168,255,0.08)',
+                border: '1px solid rgba(102,168,255,0.16)',
+              }}
+            >
+              <Box>
+                <Typography sx={{ color: 'rgba(226,234,255,0.72)', fontSize: '0.8rem' }}>Giao qua</Typography>
+                <Typography sx={{ fontWeight: 800, color: '#eef4ff', mt: 0.3 }}>
+                  {lastResult?.deliveryMode ?? 'instant'}
+                </Typography>
+              </Box>
+              <Box sx={{ textAlign: 'right' }}>
+                <Typography sx={{ color: 'rgba(226,234,255,0.72)', fontSize: '0.8rem' }}>Đích nhận</Typography>
+                <Typography sx={{ fontWeight: 800, color: '#eef4ff', mt: 0.3 }}>
+                  {lastResult?.deliveryTarget ?? 'reward_inbox'}
+                </Typography>
+              </Box>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2, pt: 1.25, gap: 1 }}>
+          <Button
+            onClick={() => {
+              setResultOpen(false);
+              router.push('/my-rewards');
+            }}
+            variant="contained"
+            sx={{
+              flex: 1,
+              borderRadius: 999,
+              fontWeight: 900,
+              background: 'linear-gradient(180deg, rgba(58,111,255,1) 0%, rgba(18,45,154,1) 100%)',
+            }}
+          >
+            Quà của tôi
+          </Button>
+          <Button
+            onClick={() => setResultOpen(false)}
+            variant="outlined"
+            sx={{
+              flex: 1,
+              borderRadius: 999,
+              fontWeight: 800,
+              color: '#dbeafe',
+              borderColor: 'rgba(123,174,255,0.24)',
+            }}
+          >
+            Đóng
+          </Button>
+        </DialogActions>
+      </Dialog>
     </PageShell>
   );
 }
