@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
 import { apiClient } from '../../lib/api';
@@ -32,11 +32,17 @@ export default function WheelPage() {
     status: 'won' | 'missed' | 'pending' | 'claimed';
     createdAt?: string | null;
   } | null>(null);
+  const spinTimersRef = useRef<number[]>([]);
 
   const client = useMemo(() => apiClient(token), [token]);
 
   useEffect(() => {
     setToken(window.localStorage.getItem('tele-member-token'));
+  }, []);
+
+  useEffect(() => () => {
+    spinTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    spinTimersRef.current = [];
   }, []);
 
   useEffect(() => {
@@ -70,12 +76,17 @@ export default function WheelPage() {
 
   async function handleSpin() {
     if (spinning) return;
+    spinTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    spinTimersRef.current = [];
+
     try {
       setSpinning(true);
+      setResultOpen(false);
       setSpinPhase('spinning');
 
       const spinStart = getWheelStartRotation(rotation);
       setRotation(spinStart);
+      window.requestAnimationFrame(() => setRotation(spinStart + 1080));
 
       const data = await client.spinWheel();
 
@@ -94,25 +105,43 @@ export default function WheelPage() {
         status: prizeId ? 'won' : 'missed',
         createdAt: new Date().toISOString(),
       });
-      setResultOpen(true);
       const finalRotation = spinStart + getWheelTargetRotation(wheelSegments, prizeId);
-      if (prizeId && finalRotation !== spinStart) {
-        setSpinPhase('settling');
-        setRotation(finalRotation + 8);
-        window.setTimeout(() => setRotation(finalRotation), 220);
-        window.setTimeout(() => setSpinPhase('idle'), 620);
-      } else {
-        setTimeout(() => setSpinPhase('idle'), 150);
-      }
 
       const updatedSpins = await client.getMySpins();
       setSpins(Number(updatedSpins?.balance ?? 0));
       const refreshedHistory = await client.getWheelHistory();
       setHistory(((refreshedHistory?.spins ?? []) as any[]) ?? []);
+
+      spinTimersRef.current.push(
+        window.setTimeout(() => {
+          setRotation(finalRotation + 540);
+        }, 3400),
+      );
+      spinTimersRef.current.push(
+        window.setTimeout(() => {
+          setSpinPhase('settling');
+          setRotation(finalRotation + 8);
+        }, 4950),
+      );
+      spinTimersRef.current.push(
+        window.setTimeout(() => {
+          setRotation(finalRotation);
+        }, 5220),
+      );
+      spinTimersRef.current.push(
+        window.setTimeout(() => {
+          setSpinPhase('idle');
+          setSpinning(false);
+          setResultOpen(true);
+        }, 5900),
+      );
     } catch (err) {
       setSpinPhase('idle');
-    } finally {
       setSpinning(false);
+    } finally {
+      if (spinTimersRef.current.length === 0) {
+        setSpinning(false);
+      }
     }
   }
 

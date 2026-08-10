@@ -136,9 +136,8 @@ export function WheelRenderer({
               const finalX = token.x + token.offsetX;
               const finalY = token.y + token.offsetY;
               const shouldUseLabel = token.renderMode === 'label-only';
-              const radius = shouldUseLabel ? tokenSize * 0.48 : tokenSize * 0.46;
-              const iconSize = shouldUseLabel ? tokenSize * 0.56 : tokenSize * 0.62;
-              const fallbackFontSize = Math.max(18, tokenSize * 0.42);
+              const iconSize = shouldUseLabel ? tokenSize * 0.58 : tokenSize * 0.72;
+              const fallbackFontSize = Math.max(18, tokenSize * 0.46);
               return (
                 <Box
                   key={token.prizeId}
@@ -154,20 +153,6 @@ export function WheelRenderer({
                     pointerEvents: 'none',
                   }}
                 >
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      inset: 0,
-                      margin: 'auto',
-                      width: `${radius * 2}px`,
-                      height: `${radius * 2}px`,
-                      borderRadius: shouldUseLabel ? 1 : '50%',
-                      background: shouldUseLabel ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.14)',
-                      border: '1px solid rgba(255,255,255,0.14)',
-                      boxShadow: '0 8px 16px rgba(0,0,0,0.16)',
-                      backdropFilter: 'blur(4px)',
-                    }}
-                  />
                   {token.assetUrl && !shouldUseLabel ? (
                     <Box
                       component="img"
