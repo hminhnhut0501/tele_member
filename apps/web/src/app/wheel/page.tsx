@@ -116,36 +116,31 @@ export default function WheelPage() {
       spinTimersRef.current.push(
         window.setTimeout(() => {
           setSpinPhase('slowing');
-          setRotation(finalRotation + 18);
-        }, 3320),
-      );
-      spinTimersRef.current.push(
-        window.setTimeout(() => {
-          setRotation(finalRotation + 360 - 7);
-        }, 3720),
+          setRotation(finalRotation + 90);
+        }, 3480),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
           setSpinPhase('settling');
-          setRotation(finalRotation + 360 + 3);
-        }, 4080),
+          setRotation(finalRotation + 132);
+        }, 4240),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
-          setRotation(finalRotation + 720 - 1.25);
-        }, 4370),
+          setRotation(finalRotation + 148);
+        }, 4860),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
-          setRotation(finalRotation + 720);
-        }, 4660),
+          setRotation(finalRotation + 156);
+        }, 5400),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
           setSpinPhase('idle');
           setSpinning(false);
           setResultOpen(true);
-        }, 5250),
+        }, 6100),
       );
     } catch (err) {
       setSpinPhase('idle');
