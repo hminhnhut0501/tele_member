@@ -105,7 +105,8 @@ export default function WheelPage() {
         status: prizeId ? 'won' : 'missed',
         createdAt: new Date().toISOString(),
       });
-      const finalRotation = spinStart + getWheelTargetRotation(wheelSegments, prizeId);
+      const targetRotation = getWheelTargetRotation(wheelSegments, prizeId);
+      const finalRotation = spinStart + 1440 + targetRotation;
 
       const updatedSpins = await client.getMySpins();
       setSpins(Number(updatedSpins?.balance ?? 0));
@@ -115,29 +116,29 @@ export default function WheelPage() {
       spinTimersRef.current.push(
         window.setTimeout(() => {
           setSpinPhase('slowing');
-          setRotation(finalRotation + 16);
+          setRotation(finalRotation + 18);
         }, 3320),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
-          setRotation(finalRotation - 7);
+          setRotation(finalRotation + 360 - 7);
         }, 3720),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
           setSpinPhase('settling');
-          setRotation(finalRotation + 3);
+          setRotation(finalRotation + 360 + 3);
         }, 4080),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
-          setRotation(finalRotation - 1.25);
+          setRotation(finalRotation + 720 - 1.25);
         }, 4370),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
-          setRotation(finalRotation);
-        }, 4650),
+          setRotation(finalRotation + 720);
+        }, 4660),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {

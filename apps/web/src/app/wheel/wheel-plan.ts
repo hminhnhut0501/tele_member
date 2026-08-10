@@ -53,8 +53,8 @@ function getPreset(segmentCount: number): WheelRenderPreset {
 
 function getPalette(type: string, index: number) {
   const t = String(type ?? '').toUpperCase();
-  const palette = ['#d7eaff', '#76a8ff'];
-  if (t === 'NOTHING') return palette[1];
+  const palette = ['#dfeeff', '#9fc2ff', '#5f8ef0'];
+  if (t === 'NOTHING') return '#2a4d9f';
   return palette[index % palette.length];
 }
 
