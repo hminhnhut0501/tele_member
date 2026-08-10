@@ -53,8 +53,8 @@ function getPreset(segmentCount: number): WheelRenderPreset {
 
 function getPalette(type: string, index: number) {
   const t = String(type ?? '').toUpperCase();
-  const palette = ['#dbeafe', '#b9d6ff', '#8cb8ff', '#6398ff', '#3f74f0', '#274fc2'];
-  if (t === 'NOTHING') return '#15254a';
+  const palette = ['#d7eaff', '#76a8ff'];
+  if (t === 'NOTHING') return palette[1];
   return palette[index % palette.length];
 }
 
@@ -127,15 +127,15 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
 
   const tokenRadius = isMobile
     ? dense
-      ? 274
+      ? 268
       : compact
-        ? 292
-        : 314
+        ? 286
+        : 306
     : dense
-      ? 298
+      ? 292
       : compact
-        ? 322
-        : 342;
+        ? 316
+        : 336;
 
   const pointerInset = isMobile ? (isCompactHeight ? 5 : 8) : 12;
   const centerSize = isMobile ? (isCompactHeight ? 0.34 : 0.36) : 0.38;
@@ -226,10 +226,10 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
         : 0;
     const tokenRadiusEffective = tokenRadius + tokenRadiusNudge + segment.slotBias * 0.38 + (isFive ? (index === 0 ? 4 : index === 1 ? -1 : index === 2 ? -6 : index === 3 ? 3 : 1) : 0);
     const point = polarToCartesian(500, 500, tokenRadiusEffective, midAngle + (isMobile ? -1 : 0));
-    const baseTokenSize = isFive ? (isMobile ? 58 : 66) : isMobile ? 44 : 52;
+    const baseTokenSize = isFive ? (isMobile ? 52 : 60) : isMobile ? 40 : 48;
     const tokenSize = Math.max(
-      isFive ? 40 : isMobile ? 30 : 34,
-      baseTokenSize * (segment.labelPolicy.kind === 'phrase' ? 0.92 : segment.labelPolicy.kind === 'badge' ? 0.98 : 1),
+      isFive ? 34 : isMobile ? 28 : 30,
+      baseTokenSize * (segment.labelPolicy.kind === 'phrase' ? 0.88 : segment.labelPolicy.kind === 'badge' ? 0.94 : 0.98),
     );
     const assetUrl = resolveAssetUrl(segment as unknown as WheelPrize, segment.glyph || '✦');
 

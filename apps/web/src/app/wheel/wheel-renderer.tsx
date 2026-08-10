@@ -136,8 +136,8 @@ export function WheelRenderer({
               const finalX = token.x + token.offsetX;
               const finalY = token.y + token.offsetY;
               const shouldUseLabel = token.renderMode === 'label-only';
-              const iconSize = shouldUseLabel ? tokenSize * 0.58 : tokenSize * 0.72;
-              const fallbackFontSize = Math.max(18, tokenSize * 0.46);
+              const iconSize = shouldUseLabel ? tokenSize * 0.5 : tokenSize * 0.58;
+              const fallbackFontSize = Math.max(15, tokenSize * 0.34);
               return (
                 <Box
                   key={token.prizeId}
@@ -164,7 +164,7 @@ export function WheelRenderer({
                         height: `${iconSize}px`,
                         objectFit: 'contain',
                         imageRendering: 'auto',
-                        filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.18))',
+                        filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.14))',
                       }}
                     />
                   ) : (
@@ -179,7 +179,7 @@ export function WheelRenderer({
                         fontFamily: shouldUseLabel
                           ? 'Inter, ui-sans-serif, system-ui, sans-serif'
                           : '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
-                        textShadow: '0 1px 2px rgba(0,0,0,0.18)',
+                        textShadow: '0 1px 1px rgba(0,0,0,0.14)',
                         whiteSpace: 'nowrap',
                         letterSpacing: '0.01em',
                         transform: shouldUseLabel ? 'translateY(-1px)' : 'translateY(0)',

@@ -19,7 +19,7 @@ export default function WheelPage() {
   const [spins, setSpins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
-  const [spinPhase, setSpinPhase] = useState<'idle' | 'spinning' | 'settling'>('idle');
+  const [spinPhase, setSpinPhase] = useState<'idle' | 'spinning' | 'slowing' | 'settling'>('idle');
   const [rotation, setRotation] = useState(0);
   const [resultOpen, setResultOpen] = useState(false);
   const [lastResult, setLastResult] = useState<{
@@ -114,26 +114,37 @@ export default function WheelPage() {
 
       spinTimersRef.current.push(
         window.setTimeout(() => {
-          setRotation(finalRotation + 540);
-        }, 3400),
+          setSpinPhase('slowing');
+          setRotation(finalRotation + 16);
+        }, 3320),
+      );
+      spinTimersRef.current.push(
+        window.setTimeout(() => {
+          setRotation(finalRotation - 7);
+        }, 3720),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
           setSpinPhase('settling');
-          setRotation(finalRotation + 8);
-        }, 4950),
+          setRotation(finalRotation + 3);
+        }, 4080),
+      );
+      spinTimersRef.current.push(
+        window.setTimeout(() => {
+          setRotation(finalRotation - 1.25);
+        }, 4370),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
           setRotation(finalRotation);
-        }, 5220),
+        }, 4650),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
           setSpinPhase('idle');
           setSpinning(false);
           setResultOpen(true);
-        }, 5900),
+        }, 5250),
       );
     } catch (err) {
       setSpinPhase('idle');
