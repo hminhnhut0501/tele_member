@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Box, Button, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
 import { apiClient } from '../../lib/api';
 import { PageShell } from '../shared-ui';
 import { getDefaultWheelPrizes, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
@@ -13,13 +13,14 @@ import { WheelHistoryRail, WheelHistoryTicker, WheelRewardRail } from './wheel-r
 
 export default function WheelPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [token, setToken] = useState<string | null>(null);
   const [prizes, setPrizes] = useState<WheelPrize[]>([]);
   const [history, setHistory] = useState<WheelSpinHistoryItem[]>([]);
   const [spins, setSpins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
-  const [spinPhase, setSpinPhase] = useState<'idle' | 'spinning' | 'slowing' | 'settling'>('idle');
+  const [spinPhase, setSpinPhase] = useState<'idle' | 'spinning'>('idle');
   const [rotation, setRotation] = useState(0);
   const [resultOpen, setResultOpen] = useState(false);
   const [lastResult, setLastResult] = useState<{
@@ -33,11 +34,16 @@ export default function WheelPage() {
     createdAt?: string | null;
   } | null>(null);
   const spinTimersRef = useRef<number[]>([]);
+  const [debugSpinMode, setDebugSpinMode] = useState(false);
 
   const client = useMemo(() => apiClient(token), [token]);
 
   useEffect(() => {
     setToken(window.localStorage.getItem('tele-member-token'));
+    const debugEnabled =
+      searchParams.get('debugSpin') === '1' ||
+      window.localStorage.getItem('tele-member-wheel-debug') === '1';
+    setDebugSpinMode(debugEnabled);
   }, []);
 
   useEffect(() => () => {
@@ -73,6 +79,50 @@ export default function WheelPage() {
   const demoFallbackPrizes = getDefaultWheelPrizes();
   const effectivePrizes = prizes.length ? prizes : demoFallbackPrizes;
   const wheelSegments = useMemo(() => buildWheelPlan(effectivePrizes, false, false).segments, [effectivePrizes]);
+  const canSpin = !loading && !spinning && (debugSpinMode || spins > 0);
+
+  function createDebugSpinResult(prizeId?: string | null) {
+    const selectedPrize =
+      effectivePrizes.find((prize) => prize.id === prizeId) ??
+      effectivePrizes.find((prize) => String(prize.type ?? '').toUpperCase() !== 'NOTHING') ??
+      effectivePrizes[0] ??
+      null;
+    const prizeType = String(selectedPrize?.type ?? 'CUSTOM').toUpperCase();
+    const glyph = String(
+      selectedPrize?.metadata?.glyph ??
+        selectedPrize?.metadata?.emoji ??
+        selectedPrize?.metadata?.wheelGlyph ??
+        (prizeType === 'POINT'
+          ? '🍑'
+          : prizeType === 'SPIN_TICKET'
+            ? '🎞'
+            : prizeType === 'VOUCHER'
+              ? '🎁'
+              : prizeType === 'VIP_CODE'
+                ? '👑'
+                : prizeType === 'NOTHING'
+                  ? '😢'
+                  : '✦'),
+    );
+
+    return {
+      prize: selectedPrize
+        ? {
+            id: selectedPrize.id,
+            name: selectedPrize.name,
+            type: selectedPrize.type,
+            glyph,
+            code: null,
+          }
+        : null,
+      prizeName: selectedPrize?.name ?? 'Sẵn sàng',
+      prizeType,
+      glyph,
+      code: null,
+      deliveryMode: selectedPrize?.metadata?.deliveryMode ?? 'immediate',
+      deliveryTarget: selectedPrize?.metadata?.deliveryTarget ?? 'reward_inbox',
+    };
+  }
 
   async function handleSpin() {
     if (spinning) return;
@@ -88,7 +138,8 @@ export default function WheelPage() {
       setRotation(spinStart);
       window.requestAnimationFrame(() => setRotation(spinStart + 1080));
 
-      const data = await client.spinWheel();
+      const debugResult = debugSpinMode && (spins <= 0 || !token);
+      const data = debugResult ? createDebugSpinResult() : await client.spinWheel();
 
       const prizeId = data?.prize?.id;
       const prizeName = String(data?.prize?.name ?? data?.prizeName ?? data?.resultLabel ?? (prizeId ? 'Đã trúng' : 'Không trúng'));
@@ -108,34 +159,24 @@ export default function WheelPage() {
       const targetRotation = getWheelTargetRotation(wheelSegments, prizeId);
       const finalRotation = spinStart + 1440 + targetRotation;
 
-      const updatedSpins = await client.getMySpins();
-      setSpins(Number(updatedSpins?.balance ?? 0));
-      const refreshedHistory = await client.getWheelHistory();
-      setHistory(((refreshedHistory?.spins ?? []) as any[]) ?? []);
+      if (!debugResult) {
+        const updatedSpins = await client.getMySpins();
+        setSpins(Number(updatedSpins?.balance ?? 0));
+        const refreshedHistory = await client.getWheelHistory();
+        setHistory(((refreshedHistory?.spins ?? []) as any[]) ?? []);
+      }
 
       spinTimersRef.current.push(
         window.setTimeout(() => {
-          setSpinPhase('slowing');
-          setRotation(finalRotation + 24);
-        }, 3420),
-      );
-      spinTimersRef.current.push(
-        window.setTimeout(() => {
-          setSpinPhase('settling');
-          setRotation(finalRotation + 8);
-        }, 4220),
-      );
-      spinTimersRef.current.push(
-        window.setTimeout(() => {
           setRotation(finalRotation);
-        }, 4780),
+        }, 5900),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
           setSpinPhase('idle');
           setSpinning(false);
           setResultOpen(true);
-        }, 5480),
+        }, 6460),
       );
     } catch (err) {
       setSpinPhase('idle');
@@ -183,6 +224,19 @@ export default function WheelPage() {
             <Box sx={{ color: 'rgba(226,234,255,0.74)', fontSize: '0.84rem' }}>
               Blue lobby
             </Box>
+            {debugSpinMode ? (
+              <Chip
+                size="small"
+                label="DEBUG SPIN"
+                sx={{
+                  ml: 'auto',
+                  bgcolor: 'rgba(255,200,102,0.16)',
+                  color: '#ffe7bc',
+                  border: '1px solid rgba(255,200,102,0.22)',
+                  fontWeight: 800,
+                }}
+              />
+            ) : null}
           </Box>
 
           <WheelHistoryTicker items={history} />
@@ -191,7 +245,7 @@ export default function WheelPage() {
 
           <Button
             onClick={handleSpin}
-            disabled={loading || spinning || spins <= 0}
+            disabled={!canSpin}
             variant="contained"
             sx={{
               minWidth: { xs: 240, sm: 300 },
@@ -210,7 +264,7 @@ export default function WheelPage() {
               },
             }}
           >
-            {spinning ? 'ĐANG QUAY...' : spins > 0 ? 'QUAY NGAY' : 'HẾT LƯỢT QUAY'}
+            {spinning ? 'ĐANG QUAY...' : canSpin ? 'QUAY NGAY' : debugSpinMode ? 'DEBUG READY' : 'HẾT LƯỢT QUAY'}
           </Button>
 
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ justifyContent: 'center' }}>
