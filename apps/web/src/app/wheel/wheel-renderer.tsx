@@ -37,9 +37,9 @@ export function WheelRenderer({
   } as CSSProperties;
 
   const getSegmentGradient = (segment: (typeof plan.segments)[number]) => {
-    if (segment.id === 'gift') return ['#E6F1FF', '#A9C9FF', '#638FE8'];
-    if (segment.id === 'peach') return ['#DCEBFF', '#96BCFA', '#527FD9'];
-    if (segment.id === 'nothing') return ['#F5F9FF', '#C7DBFF', '#82A8F1'];
+    if (segment.id === 'gift') return ['#A9C9FF', '#5D8CF2', '#2348B5'];
+    if (segment.id === 'peach') return ['#8BB6FF', '#4777E4', '#1D3E9F'];
+    if (segment.id === 'nothing') return ['#DCEAFF', '#8DB4FA', '#4A74D0'];
     return [segment.tone, segment.tone, segment.tone];
   };
 
@@ -201,6 +201,15 @@ export function WheelRenderer({
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
           >
             <defs>
+              <filter id="wheel-token-shadow" x="-40%" y="-40%" width="180%" height="180%">
+                <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="#081B52" floodOpacity="0.28" />
+              </filter>
+              <linearGradient id="wheel-rim-gradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#CDE2FF" />
+                <stop offset="38%" stopColor="#5F98F4" />
+                <stop offset="68%" stopColor="#244BAF" />
+                <stop offset="100%" stopColor="#8FBBFF" />
+              </linearGradient>
               <radialGradient id="wheel-token-gift" cx="32%" cy="28%" r="78%">
                 <stop offset="0%" stopColor="#FFF6BE" />
                 <stop offset="58%" stopColor="#FFB848" />
@@ -232,11 +241,14 @@ export function WheelRenderer({
                 key={`segment-${segment.id}`}
                 d={describeWheelSegmentPath(segment)}
                 fill={`url(#wheel-gradient-${segment.id})`}
-                stroke="rgba(45,75,128,0.56)"
-                strokeWidth="9"
+                stroke="rgba(23,55,125,0.68)"
+                strokeWidth="6"
                 strokeLinejoin="round"
               />
             ))}
+            <circle cx="500" cy="500" r="492" fill="none" stroke="url(#wheel-rim-gradient)" strokeWidth="18" opacity="0.96" />
+            <circle cx="500" cy="500" r="466" fill="none" stroke="rgba(7,24,72,0.46)" strokeWidth="14" />
+            <circle cx="500" cy="500" r="445" fill="none" stroke="rgba(226,240,255,0.20)" strokeWidth="3" />
             {plan.tokenPlacements.map((token) => {
               const fixedIconKind = isFixedGroupIcon(token.prizeId) ? token.prizeId : null;
               if (!fixedIconKind) return null;
@@ -249,7 +261,7 @@ export function WheelRenderer({
                   : 'url(#wheel-token-nothing)';
               return (
                 <g key={`token-${token.prizeId}`} transform={`translate(${token.x} ${token.y}) rotate(${-rotation})`}>
-                  <circle r={tokenSize / 2} fill={fill} stroke="rgba(255,255,255,0.76)" strokeWidth="3" />
+                  <circle r={tokenSize / 2} fill={fill} stroke="rgba(255,255,255,0.86)" strokeWidth="4" filter="url(#wheel-token-shadow)" />
                   <circle r={tokenSize / 2 - 5} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="2" />
                   <g transform={`translate(${-iconSize / 2} ${-iconSize / 2})`}>
                     <FixedWheelIcon kind={fixedIconKind} size={iconSize} />

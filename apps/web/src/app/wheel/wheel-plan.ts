@@ -214,7 +214,7 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
     const isFixedGroup = segment.id === 'gift' || segment.id === 'peach' || segment.id === 'nothing';
     const point = polarToWheelPoint(500, 500, tokenRadius, segment.centerAngle);
     // Token size is expressed in the same 1000-unit viewBox as the wheel.
-    const tokenSize = isFixedGroup ? (isMobile ? 116 : 136) : isMobile ? 72 : 84;
+    const tokenSize = isFixedGroup ? (isMobile ? 142 : 158) : isMobile ? 72 : 84;
     const assetUrl = resolveAssetUrl(segment as unknown as WheelPrize, segment.glyph || '✦');
 
     return {
