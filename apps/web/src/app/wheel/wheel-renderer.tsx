@@ -36,7 +36,24 @@ export function WheelRenderer({
   } as CSSProperties;
 
   const segmentAngle = plan.segmentAngle;
-  const arc = `conic-gradient(from -90deg, ${plan.segments.map((segment, index) => `${segment.tone} ${index * segmentAngle}deg ${(index + 1) * segmentAngle}deg`).join(', ')})`;
+  const getSegmentGradient = (segment: (typeof plan.segments)[number]) => {
+    if (segment.id === 'gift') return ['#FFF1B5', '#F9B84B', '#D86A3A'];
+    if (segment.id === 'peach') return ['#FFE4C8', '#FFAA7A', '#E36369'];
+    if (segment.id === 'nothing') return ['#F4F8FF', '#BBD2FF', '#7699E7'];
+    return [segment.tone, segment.tone, segment.tone];
+  };
+  const arcStops = plan.segments.flatMap((segment, index) => {
+    const start = index * segmentAngle;
+    const end = (index + 1) * segmentAngle;
+    const [light, mid, deep] = getSegmentGradient(segment);
+    return [
+      `${light} ${start}deg`,
+      `${mid} ${start + segmentAngle * 0.48}deg`,
+      `${deep} ${end - segmentAngle * 0.08}deg`,
+      `${deep} ${end}deg`,
+    ];
+  });
+  const arc = `conic-gradient(from -90deg, ${arcStops.join(', ')})`;
 
   return (
     <Box
@@ -128,6 +145,8 @@ export function WheelRenderer({
             ...wheelRotationStyle,
             overflow: 'hidden',
             background: arc,
+            backgroundImage: `${arc}, radial-gradient(circle at 34% 24%, rgba(255,255,255,0.34), transparent 32%), radial-gradient(circle at 72% 82%, rgba(5,18,50,0.18), transparent 42%)`,
+            backgroundBlendMode: 'normal, screen, multiply',
             transform: `rotate(${rotation}deg) scale(${isSpinning ? 1.01 : 1})`,
             boxShadow:
               isSpinning
