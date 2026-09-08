@@ -1,6 +1,7 @@
 'use client';
 
 import type { WheelRenderSegment } from './wheel-types';
+import { getWheelTargetRotation as getGeometryTargetRotation } from './wheel-geometry';
 
 export function getWheelSegmentAngle(segmentCount: number) {
   return 360 / Math.max(segmentCount, 1);
@@ -16,12 +17,8 @@ export function getWheelTargetRotation(segments: WheelRenderSegment[], prizeId?:
   if (!segments.length || !prizeId) return 0;
   const index = segments.findIndex((segment) => segment.id === prizeId);
   if (index < 0) return 0;
-  const segmentAngle = getWheelSegmentAngle(segments.length);
   const segment = segments[index];
-  const centerAngle = segment?.startAngle !== undefined
-    ? segment.startAngle + segment.sweepAngle / 2
-    : index * segmentAngle + segmentAngle / 2;
-  return 360 - centerAngle;
+  return segment ? getGeometryTargetRotation(segment.centerAngle) : 0;
 }
 
 export function getWheelSpinTransition(phase: WheelMotionPhase) {

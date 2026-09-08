@@ -29,6 +29,7 @@ export type WheelRenderSegment = {
   weight: number;
   startAngle: number;
   sweepAngle: number;
+  centerAngle: number;
   tone: string;
   textTone: string;
   metadata?: WheelPrizeMetadata | null;

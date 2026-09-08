@@ -1,7 +1,7 @@
 'use client';
 
 import { getDefaultWheelPrizes, getWheelPrizeGlyph, getWheelPrizeShortLabel, normalizeWheelPrize, type WheelPrize } from './wheel-model';
-import { getWheelSegmentAngle } from './wheel-motion';
+import { buildWheelGeometry, polarToWheelPoint, type WheelGeometry } from './wheel-geometry';
 import type { WheelRenderSegment } from './wheel-types';
 
 export type WheelRenderPreset = 'five' | 'six' | 'eight' | 'tenPlus' | 'custom';
@@ -31,16 +31,9 @@ export interface WheelRenderPlan {
   pointerInset: number;
   centerSize: number;
   historyTickerCount: number;
+  geometry: WheelGeometry;
   segments: WheelRenderSegment[];
   tokenPlacements: WheelTokenPlacement[];
-}
-
-function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {
-  const angleRad = ((angleDeg - 90) * Math.PI) / 180;
-  return {
-    x: cx + radius * Math.cos(angleRad),
-    y: cy + radius * Math.sin(angleRad),
-  };
 }
 
 function getPreset(segmentCount: number): WheelRenderPreset {
@@ -111,7 +104,7 @@ function resolveAssetUrl(prize: WheelPrize, fallbackGlyph: string) {
 
 export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompactHeight: boolean): WheelRenderPlan {
   const source = (prizes.length ? prizes : getDefaultWheelPrizes()).map((prize) => normalizeWheelPrize(prize));
-  const segmentAngle = getWheelSegmentAngle(source.length);
+  const segmentAngle = 360 / Math.max(source.length, 1);
   const preset = getPreset(source.length);
   const dense = source.length >= 10;
   const compact = source.length >= 8;
@@ -151,9 +144,11 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
     custom: [],
   };
 
-  const visualWeights = source.map((prize) => Math.max(Number(prize.weight) || 0, 1));
-  const totalSegmentWeight = visualWeights.reduce((sum, weight) => sum + weight, 0);
-  let angleCursor = 0;
+  const geometry = buildWheelGeometry(source.map((prize) => ({
+    id: prize.id,
+    probabilityWeight: Number(prize.weight) || 0,
+    displayWeight: Number(prize.metadata?.displayWeight ?? prize.weight) || 0,
+  })));
   const segments: WheelRenderSegment[] = source.map((prize, index) => {
     const type = String(prize.type ?? '').toUpperCase();
     const renderMode = getRenderMode(prize);
@@ -161,9 +156,7 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
     const railLabel = shortText(prize.metadata?.railLabel ? String(prize.metadata.railLabel) : prize.name || wheelLabel, 24);
     const glyph = getWheelPrizeGlyph(prize);
     const kind = type === 'POINT' ? 'value' : type === 'SPIN_TICKET' || type === 'SPIN' ? 'badge' : type === 'NOTHING' ? 'hidden' : 'phrase';
-    const sweepAngle = (visualWeights[index] / totalSegmentWeight) * 360;
-    const startAngle = angleCursor;
-    angleCursor += sweepAngle;
+    const geometrySegment = geometry.segments[index];
 
     return {
       id: prize.id,
@@ -173,8 +166,9 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
       emojiCount: Number(prize.metadata?.emojiCount ?? 1),
       type: prize.type,
       weight: prize.weight,
-      startAngle,
-      sweepAngle,
+      startAngle: geometrySegment.startAngle,
+      sweepAngle: geometrySegment.sweepAngle,
+      centerAngle: geometrySegment.centerAngle,
       tone: getPalette(prize.type, index),
       textTone: getTextTone(prize.type),
       metadata: prize.metadata ?? {},
@@ -236,7 +230,7 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
         ? 8
         : 0;
     const tokenRadiusEffective = tokenRadius + tokenRadiusNudge + segment.slotBias * 0.38 + (isFive ? (index === 0 ? 4 : index === 1 ? -1 : index === 2 ? -6 : index === 3 ? 3 : 1) : 0);
-    const point = polarToCartesian(500, 500, tokenRadiusEffective, midAngle);
+    const point = polarToWheelPoint(500, 500, tokenRadiusEffective, midAngle);
     const baseTokenSize = isFive ? (isMobile ? 52 : 60) : isMobile ? 40 : 48;
     const fixedGroup = isFixedGroup;
     const tokenSize = Math.max(
@@ -271,6 +265,7 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
     pointerInset,
     centerSize,
     historyTickerCount,
+    geometry,
     segments,
     tokenPlacements,
   };

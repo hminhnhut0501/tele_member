@@ -10,6 +10,7 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
-    "wheel:simulate": "node scripts/simulate-wheel.mjs"
+    "wheel:simulate": "node scripts/simulate-wheel.mjs",
+    "wheel:test": "pnpm --filter @tele-member/api exec tsx ../../scripts/test-wheel-geometry.ts"
   }
 }

@@ -7,6 +7,7 @@ import { getWheelSpinTransition, type WheelMotionPhase } from './wheel-motion';
 import { buildWheelPlan } from './wheel-plan';
 import type { WheelPrize } from './wheel-model';
 import { FixedWheelIcon, WheelHubIcon } from './wheel-icons';
+import { describeWheelSegmentPath } from './wheel-geometry';
 
 function isFixedGroupIcon(value: string): value is 'gift' | 'peach' | 'nothing' {
   return value === 'gift' || value === 'peach' || value === 'nothing';
@@ -35,26 +36,12 @@ export function WheelRenderer({
     willChange: 'transform',
   } as CSSProperties;
 
-  const segmentAngle = plan.segmentAngle;
-  const arcStartAngle = plan.segments.length === 3 ? -90 - (plan.segments[0]?.sweepAngle ?? segmentAngle) / 2 : -90;
   const getSegmentGradient = (segment: (typeof plan.segments)[number]) => {
     if (segment.id === 'gift') return ['#E6F1FF', '#A9C9FF', '#638FE8'];
     if (segment.id === 'peach') return ['#DCEBFF', '#96BCFA', '#527FD9'];
     if (segment.id === 'nothing') return ['#F5F9FF', '#C7DBFF', '#82A8F1'];
     return [segment.tone, segment.tone, segment.tone];
   };
-  const arcStops = plan.segments.flatMap((segment, index) => {
-    const start = segment.startAngle ?? index * segmentAngle;
-    const end = start + (segment.sweepAngle ?? segmentAngle);
-    const [light, mid, deep] = getSegmentGradient(segment);
-    return [
-      `${light} ${start}deg`,
-      `${mid} ${start + segmentAngle * 0.48}deg`,
-      `${deep} ${end - segmentAngle * 0.08}deg`,
-      `${deep} ${end}deg`,
-    ];
-  });
-  const arc = `conic-gradient(from ${arcStartAngle}deg, ${arcStops.join(', ')})`;
 
   return (
     <Box
@@ -145,9 +132,7 @@ export function WheelRenderer({
             borderRadius: '50%',
             ...wheelRotationStyle,
             overflow: 'hidden',
-            background: arc,
-            backgroundImage: `${arc}, radial-gradient(circle at 34% 24%, rgba(255,255,255,0.34), transparent 32%), radial-gradient(circle at 72% 82%, rgba(5,18,50,0.18), transparent 42%)`,
-            backgroundBlendMode: 'normal, screen, multiply',
+            background: 'transparent',
             transform: `rotate(${rotation}deg) scale(${isSpinning ? 1.01 : 1})`,
             boxShadow:
               isSpinning
@@ -157,6 +142,35 @@ export function WheelRenderer({
                   : 'inset 0 0 0 8px rgba(114, 172, 255, 0.74), inset 0 0 0 18px rgba(5,10,22,0.52), 0 18px 42px rgba(0,0,0,0.30)',
           }}
         >
+          <svg
+            viewBox="0 0 1000 1000"
+            aria-hidden="true"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
+          >
+            <defs>
+              {plan.segments.map((segment) => {
+                const [light, mid, deep] = getSegmentGradient(segment);
+                return (
+                  <linearGradient key={`gradient-${segment.id}`} id={`wheel-gradient-${segment.id}`} x1="18%" y1="8%" x2="82%" y2="92%">
+                    <stop offset="0%" stopColor={light} />
+                    <stop offset="48%" stopColor={mid} />
+                    <stop offset="100%" stopColor={deep} />
+                  </linearGradient>
+                );
+              })}
+            </defs>
+            {plan.segments.map((segment) => (
+              <path
+                key={`segment-${segment.id}`}
+                d={describeWheelSegmentPath(segment)}
+                fill={`url(#wheel-gradient-${segment.id})`}
+                stroke="rgba(45,75,128,0.56)"
+                strokeWidth="9"
+                strokeLinejoin="round"
+              />
+            ))}
+          </svg>
+
           <Box
             sx={{
               position: 'absolute',
