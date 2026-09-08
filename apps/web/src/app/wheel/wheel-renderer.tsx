@@ -6,6 +6,11 @@ import type { CSSProperties } from 'react';
 import { getWheelSpinTransition, type WheelMotionPhase } from './wheel-motion';
 import { buildWheelPlan } from './wheel-plan';
 import type { WheelPrize } from './wheel-model';
+import { FixedWheelIcon } from './wheel-icons';
+
+function isFixedGroupIcon(value: string): value is 'gift' | 'peach' | 'nothing' {
+  return value === 'gift' || value === 'peach' || value === 'nothing';
+}
 
 export function WheelRenderer({
   prizes,
@@ -156,8 +161,10 @@ export function WheelRenderer({
               const tokenSize = token.size;
               const finalX = token.x + token.offsetX;
               const finalY = token.y + token.offsetY;
+              const fixedIconKind = isFixedGroupIcon(token.prizeId) ? token.prizeId : null;
+              const fixedIcon = fixedIconKind !== null;
               const shouldUseLabel = token.renderMode === 'label-only';
-              const iconSize = shouldUseLabel ? tokenSize * 0.5 : tokenSize * 0.58;
+              const iconSize = fixedIcon ? tokenSize * 0.76 : shouldUseLabel ? tokenSize * 0.5 : tokenSize * 0.58;
               const fallbackFontSize = Math.max(15, tokenSize * 0.34);
               return (
                 <Box
@@ -166,7 +173,7 @@ export function WheelRenderer({
                     position: 'absolute',
                     left: `${finalX / 10}%`,
                     top: `${finalY / 10}%`,
-                    transform: `translate(-50%, -50%) rotate(${token.counterRotate}deg)`,
+                    transform: `translate(-50%, -50%) rotate(${token.counterRotate - rotation}deg)`,
                     width: `${tokenSize}px`,
                     height: `${tokenSize}px`,
                     display: 'grid',
@@ -174,7 +181,26 @@ export function WheelRenderer({
                     pointerEvents: 'none',
                   }}
                 >
-                  {token.assetUrl && !shouldUseLabel ? (
+                  {fixedIcon ? (
+                    <Box
+                      sx={{
+                        width: `${tokenSize}px`,
+                        height: `${tokenSize}px`,
+                        display: 'grid',
+                        placeItems: 'center',
+                        borderRadius: '50%',
+                        background: token.prizeId === 'gift'
+                          ? 'radial-gradient(circle at 32% 28%, rgba(255,246,190,0.98), rgba(255,184,72,0.8) 58%, rgba(208,105,22,0.7))'
+                          : token.prizeId === 'peach'
+                            ? 'radial-gradient(circle at 32% 28%, rgba(255,235,196,0.98), rgba(255,143,107,0.82) 58%, rgba(197,66,70,0.74))'
+                            : 'radial-gradient(circle at 32% 28%, rgba(255,255,255,0.96), rgba(174,207,255,0.82) 58%, rgba(78,126,218,0.7))',
+                        border: '1px solid rgba(255,255,255,0.72)',
+                        boxShadow: '0 5px 14px rgba(8,24,62,0.2), inset 0 1px 0 rgba(255,255,255,0.62)',
+                      }}
+                    >
+                      <FixedWheelIcon kind={fixedIconKind!} size={iconSize} />
+                    </Box>
+                  ) : token.assetUrl && !shouldUseLabel ? (
                     <Box
                       component="img"
                       src={token.assetUrl}
