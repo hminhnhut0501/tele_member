@@ -545,13 +545,25 @@ export function useAdminDashboard() {
     try {
       setError('');
       setNotice('');
+      const groupWeights = {
+        gift: Number(editGiftWeight),
+        peach: Number(editPeachWeight),
+        nothing: Number(editNothingWeight),
+      };
+      if (Object.values(groupWeights).some((weight) => !Number.isFinite(weight) || weight < 0)) {
+        throw new Error('Xác suất nhóm phải là số không âm');
+      }
+      const totalGroupWeight = Object.values(groupWeights).reduce((sum, weight) => sum + weight, 0);
+      if (totalGroupWeight !== 100) {
+        throw new Error(`Tổng xác suất nhóm phải bằng 100% (hiện tại ${totalGroupWeight}%)`);
+      }
       await service.updateWheelCampaign(editingCampaign.id, {
         name: editCampaignName,
         description: editCampaignDescription,
         isActive: editCampaignActive,
         metadata: {
           ...(editingCampaign.metadata ?? {}),
-          groupWeights: { gift: editGiftWeight, peach: editPeachWeight, nothing: editNothingWeight },
+          groupWeights,
         },
       });
       const data = await service.getWheelCampaigns();

@@ -136,14 +136,6 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
   const centerSize = isMobile ? (isCompactHeight ? 0.34 : 0.36) : 0.38;
   const historyTickerCount = Math.min(8, source.length + 2);
 
-  const slotOffsetByPreset: Record<WheelRenderPreset, number[]> = {
-    five: [5, -2, -5, 2, 1],
-    six: [2.5, -1, -2.5, 0.5, 1.25, -0.5],
-    eight: [2, 1, -1, -2, -1.25, 0.75, 1.5, -0.75],
-    tenPlus: [1.5, 0.75, -0.25, -1, -1.5, -0.5, 0.2, 0.9, 1.1, -0.35],
-    custom: [],
-  };
-
   const geometry = buildWheelGeometry(source.map((prize) => ({
     id: prize.id,
     probabilityWeight: Number(prize.weight) || 0,
@@ -208,7 +200,7 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
       displayLabel: wheelLabel,
       railLabel,
       showLabelOnWheel: kind !== 'hidden',
-      slotBias: slotOffsetByPreset[preset][index % Math.max(slotOffsetByPreset[preset].length, 1)] ?? 0,
+      slotBias: 0,
     } as WheelRenderSegment & {
       labelPolicy: WheelRenderSegment['labelPolicy'];
       displayLabel: string;
@@ -218,35 +210,21 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
     };
   });
 
-  const tokenPlacements: WheelTokenPlacement[] = segments.map((segment, index) => {
+  const tokenPlacements: WheelTokenPlacement[] = segments.map((segment) => {
     const isFixedGroup = segment.id === 'gift' || segment.id === 'peach' || segment.id === 'nothing';
-    const midAngle = segment.startAngle + segment.sweepAngle / 2;
-    const isFive = preset === 'five';
-    const tokenRadiusNudge = isFive
-      ? isMobile
-        ? 8
-        : 12
-      : preset === 'six'
-        ? 8
-        : 0;
-    const tokenRadiusEffective = tokenRadius + tokenRadiusNudge + segment.slotBias * 0.38 + (isFive ? (index === 0 ? 4 : index === 1 ? -1 : index === 2 ? -6 : index === 3 ? 3 : 1) : 0);
-    const point = polarToWheelPoint(500, 500, tokenRadiusEffective, midAngle);
-    const baseTokenSize = isFive ? (isMobile ? 52 : 60) : isMobile ? 40 : 48;
-    const fixedGroup = isFixedGroup;
-    const tokenSize = Math.max(
-      fixedGroup ? (isMobile ? 58 : 68) : isFive ? 34 : isMobile ? 28 : 30,
-      fixedGroup ? (isMobile ? 58 : 68) : baseTokenSize * (segment.labelPolicy.kind === 'phrase' ? 0.88 : segment.labelPolicy.kind === 'badge' ? 0.94 : 0.98),
-    );
+    const point = polarToWheelPoint(500, 500, tokenRadius, segment.centerAngle);
+    // Token size is expressed in the same 1000-unit viewBox as the wheel.
+    const tokenSize = isFixedGroup ? (isMobile ? 116 : 136) : isMobile ? 72 : 84;
     const assetUrl = resolveAssetUrl(segment as unknown as WheelPrize, segment.glyph || '✦');
 
     return {
       prizeId: segment.id,
       x: point.x,
       y: point.y,
-      angle: midAngle,
+      angle: segment.centerAngle,
       size: tokenSize,
-      offsetX: fixedGroup ? 0 : isFive ? (index === 0 ? -10 : index === 1 ? 4 : index === 2 ? 10 : index === 3 ? 2 : -2) : 0,
-      offsetY: fixedGroup ? 0 : isFive ? (index === 0 ? -4 : index === 1 ? -2 : index === 2 ? 5 : index === 3 ? 0 : 2) : 0,
+      offsetX: 0,
+      offsetY: 0,
       counterRotate: 0,
       token: segment.glyph || '✦',
       assetUrl,

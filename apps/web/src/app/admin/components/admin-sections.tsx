@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Alert,
   Box,
   Button,
   CardContent,
@@ -97,14 +98,6 @@ function AdminDialog({
   );
 }
 
-function getWheelPreset(count: number) {
-  if (count === 5) return '5 ô';
-  if (count === 6) return '6 ô';
-  if (count === 8) return '8 ô';
-  if (count >= 10) return '10+ ô';
-  return 'tùy chỉnh';
-}
-
 function renderModeLabel(value: string) {
   if (value === 'emoji-only') return 'Chỉ biểu tượng';
   if (value === 'label-only') return 'Chỉ nhãn';
@@ -133,6 +126,21 @@ function wheelGroupLabel(value: string) {
   if (value === 'peach') return 'Đào';
   if (value === 'nothing') return 'Không trúng';
   return 'Quà';
+}
+
+const FIXED_WHEEL_GROUPS = [
+  { key: 'gift', label: 'Quà', glyph: '🎁', tone: '#F59E0B', soft: 'rgba(245,158,11,0.12)' },
+  { key: 'peach', label: 'Đào', glyph: '🍑', tone: '#F97362', soft: 'rgba(249,115,98,0.12)' },
+  { key: 'nothing', label: 'Không trúng', glyph: '✦', tone: '#4F83E8', soft: 'rgba(79,131,232,0.12)' },
+] as const;
+
+function getGroupWeights(campaign: any) {
+  const weights = campaign?.metadata?.groupWeights ?? {};
+  return {
+    gift: Number(weights.gift ?? 40),
+    peach: Number(weights.peach ?? 45),
+    nothing: Number(weights.nothing ?? 15),
+  };
 }
 
 function policyScopeLabel(value: string) {
@@ -647,10 +655,92 @@ export function RewardsSection(props: any) {
 
 export function WheelSection(props: any) {
   const previewPrizes = props.wheelPreview?.prizes ?? props.wheelPrizes;
-  const previewPreset = getWheelPreset(previewPrizes.length);
+  const selectedCampaign = props.campaigns.find((campaign: any) => campaign.id === props.selectedWheelCampaignId) ?? props.campaigns[0] ?? null;
+  const groupWeights = getGroupWeights(selectedCampaign);
+  const groupTotal = groupWeights.gift + groupWeights.peach + groupWeights.nothing;
 
   return (
     <Stack spacing={2}>
+      <AppSection
+        title="Cấu hình wheel cố định"
+        subtitle="Wheel luôn hiển thị đúng 3 nhóm. Xác suất nhóm độc lập với các phần quà con bên trong."
+        accent="blue"
+        action={
+          <Chip
+            label={groupTotal === 100 ? 'Cấu hình hợp lệ' : `Cần cân bằng · ${groupTotal}%`}
+            color={groupTotal === 100 ? 'success' : 'warning'}
+            variant="outlined"
+          />
+        }
+      >
+        <CardContent sx={{ pt: 0 }}>
+          <Stack spacing={1.5}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={1}>
+              <Box>
+                <Typography fontWeight={900}>{selectedCampaign?.name ?? 'Chưa chọn chiến dịch'}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Các segment trên wheel luôn là Quà, Đào và Không trúng; admin chỉ chỉnh xác suất, không chỉnh số ô.
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                disabled={!selectedCampaign}
+                onClick={() => {
+                  if (!selectedCampaign) return;
+                  props.setEditingCampaign(selectedCampaign);
+                  props.setEditCampaignName(selectedCampaign.name);
+                  props.setEditCampaignDescription(selectedCampaign.description ?? '');
+                  props.setEditCampaignActive(Boolean(selectedCampaign.isActive ?? true));
+                  props.setEditGiftWeight(groupWeights.gift);
+                  props.setEditPeachWeight(groupWeights.peach);
+                  props.setEditNothingWeight(groupWeights.nothing);
+                }}
+                sx={{ alignSelf: { xs: 'stretch', sm: 'flex-start' } }}
+              >
+                Chỉnh xác suất
+              </Button>
+            </Stack>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 1.25 }}>
+              {FIXED_WHEEL_GROUPS.map((group) => {
+                const weight = groupWeights[group.key];
+                const outcomes = props.wheelPrizes.filter((prize: any) => {
+                  const prizeGroup = prize.groupKey ?? prize.metadata?.groupKey ?? (String(prize.type).toUpperCase() === 'NOTHING' ? 'nothing' : String(prize.type).toUpperCase() === 'POINT' ? 'peach' : 'gift');
+                  return prizeGroup === group.key && (prize.isActive ?? true);
+                });
+                return (
+                  <Box key={group.key} sx={{ p: 1.5, borderRadius: 1.5, bgcolor: group.soft, border: `1px solid ${group.tone}33` }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Box sx={{ width: 36, height: 36, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: '#fff', fontSize: '1.2rem', boxShadow: '0 4px 10px rgba(15,23,42,0.08)' }}>{group.glyph}</Box>
+                        <Box>
+                          <Typography fontWeight={900}>{group.label}</Typography>
+                          <Typography variant="caption" color="text.secondary">{outcomes.length} outcome đang bật</Typography>
+                        </Box>
+                      </Stack>
+                      <Typography sx={{ color: group.tone, fontWeight: 950, fontSize: '1.25rem' }}>{weight}%</Typography>
+                    </Stack>
+                    <Box sx={{ mt: 1.25, height: 7, borderRadius: 99, bgcolor: 'rgba(15,23,42,0.08)', overflow: 'hidden' }}>
+                      <Box sx={{ width: `${Math.max(0, Math.min(100, weight))}%`, height: '100%', borderRadius: 99, bgcolor: group.tone, transition: 'width 180ms ease' }} />
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
+
+            {groupTotal !== 100 ? (
+              <Alert severity="warning">
+                Tổng xác suất hiện tại là {groupTotal}%. Hãy đưa về đúng 100% trước khi xuất bản chiến dịch.
+              </Alert>
+            ) : (
+              <Typography variant="caption" color="text.secondary">
+                Layout hiển thị: 3 segment bằng nhau. Probability engine vẫn dùng đúng các tỷ lệ trên.
+              </Typography>
+            )}
+          </Stack>
+        </CardContent>
+      </AppSection>
+
       <AppSection
         title="Chiến dịch vòng quay"
         subtitle="Quản lý chiến dịch và danh sách phần thưởng."
@@ -738,7 +828,7 @@ export function WheelSection(props: any) {
         </CardContent>
       </AppSection>
 
-      <AppSection title="Bảng phần thưởng" subtitle="Sửa nhanh emoji, nhãn và trọng số cho từng lát." accent="blue">
+      <AppSection title="Outcome trong từng nhóm" subtitle="Quản lý các phần quà con được chọn sau khi hệ thống đã chọn nhóm." accent="blue">
         <CardContent>
           <Stack spacing={1.25}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -761,7 +851,7 @@ export function WheelSection(props: any) {
                           {String(prize.metadata?.glyph ?? prize.metadata?.wheelGlyph ?? prize.metadata?.icon ?? prize.metadata?.emoji ?? '✦')} {prize.name}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {wheelGroupLabel(String(prize.groupKey ?? prize.metadata?.groupKey ?? 'gift'))} • outcome weight {prize.weight} • tồn kho {prize.stock ?? '∞'} • {isActive ? 'Đang bật' : 'Đang tắt'}
+                          {wheelGroupLabel(String(prize.groupKey ?? prize.metadata?.groupKey ?? 'gift'))} • trọng số outcome {prize.weight} • tồn kho {prize.stock ?? '∞'} • {isActive ? 'Đang bật' : 'Đang tắt'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {String(prize.metadata?.wheelLabel ?? prize.name)} / {String(prize.metadata?.railLabel ?? prize.name)} / {deliveryModeLabel(String(prize.metadata?.deliveryMode ?? 'immediate'))} / {deliveryTargetLabel(String(prize.metadata?.deliveryTarget ?? 'reward_inbox'))} / {renderModeLabel(String(prize.metadata?.wheelRenderMode ?? prize.metadata?.renderMode ?? prize.metadata?.labelMode ?? 'emoji-only'))}
@@ -814,16 +904,16 @@ export function WheelSection(props: any) {
         </CardContent>
       </AppSection>
 
-      <AppSection title="Xem trước xác suất" subtitle="Xác suất theo trọng số và trạng thái đang bật của chiến dịch đang chọn." accent="violet">
+      <AppSection title="Xem trước probability engine" subtitle="Xem xác suất nhóm và phân phối outcome; preview này không tạo thêm segment trên wheel." accent="violet">
         <CardContent>
           <Stack spacing={1.5}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="body2" color="text.secondary">
-                Tổng trọng số: <b>{props.wheelPreview?.totalWeight ?? 0}</b>
+                Tổng trọng số outcome: <b>{props.wheelPreview?.totalWeight ?? 0}</b>
               </Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end">
                 <Chip label={`${previewPrizes.length} phần thưởng`} size="small" />
-                <Chip label={`preset: ${previewPreset}`} size="small" variant="outlined" />
+                <Chip label="wheel: 3 nhóm cố định" size="small" variant="outlined" />
               </Stack>
             </Stack>
             <Stack spacing={1}>

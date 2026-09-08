@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
 import { useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import { getWheelSpinTransition, type WheelMotionPhase } from './wheel-motion';
@@ -66,6 +66,16 @@ export function WheelRenderer({
           borderTop: { xs: '38px solid rgba(102, 168, 255, 0.98)', sm: '52px solid rgba(102, 168, 255, 0.98)' },
           zIndex: 3,
           filter: isSpinning ? 'drop-shadow(0 12px 18px rgba(53,103,255,0.26))' : 'drop-shadow(0 10px 14px rgba(0,0,0,0.24))',
+          animation: isSpinning ? 'wheelPointer 0.72s ease-in-out infinite' : isSettling ? 'wheelPointerSettle 0.42s ease-out' : 'none',
+          '@keyframes wheelPointer': {
+            '0%, 100%': { transform: 'translateX(-50%) translateY(0)' },
+            '50%': { transform: 'translateX(-50%) translateY(4px)' },
+          },
+          '@keyframes wheelPointerSettle': {
+            '0%': { transform: 'translateX(-50%) translateY(5px)' },
+            '100%': { transform: 'translateX(-50%) translateY(0)' },
+          },
+          '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
         }}
       />
 
@@ -100,6 +110,49 @@ export function WheelRenderer({
           placeItems: 'center',
         }}
       >
+        {(isSpinning || isSettling) ? (
+          <Box
+            aria-hidden="true"
+            sx={{
+              position: 'absolute',
+              inset: { xs: -18, sm: -28 },
+              borderRadius: '50%',
+              pointerEvents: 'none',
+              zIndex: 5,
+              '@keyframes wheelParticle': {
+                '0%': { opacity: 0, transform: 'rotate(var(--particle-angle)) translateX(34%) scale(0.35)' },
+                '18%': { opacity: 0.9 },
+                '100%': { opacity: 0, transform: 'rotate(var(--particle-angle)) translateX(50%) scale(0.05)' },
+              },
+              '@keyframes wheelParticleSettling': {
+                '0%': { opacity: 0, transform: 'rotate(var(--particle-angle)) translateX(16%) scale(0.2)' },
+                '35%': { opacity: 1 },
+                '100%': { opacity: 0, transform: 'rotate(var(--particle-angle)) translateX(44%) scale(0.02)' },
+              },
+              '@media (prefers-reduced-motion: reduce)': { display: 'none' },
+            }}
+          >
+            {Array.from({ length: 12 }, (_, index) => (
+              <Box
+                key={index}
+                component="span"
+                sx={{
+                  '--particle-angle': `${index * 30}deg`,
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  width: { xs: 4, sm: 5 },
+                  height: { xs: 4, sm: 5 },
+                  borderRadius: '50%',
+                  bgcolor: index % 3 === 0 ? '#FFE09A' : index % 3 === 1 ? '#A7CCFF' : '#FFFFFF',
+                  boxShadow: '0 0 10px currentColor',
+                  animation: `${isSettling ? 'wheelParticleSettling' : 'wheelParticle'} ${isSettling ? 0.72 : 1.55}s cubic-bezier(0.2, 0.8, 0.25, 1) ${index * -0.09}s infinite`,
+                }}
+              />
+            ))}
+          </Box>
+        ) : null}
+
         <Box
           sx={{
             position: 'absolute',
@@ -148,6 +201,21 @@ export function WheelRenderer({
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' }}
           >
             <defs>
+              <radialGradient id="wheel-token-gift" cx="32%" cy="28%" r="78%">
+                <stop offset="0%" stopColor="#FFF6BE" />
+                <stop offset="58%" stopColor="#FFB848" />
+                <stop offset="100%" stopColor="#D06916" />
+              </radialGradient>
+              <radialGradient id="wheel-token-peach" cx="32%" cy="28%" r="78%">
+                <stop offset="0%" stopColor="#FFEBC4" />
+                <stop offset="58%" stopColor="#FF8F6B" />
+                <stop offset="100%" stopColor="#C54246" />
+              </radialGradient>
+              <radialGradient id="wheel-token-nothing" cx="32%" cy="28%" r="78%">
+                <stop offset="0%" stopColor="#FFFFFF" />
+                <stop offset="58%" stopColor="#AECFFF" />
+                <stop offset="100%" stopColor="#4E7EDA" />
+              </radialGradient>
               {plan.segments.map((segment) => {
                 const [light, mid, deep] = getSegmentGradient(segment);
                 return (
@@ -169,6 +237,26 @@ export function WheelRenderer({
                 strokeLinejoin="round"
               />
             ))}
+            {plan.tokenPlacements.map((token) => {
+              const fixedIconKind = isFixedGroupIcon(token.prizeId) ? token.prizeId : null;
+              if (!fixedIconKind) return null;
+              const tokenSize = token.size;
+              const iconSize = tokenSize * 0.76;
+              const fill = token.prizeId === 'gift'
+                ? 'url(#wheel-token-gift)'
+                : token.prizeId === 'peach'
+                  ? 'url(#wheel-token-peach)'
+                  : 'url(#wheel-token-nothing)';
+              return (
+                <g key={`token-${token.prizeId}`} transform={`translate(${token.x} ${token.y}) rotate(${-rotation})`}>
+                  <circle r={tokenSize / 2} fill={fill} stroke="rgba(255,255,255,0.76)" strokeWidth="3" />
+                  <circle r={tokenSize / 2 - 5} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="2" />
+                  <g transform={`translate(${-iconSize / 2} ${-iconSize / 2})`}>
+                    <FixedWheelIcon kind={fixedIconKind} size={iconSize} />
+                  </g>
+                </g>
+              );
+            })}
           </svg>
 
           <Box
@@ -183,96 +271,6 @@ export function WheelRenderer({
               pointerEvents: 'none',
             }}
           />
-
-          <Box
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              pointerEvents: 'none',
-            }}
-          >
-            {plan.tokenPlacements.map((token) => {
-              const tokenSize = token.size;
-              const finalX = token.x + token.offsetX;
-              const finalY = token.y + token.offsetY;
-              const fixedIconKind = isFixedGroupIcon(token.prizeId) ? token.prizeId : null;
-              const fixedIcon = fixedIconKind !== null;
-              const shouldUseLabel = token.renderMode === 'label-only';
-              const iconSize = fixedIcon ? tokenSize * 0.76 : shouldUseLabel ? tokenSize * 0.5 : tokenSize * 0.58;
-              const fallbackFontSize = Math.max(15, tokenSize * 0.34);
-              return (
-                <Box
-                  key={token.prizeId}
-                  sx={{
-                    position: 'absolute',
-                    left: `${finalX / 10}%`,
-                    top: `${finalY / 10}%`,
-                    transform: `translate(-50%, -50%) rotate(${token.counterRotate - rotation}deg)`,
-                    width: `${tokenSize}px`,
-                    height: `${tokenSize}px`,
-                    display: 'grid',
-                    placeItems: 'center',
-                    pointerEvents: 'none',
-                  }}
-                >
-                  {fixedIcon ? (
-                    <Box
-                      sx={{
-                        width: `${tokenSize}px`,
-                        height: `${tokenSize}px`,
-                        display: 'grid',
-                        placeItems: 'center',
-                        borderRadius: '50%',
-                        background: token.prizeId === 'gift'
-                          ? 'radial-gradient(circle at 32% 28%, rgba(255,246,190,0.98), rgba(255,184,72,0.8) 58%, rgba(208,105,22,0.7))'
-                          : token.prizeId === 'peach'
-                            ? 'radial-gradient(circle at 32% 28%, rgba(255,235,196,0.98), rgba(255,143,107,0.82) 58%, rgba(197,66,70,0.74))'
-                            : 'radial-gradient(circle at 32% 28%, rgba(255,255,255,0.96), rgba(174,207,255,0.82) 58%, rgba(78,126,218,0.7))',
-                        border: '1px solid rgba(255,255,255,0.72)',
-                        boxShadow: '0 5px 14px rgba(8,24,62,0.2), inset 0 1px 0 rgba(255,255,255,0.62)',
-                      }}
-                    >
-                      <FixedWheelIcon kind={fixedIconKind!} size={iconSize} />
-                    </Box>
-                  ) : token.assetUrl && !shouldUseLabel ? (
-                    <Box
-                      component="img"
-                      src={token.assetUrl}
-                      alt=""
-                      sx={{
-                        position: 'relative',
-                        width: `${iconSize}px`,
-                        height: `${iconSize}px`,
-                        objectFit: 'contain',
-                        imageRendering: 'auto',
-                        filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.14))',
-                      }}
-                    />
-                  ) : (
-                    <Typography
-                      component="span"
-                      sx={{
-                        position: 'relative',
-                        fontSize: `${fallbackFontSize}px`,
-                        lineHeight: 1,
-                        fontWeight: 900,
-                        color: token.textTone,
-                        fontFamily: shouldUseLabel
-                          ? 'Inter, ui-sans-serif, system-ui, sans-serif'
-                          : '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif',
-                        textShadow: '0 1px 1px rgba(0,0,0,0.14)',
-                        whiteSpace: 'nowrap',
-                        letterSpacing: '0.01em',
-                        transform: shouldUseLabel ? 'translateY(-1px)' : 'translateY(0)',
-                      }}
-                    >
-                      {shouldUseLabel ? token.label : token.token}
-                    </Typography>
-                  )}
-                </Box>
-              );
-            })}
-          </Box>
 
           <Box
             sx={{
@@ -293,6 +291,16 @@ export function WheelRenderer({
               display: 'grid',
               placeItems: 'center',
               textAlign: 'center',
+              animation: isSpinning ? 'wheelHubPulse 1.5s ease-in-out infinite' : isSettling ? 'wheelHubSettle 0.42s ease-out' : 'none',
+              '@keyframes wheelHubPulse': {
+                '0%, 100%': { transform: 'scale(1)', filter: 'brightness(1)' },
+                '50%': { transform: 'scale(1.035)', filter: 'brightness(1.08)' },
+              },
+              '@keyframes wheelHubSettle': {
+                '0%': { transform: 'scale(1.08)', filter: 'brightness(1.14)' },
+                '100%': { transform: 'scale(1)', filter: 'brightness(1)' },
+              },
+              '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
             }}
           >
             <WheelHubIcon size={isCompactHeight ? 42 : 48} />

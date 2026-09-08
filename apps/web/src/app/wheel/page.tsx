@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Box, Button, Chip, Container, DialogActions, DialogContent, DialogTitle, Drawer, Stack, Typography } from '@mui/material';
+import { Box, Button, Chip, Container, Stack, Typography } from '@mui/material';
 import { apiClient } from '../../lib/api';
 import { PageShell } from '../shared-ui';
 import { getDefaultWheelPrizes, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
@@ -10,31 +10,24 @@ import { buildWheelPlan } from './wheel-plan';
 import { getWheelStartRotation, getWheelTargetRotation } from './wheel-motion';
 import { WheelRenderer } from './wheel-renderer';
 import { WheelHistoryRail, WheelHistoryTicker, WheelRewardRail } from './wheel-rail';
+import { buildFixedWheelPrizes, DEFAULT_GROUP_WEIGHTS, type FixedWheelGroupKey } from './wheel-groups';
+import { WheelResultSheet, type WheelResultGroupKey, type WheelResultSheetData } from './wheel-result-sheet';
 
 function WheelPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [token, setToken] = useState<string | null>(null);
   const [prizes, setPrizes] = useState<WheelPrize[]>([]);
-  const [groupWeights, setGroupWeights] = useState({ gift: 40, peach: 45, nothing: 15 });
+  const [groupWeights, setGroupWeights] = useState(DEFAULT_GROUP_WEIGHTS);
   const [history, setHistory] = useState<WheelSpinHistoryItem[]>([]);
   const [spins, setSpins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [spinError, setSpinError] = useState('');
   const [spinning, setSpinning] = useState(false);
-  const [spinPhase, setSpinPhase] = useState<'idle' | 'spinning'>('idle');
+  const [spinPhase, setSpinPhase] = useState<'idle' | 'spinning' | 'slowing' | 'settling'>('idle');
   const [rotation, setRotation] = useState(0);
   const [resultOpen, setResultOpen] = useState(false);
-  const [lastResult, setLastResult] = useState<{
-    prizeName: string;
-    prizeType: string;
-    glyph: string;
-    code: string | null;
-    deliveryMode?: string | null;
-    deliveryTarget?: string | null;
-    status: 'won' | 'missed' | 'pending' | 'claimed';
-    createdAt?: string | null;
-  } | null>(null);
+  const [lastResult, setLastResult] = useState<WheelResultSheetData | null>(null);
   const spinTimersRef = useRef<number[]>([]);
   const [debugSpinMode, setDebugSpinMode] = useState(false);
 
@@ -66,10 +59,10 @@ function WheelPageContent() {
       .then(([wheel, spinData, historyData]) => {
         if (cancelled) return;
         setPrizes(((wheel?.prizes ?? []) as WheelPrize[]) ?? []);
-        const nextGroupWeights = { gift: 40, peach: 45, nothing: 15 };
+        const nextGroupWeights = { ...DEFAULT_GROUP_WEIGHTS };
         for (const group of wheel?.groups ?? []) {
           if (group.groupKey in nextGroupWeights) {
-            nextGroupWeights[group.groupKey as keyof typeof nextGroupWeights] = Number(group.weight) || 0;
+            nextGroupWeights[group.groupKey as FixedWheelGroupKey] = Number(group.weight) || 0;
           }
         }
         setGroupWeights(nextGroupWeights);
@@ -88,31 +81,7 @@ function WheelPageContent() {
   const demoFallbackPrizes = getDefaultWheelPrizes();
   const effectivePrizes = prizes.length ? prizes : demoFallbackPrizes;
   const wheelGroupPrizes = useMemo(() => {
-    const groups = [
-      { key: 'gift', name: 'QUÀ', type: 'VOUCHER', glyph: '🎁', description: 'Phần thưởng bất ngờ' },
-      { key: 'peach', name: 'ĐÀO', type: 'POINT', glyph: '🍑', description: 'Nhận đào ngẫu nhiên' },
-      { key: 'nothing', name: 'KHÔNG TRÚNG', type: 'NOTHING', glyph: '✦', description: 'May mắn lần sau' },
-    ] as const;
-    return groups.map((group) => {
-      const outcome = effectivePrizes.find((prize) => prize.groupKey === group.key);
-      return {
-        id: group.key,
-        campaignId: outcome?.campaignId,
-        name: group.name,
-        type: group.type,
-        groupKey: group.key,
-        weight: groupWeights[group.key],
-        stock: null,
-        isActive: true,
-        metadata: {
-          ...(outcome?.metadata ?? {}),
-          glyph: group.glyph,
-          wheelLabel: group.name,
-          railLabel: group.description,
-          renderMode: 'mixed',
-        },
-      } as WheelPrize;
-    });
+    return buildFixedWheelPrizes(effectivePrizes, groupWeights);
   }, [effectivePrizes, groupWeights]);
   const wheelSegments = useMemo(() => buildWheelPlan(wheelGroupPrizes, false, false).segments, [wheelGroupPrizes]);
   const canSpin = !loading && !spinning && (debugSpinMode || spins > 0);
@@ -142,6 +111,7 @@ function WheelPageContent() {
     );
 
     return {
+      groupKey: selectedPrize?.groupKey ?? (prizeType === 'NOTHING' ? 'nothing' : prizeType === 'POINT' ? 'peach' : 'gift'),
       prize: selectedPrize
         ? {
             id: selectedPrize.id,
@@ -157,6 +127,8 @@ function WheelPageContent() {
       code: null,
       deliveryMode: selectedPrize?.metadata?.deliveryMode ?? 'immediate',
       deliveryTarget: selectedPrize?.metadata?.deliveryTarget ?? 'reward_inbox',
+      points: Number(selectedPrize?.metadata?.points ?? selectedPrize?.metadata?.point_amount ?? 0) || null,
+      description: selectedPrize?.metadata?.description ?? null,
     };
   }
 
@@ -182,17 +154,21 @@ function WheelPageContent() {
       const resultGroupKey = String(data?.groupKey ?? data?.prize?.groupKey ?? (data?.prize?.type === 'NOTHING' ? 'nothing' : data?.prize?.type === 'POINT' ? 'peach' : 'gift'));
       const prizeName = String(data?.prize?.name ?? data?.prizeName ?? data?.resultLabel ?? (prizeId ? 'Đã trúng' : 'Không trúng'));
       const prizeType = String(data?.prize?.type ?? data?.prizeType ?? (prizeId ? 'CUSTOM' : 'NOTHING')).toUpperCase();
+      const normalizedGroupKey: WheelResultGroupKey = resultGroupKey === 'peach' ? 'peach' : resultGroupKey === 'nothing' ? 'nothing' : 'gift';
       const glyph = String(data?.prize?.glyph ?? data?.glyph ?? (prizeType === 'POINT' ? '🍑' : prizeType === 'SPIN_TICKET' ? '🎞' : prizeType === 'VOUCHER' ? '🎁' : prizeType === 'VIP_CODE' ? '👑' : prizeType === 'NOTHING' ? '😢' : '✦'));
       const code = data?.prize?.code ? String(data.prize.code) : data?.code ? String(data.code) : null;
+      const resultMetadata = (data?.prize?.metadata ?? data?.metadata ?? {}) as Record<string, unknown>;
       setLastResult({
+        groupKey: normalizedGroupKey,
         prizeName,
         prizeType,
         glyph,
         code,
+        points: Number(resultMetadata.points ?? resultMetadata.point_amount ?? data?.points ?? 0) || null,
+        description: typeof resultMetadata.description === 'string' ? resultMetadata.description : null,
         deliveryMode: data?.deliveryMode ?? null,
         deliveryTarget: data?.deliveryTarget ?? null,
         status: resultGroupKey === 'nothing' ? 'missed' : prizeId ? 'won' : 'missed',
-        createdAt: new Date().toISOString(),
       });
       const targetRotation = getWheelTargetRotation(wheelSegments, resultGroupKey);
       const finalRotation = spinStart + 1440 + targetRotation;
@@ -204,18 +180,14 @@ function WheelPageContent() {
         setHistory(((refreshedHistory?.spins ?? []) as any[]) ?? []);
       }
 
-      spinTimersRef.current.push(
-        window.setTimeout(() => {
-          setRotation(finalRotation);
-        }, 3600),
-      );
-      spinTimersRef.current.push(
-        window.setTimeout(() => {
-          setSpinPhase('idle');
-          setSpinning(false);
-          setResultOpen(true);
-        }, 4140),
-      );
+      spinTimersRef.current.push(window.setTimeout(() => setSpinPhase('slowing'), 3300));
+      spinTimersRef.current.push(window.setTimeout(() => setRotation(finalRotation), 3600));
+      spinTimersRef.current.push(window.setTimeout(() => setSpinPhase('settling'), 4120));
+      spinTimersRef.current.push(window.setTimeout(() => {
+        setSpinPhase('idle');
+        setSpinning(false);
+        setResultOpen(true);
+      }, 4540));
     } catch (err) {
       setSpinPhase('idle');
       setSpinning(false);
@@ -356,141 +328,20 @@ function WheelPageContent() {
         </Stack>
       </Container>
 
-      <Drawer
-        anchor="bottom"
+      <WheelResultSheet
         open={resultOpen}
+        result={lastResult}
         onClose={() => setResultOpen(false)}
-        PaperProps={{
-          sx: {
-            width: 'min(100%, 520px)',
-            mx: 'auto',
-            borderRadius: '24px 24px 0 0',
-            border: '1px solid rgba(105, 147, 255, 0.14)',
-            background: 'linear-gradient(180deg, rgba(7,14,30,0.98), rgba(12,21,44,0.98))',
-            color: '#eef4ff',
-            boxShadow: '0 30px 80px rgba(0,0,0,0.45)',
-          },
+        onViewRewards={() => {
+          setResultOpen(false);
+          router.push('/my-rewards');
         }}
-      >
-        <DialogTitle sx={{ pb: 1 }}>
-          <Stack direction="row" spacing={1.2} alignItems="center">
-            <Box
-              sx={{
-                width: 44,
-                height: 44,
-                borderRadius: '50%',
-                display: 'grid',
-                placeItems: 'center',
-                background: 'linear-gradient(180deg, rgba(102,168,255,0.36), rgba(18,45,154,0.72))',
-                border: '1px solid rgba(123,174,255,0.26)',
-                fontSize: '1.3rem',
-                flex: '0 0 auto',
-              }}
-            >
-              {lastResult?.glyph ?? '✦'}
-            </Box>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography sx={{ fontWeight: 900, letterSpacing: '-0.03em', color: '#f7fbff' }}>
-                {lastResult?.status === 'won' ? 'Chúc mừng bạn!' : 'Chưa trúng'}
-              </Typography>
-              <Typography sx={{ color: 'rgba(226,234,255,0.66)', fontSize: '0.84rem' }}>
-                Kết quả vừa quay xong
-              </Typography>
-            </Box>
-          </Stack>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 0.5 }}>
-          <Stack spacing={1.5}>
-            <Box
-              sx={{
-                p: 1.5,
-                borderRadius: 1.25,
-                bgcolor: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.08)',
-              }}
-            >
-              <Typography sx={{ color: 'rgba(226,234,255,0.72)', fontSize: '0.8rem' }}>Phần quà</Typography>
-              <Typography sx={{ fontWeight: 900, color: '#f7fbff', mt: 0.4 }}>
-                {lastResult?.prizeName ?? 'Không trúng'}
-              </Typography>
-              <Typography sx={{ color: 'rgba(226,234,255,0.66)', fontSize: '0.84rem', mt: 0.25 }}>
-                {lastResult?.prizeType ?? 'UNKNOWN'}
-              </Typography>
-            </Box>
-
-            {lastResult?.code ? (
-              <Box
-                sx={{
-                  p: 1.5,
-                  borderRadius: 1.25,
-                  bgcolor: 'rgba(255,214,102,0.08)',
-                  border: '1px solid rgba(255,214,102,0.16)',
-                }}
-              >
-                <Typography sx={{ color: 'rgba(255,244,209,0.76)', fontSize: '0.8rem' }}>Mã nhận quà</Typography>
-                <Typography sx={{ fontWeight: 900, color: '#fff2c0', letterSpacing: 0.5, mt: 0.4 }}>
-                  {lastResult.code}
-                </Typography>
-              </Box>
-            ) : null}
-
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: 1,
-                p: 1.5,
-                borderRadius: 1.25,
-                bgcolor: 'rgba(102,168,255,0.08)',
-                border: '1px solid rgba(102,168,255,0.16)',
-              }}
-            >
-              <Box>
-                <Typography sx={{ color: 'rgba(226,234,255,0.72)', fontSize: '0.8rem' }}>Giao qua</Typography>
-                <Typography sx={{ fontWeight: 800, color: '#eef4ff', mt: 0.3 }}>
-                  {lastResult?.deliveryMode ?? 'instant'}
-                </Typography>
-              </Box>
-              <Box sx={{ textAlign: 'right' }}>
-                <Typography sx={{ color: 'rgba(226,234,255,0.72)', fontSize: '0.8rem' }}>Đích nhận</Typography>
-                <Typography sx={{ fontWeight: 800, color: '#eef4ff', mt: 0.3 }}>
-                  {lastResult?.deliveryTarget ?? 'reward_inbox'}
-                </Typography>
-              </Box>
-            </Box>
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 2, pb: 2, pt: 1.25, gap: 1 }}>
-          <Button
-            onClick={() => {
-              setResultOpen(false);
-              router.push('/my-rewards');
-            }}
-            variant="contained"
-            sx={{
-              flex: 1,
-              borderRadius: 999,
-              fontWeight: 900,
-              background: 'linear-gradient(180deg, rgba(58,111,255,1) 0%, rgba(18,45,154,1) 100%)',
-            }}
-          >
-            Quà của tôi
-          </Button>
-          <Button
-            onClick={() => setResultOpen(false)}
-            variant="outlined"
-            sx={{
-              flex: 1,
-              borderRadius: 999,
-              fontWeight: 800,
-              color: '#dbeafe',
-              borderColor: 'rgba(123,174,255,0.24)',
-            }}
-          >
-            Đóng
-          </Button>
-        </DialogActions>
-      </Drawer>
+        onSpinAgain={() => {
+          setResultOpen(false);
+          window.setTimeout(() => void handleSpin(), 120);
+        }}
+        canSpinAgain={canSpin}
+      />
     </PageShell>
   );
 }
