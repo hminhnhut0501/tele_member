@@ -35,7 +35,8 @@ export interface WheelRenderPlan {
   tokenPlacements: WheelTokenPlacement[];
 }
 
-const FIXED_GROUP_SLOT_ANGLES = [60, 180, 300];
+// Keep the pointer on the center of a segment, not on a divider.
+const FIXED_GROUP_SLOT_ANGLES = [0, 120, 240];
 
 function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {
   const angleRad = ((angleDeg - 90) * Math.PI) / 180;

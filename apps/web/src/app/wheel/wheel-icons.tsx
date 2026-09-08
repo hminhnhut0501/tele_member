@@ -76,3 +76,21 @@ export function FixedWheelIcon({ kind, size = 44 }: { kind: WheelIconKind; size?
     </svg>
   );
 }
+
+export function WheelHubIcon({ size = 48 }: { size?: number }) {
+  return (
+    <svg {...sharedProps} width={size} height={size}>
+      <defs>
+        <linearGradient id="wheel-hub-gradient" x1="10" y1="8" x2="38" y2="42" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FFFFFF" />
+          <stop offset="0.52" stopColor="#C8DFFF" />
+          <stop offset="1" stopColor="#6D9CF5" />
+        </linearGradient>
+      </defs>
+      <circle cx="24" cy="24" r="18" fill="url(#wheel-hub-gradient)" stroke="#EFF6FF" strokeWidth="1.5" />
+      <path d="M24 10L27 20.8L38 24L27 27.2L24 38L21 27.2L10 24L21 20.8L24 10Z" fill="#4C82EA" opacity="0.92" />
+      <circle cx="24" cy="24" r="4" fill="#F8FBFF" stroke="#6E9CF3" strokeWidth="1.4" />
+      <path d="M24 14V18M24 30V34M14 24H18M30 24H34" stroke="#F8FBFF" strokeWidth="1.5" strokeLinecap="round" opacity="0.9" />
+    </svg>
+  );
+}

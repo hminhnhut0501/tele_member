@@ -6,7 +6,7 @@ import type { CSSProperties } from 'react';
 import { getWheelSpinTransition, type WheelMotionPhase } from './wheel-motion';
 import { buildWheelPlan } from './wheel-plan';
 import type { WheelPrize } from './wheel-model';
-import { FixedWheelIcon } from './wheel-icons';
+import { FixedWheelIcon, WheelHubIcon } from './wheel-icons';
 
 function isFixedGroupIcon(value: string): value is 'gift' | 'peach' | 'nothing' {
   return value === 'gift' || value === 'peach' || value === 'nothing';
@@ -36,10 +36,11 @@ export function WheelRenderer({
   } as CSSProperties;
 
   const segmentAngle = plan.segmentAngle;
+  const arcStartAngle = plan.segments.length === 3 ? -90 - segmentAngle / 2 : -90;
   const getSegmentGradient = (segment: (typeof plan.segments)[number]) => {
-    if (segment.id === 'gift') return ['#FFF1B5', '#F9B84B', '#D86A3A'];
-    if (segment.id === 'peach') return ['#FFE4C8', '#FFAA7A', '#E36369'];
-    if (segment.id === 'nothing') return ['#F4F8FF', '#BBD2FF', '#7699E7'];
+    if (segment.id === 'gift') return ['#E6F1FF', '#A9C9FF', '#638FE8'];
+    if (segment.id === 'peach') return ['#DCEBFF', '#96BCFA', '#527FD9'];
+    if (segment.id === 'nothing') return ['#F5F9FF', '#C7DBFF', '#82A8F1'];
     return [segment.tone, segment.tone, segment.tone];
   };
   const arcStops = plan.segments.flatMap((segment, index) => {
@@ -53,7 +54,7 @@ export function WheelRenderer({
       `${deep} ${end}deg`,
     ];
   });
-  const arc = `conic-gradient(from -90deg, ${arcStops.join(', ')})`;
+  const arc = `conic-gradient(from ${arcStartAngle}deg, ${arcStops.join(', ')})`;
 
   return (
     <Box
@@ -262,7 +263,7 @@ export function WheelRenderer({
           <Box
             sx={{
               position: 'absolute',
-              inset: { xs: isCompactHeight ? '36%' : '35%', sm: '34%' },
+              inset: { xs: isCompactHeight ? '42%' : '40%', sm: '39%' },
               borderRadius: '50%',
               background:
                 isSpinning
@@ -280,14 +281,7 @@ export function WheelRenderer({
               textAlign: 'center',
             }}
           >
-            <Stack spacing={0.2} alignItems="center" sx={{ color: '#3d2a05', px: 1, textAlign: 'center' }}>
-              <Typography sx={{ fontWeight: 900, fontSize: { xs: '0.64rem', sm: '0.72rem' }, letterSpacing: '0.32em', lineHeight: 1 }}>
-                SPIN
-              </Typography>
-              <Typography sx={{ fontWeight: 900, fontSize: { xs: '0.96rem', sm: '1.1rem' }, lineHeight: 1.05 }}>
-                Sẵn sàng
-              </Typography>
-            </Stack>
+            <WheelHubIcon size={isCompactHeight ? 42 : 48} />
           </Box>
         </Box>
       </Box>
