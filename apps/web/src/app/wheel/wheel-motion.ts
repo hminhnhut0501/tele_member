@@ -15,7 +15,11 @@ export function getWheelStartRotation(previousRotation: number) {
 
 export function getWheelTargetRotation(segments: WheelRenderSegment[], prizeId?: string | null) {
   if (!segments.length || !prizeId) return 0;
-  const index = segments.findIndex((segment) => segment.id === prizeId);
+  const index = segments.findIndex((segment) => (
+    segment.id === prizeId ||
+    segment.id.startsWith(`${prizeId}-`) ||
+    segment.metadata?.groupKey === prizeId
+  ));
   if (index < 0) return 0;
   const segment = segments[index];
   return segment ? getGeometryTargetRotation(segment.centerAngle) : 0;

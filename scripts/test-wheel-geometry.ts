@@ -48,15 +48,16 @@ const fixedGroups = buildFixedWheelPrizes([
   { id: 'nothing-1', name: 'Nothing', type: 'NOTHING', groupKey: 'nothing', weight: 10, metadata: {} },
 ], { gift: 80, peach: 10, nothing: 10 });
 
-assert.deepEqual(fixedGroups.map((group) => group.id), ['gift', 'peach', 'nothing']);
-assert.deepEqual(fixedGroups.map((group) => group.weight), [80, 10, 10]);
-assert.deepEqual(fixedGroups.map((group) => group.metadata?.displayWeight), [1, 1, 1]);
+assert.deepEqual(fixedGroups.map((group) => group.id), ['gift-1', 'peach-1', 'nothing-1', 'gift-2', 'peach-2', 'nothing-2']);
+assert.deepEqual(fixedGroups.map((group) => group.groupKey), ['gift', 'peach', 'nothing', 'gift', 'peach', 'nothing']);
+assert.deepEqual(fixedGroups.map((group) => group.weight), [40, 5, 5, 40, 5, 5]);
+assert.deepEqual(fixedGroups.map((group) => group.metadata?.displayWeight), [1, 1, 1, 1, 1, 1]);
 
 const fixedGroupGeometry = buildWheelGeometry(fixedGroups.map((group) => ({
   id: group.id,
   probabilityWeight: group.weight,
   displayWeight: Number(group.metadata?.displayWeight),
 })));
-fixedGroupGeometry.segments.forEach((segment) => closeTo(segment.sweepAngle, 120));
+fixedGroupGeometry.segments.forEach((segment) => closeTo(segment.sweepAngle, 60));
 
 console.log('wheel geometry tests: pass');

@@ -9,8 +9,11 @@ import type { WheelPrize } from './wheel-model';
 import { FixedWheelIcon, WheelHubIcon } from './wheel-icons';
 import { describeWheelSegmentPath } from './wheel-geometry';
 
-function isFixedGroupIcon(value: string): value is 'gift' | 'peach' | 'nothing' {
-  return value === 'gift' || value === 'peach' || value === 'nothing';
+function getFixedGroupKind(value: string): 'gift' | 'peach' | 'nothing' | null {
+  if (value.startsWith('gift-')) return 'gift';
+  if (value.startsWith('peach-')) return 'peach';
+  if (value.startsWith('nothing-')) return 'nothing';
+  return null;
 }
 
 export function WheelRenderer({
@@ -250,21 +253,22 @@ export function WheelRenderer({
             <circle cx="500" cy="500" r="466" fill="none" stroke="rgba(7,24,72,0.46)" strokeWidth="14" />
             <circle cx="500" cy="500" r="445" fill="none" stroke="rgba(226,240,255,0.20)" strokeWidth="3" />
             {plan.tokenPlacements.map((token) => {
-              const fixedIconKind = isFixedGroupIcon(token.prizeId) ? token.prizeId : null;
+              const fixedIconKind = getFixedGroupKind(token.prizeId);
               if (!fixedIconKind) return null;
               const tokenSize = token.size;
               const iconSize = tokenSize * 0.76;
-              const fill = token.prizeId === 'gift'
+              const fill = fixedIconKind === 'gift'
                 ? 'url(#wheel-token-gift)'
-                : token.prizeId === 'peach'
+                : fixedIconKind === 'peach'
                   ? 'url(#wheel-token-peach)'
                   : 'url(#wheel-token-nothing)';
+              const iconVariant = Number((plan.segments.find((segment) => segment.id === token.prizeId)?.metadata as Record<string, unknown> | undefined)?.iconVariant) === 2 ? 2 : 1;
               return (
                 <g key={`token-${token.prizeId}`} transform={`translate(${token.x} ${token.y}) rotate(${-rotation})`}>
                   <circle r={tokenSize / 2} fill={fill} stroke="rgba(255,255,255,0.86)" strokeWidth="4" filter="url(#wheel-token-shadow)" />
                   <circle r={tokenSize / 2 - 5} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="2" />
                   <g transform={`translate(${-iconSize / 2} ${-iconSize / 2})`}>
-                    <FixedWheelIcon kind={fixedIconKind} size={iconSize} />
+                    <FixedWheelIcon kind={fixedIconKind} variant={iconVariant} size={iconSize} />
                   </g>
                 </g>
               );
