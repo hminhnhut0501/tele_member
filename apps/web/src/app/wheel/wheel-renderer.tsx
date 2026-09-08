@@ -36,7 +36,7 @@ export function WheelRenderer({
   } as CSSProperties;
 
   const segmentAngle = plan.segmentAngle;
-  const arcStartAngle = plan.segments.length === 3 ? -90 - segmentAngle / 2 : -90;
+  const arcStartAngle = plan.segments.length === 3 ? -90 - (plan.segments[0]?.sweepAngle ?? segmentAngle) / 2 : -90;
   const getSegmentGradient = (segment: (typeof plan.segments)[number]) => {
     if (segment.id === 'gift') return ['#E6F1FF', '#A9C9FF', '#638FE8'];
     if (segment.id === 'peach') return ['#DCEBFF', '#96BCFA', '#527FD9'];
@@ -44,8 +44,8 @@ export function WheelRenderer({
     return [segment.tone, segment.tone, segment.tone];
   };
   const arcStops = plan.segments.flatMap((segment, index) => {
-    const start = index * segmentAngle;
-    const end = (index + 1) * segmentAngle;
+    const start = segment.startAngle ?? index * segmentAngle;
+    const end = start + (segment.sweepAngle ?? segmentAngle);
     const [light, mid, deep] = getSegmentGradient(segment);
     return [
       `${light} ${start}deg`,

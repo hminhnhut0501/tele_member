@@ -17,7 +17,10 @@ export function getWheelTargetRotation(segments: WheelRenderSegment[], prizeId?:
   const index = segments.findIndex((segment) => segment.id === prizeId);
   if (index < 0) return 0;
   const segmentAngle = getWheelSegmentAngle(segments.length);
-  const centerAngle = segments.length === 3 ? index * segmentAngle : index * segmentAngle + segmentAngle / 2;
+  const segment = segments[index];
+  const centerAngle = segment?.startAngle !== undefined
+    ? segment.startAngle + segment.sweepAngle / 2
+    : index * segmentAngle + segmentAngle / 2;
   return 360 - centerAngle;
 }
 

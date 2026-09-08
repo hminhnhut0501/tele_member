@@ -35,9 +35,6 @@ export interface WheelRenderPlan {
   tokenPlacements: WheelTokenPlacement[];
 }
 
-// Keep the pointer on the center of a segment, not on a divider.
-const FIXED_GROUP_SLOT_ANGLES = [0, 120, 240];
-
 function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {
   const angleRad = ((angleDeg - 90) * Math.PI) / 180;
   return {
@@ -154,6 +151,9 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
     custom: [],
   };
 
+  const visualWeights = source.map((prize) => Math.max(Number(prize.weight) || 0, 1));
+  const totalSegmentWeight = visualWeights.reduce((sum, weight) => sum + weight, 0);
+  let angleCursor = 0;
   const segments: WheelRenderSegment[] = source.map((prize, index) => {
     const type = String(prize.type ?? '').toUpperCase();
     const renderMode = getRenderMode(prize);
@@ -161,6 +161,9 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
     const railLabel = shortText(prize.metadata?.railLabel ? String(prize.metadata.railLabel) : prize.name || wheelLabel, 24);
     const glyph = getWheelPrizeGlyph(prize);
     const kind = type === 'POINT' ? 'value' : type === 'SPIN_TICKET' || type === 'SPIN' ? 'badge' : type === 'NOTHING' ? 'hidden' : 'phrase';
+    const sweepAngle = (visualWeights[index] / totalSegmentWeight) * 360;
+    const startAngle = angleCursor;
+    angleCursor += sweepAngle;
 
     return {
       id: prize.id,
@@ -170,6 +173,8 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
       emojiCount: Number(prize.metadata?.emojiCount ?? 1),
       type: prize.type,
       weight: prize.weight,
+      startAngle,
+      sweepAngle,
       tone: getPalette(prize.type, index),
       textTone: getTextTone(prize.type),
       metadata: prize.metadata ?? {},
@@ -221,7 +226,7 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
 
   const tokenPlacements: WheelTokenPlacement[] = segments.map((segment, index) => {
     const isFixedGroup = segment.id === 'gift' || segment.id === 'peach' || segment.id === 'nothing';
-    const midAngle = isFixedGroup ? FIXED_GROUP_SLOT_ANGLES[index] : (index + 0.5) * segmentAngle;
+    const midAngle = segment.startAngle + segment.sweepAngle / 2;
     const isFive = preset === 'five';
     const tokenRadiusNudge = isFive
       ? isMobile

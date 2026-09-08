@@ -27,6 +27,8 @@ export type WheelRenderSegment = {
   emojiCount?: number;
   type: WheelPrize['type'];
   weight: number;
+  startAngle: number;
+  sweepAngle: number;
   tone: string;
   textTone: string;
   metadata?: WheelPrizeMetadata | null;
@@ -36,4 +38,3 @@ export type WheelRenderSegment = {
   showLabelOnWheel: boolean;
   slotBias: number;
 };
-

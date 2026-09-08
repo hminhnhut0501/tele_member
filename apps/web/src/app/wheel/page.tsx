@@ -16,6 +16,7 @@ function WheelPageContent() {
   const searchParams = useSearchParams();
   const [token, setToken] = useState<string | null>(null);
   const [prizes, setPrizes] = useState<WheelPrize[]>([]);
+  const [groupWeights, setGroupWeights] = useState({ gift: 40, peach: 45, nothing: 15 });
   const [history, setHistory] = useState<WheelSpinHistoryItem[]>([]);
   const [spins, setSpins] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -65,6 +66,13 @@ function WheelPageContent() {
       .then(([wheel, spinData, historyData]) => {
         if (cancelled) return;
         setPrizes(((wheel?.prizes ?? []) as WheelPrize[]) ?? []);
+        const nextGroupWeights = { gift: 40, peach: 45, nothing: 15 };
+        for (const group of wheel?.groups ?? []) {
+          if (group.groupKey in nextGroupWeights) {
+            nextGroupWeights[group.groupKey as keyof typeof nextGroupWeights] = Number(group.weight) || 0;
+          }
+        }
+        setGroupWeights(nextGroupWeights);
         setSpins(Number(spinData?.balance ?? 0));
         setHistory(((historyData?.spins ?? []) as any[]) ?? []);
       })
@@ -93,7 +101,7 @@ function WheelPageContent() {
         name: group.name,
         type: group.type,
         groupKey: group.key,
-        weight: 1,
+        weight: groupWeights[group.key],
         stock: null,
         isActive: true,
         metadata: {
@@ -105,7 +113,7 @@ function WheelPageContent() {
         },
       } as WheelPrize;
     });
-  }, [effectivePrizes]);
+  }, [effectivePrizes, groupWeights]);
   const wheelSegments = useMemo(() => buildWheelPlan(wheelGroupPrizes, false, false).segments, [wheelGroupPrizes]);
   const canSpin = !loading && !spinning && (debugSpinMode || spins > 0);
 
