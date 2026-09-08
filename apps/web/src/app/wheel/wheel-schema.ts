@@ -5,6 +5,7 @@ export type PrizeDeliveryMode = 'immediate' | 'inbox' | 'claim_required' | 'exte
 export type PrizeDeliveryTarget = 'point_wallet' | 'spin_wallet' | 'reward_inbox' | 'code_pool' | 'manual';
 
 export type PrizeType = 'POINT' | 'SPIN' | 'SPIN_TICKET' | 'VOUCHER' | 'ITEM' | 'NOTHING' | 'BADGE' | 'VIP_CODE' | 'CUSTOM';
+export type WheelGroupKey = 'gift' | 'peach' | 'nothing';
 
 export type WheelPreset = 'five' | 'six' | 'eight' | 'tenPlus' | 'custom';
 
@@ -38,6 +39,7 @@ export interface WheelPrize {
   campaignId?: string;
   name: string;
   type: PrizeType | string;
+  groupKey?: WheelGroupKey;
   weight: number;
   stock?: number | null;
   isActive?: boolean;

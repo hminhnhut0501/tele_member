@@ -22,8 +22,8 @@ export function getWheelTargetRotation(segments: WheelRenderSegment[], prizeId?:
 }
 
 export function getWheelSpinTransition(phase: WheelMotionPhase) {
-  if (phase === 'spinning') return 'transform 5.9s cubic-bezier(0.16, 0.86, 0.18, 1)';
-  if (phase === 'slowing') return 'transform 0.68s cubic-bezier(0.18, 0.88, 0.2, 1)';
+  if (phase === 'spinning') return 'transform 3.6s cubic-bezier(0.16, 0.86, 0.18, 1)';
+  if (phase === 'slowing') return 'transform 0.52s cubic-bezier(0.18, 0.88, 0.2, 1)';
   if (phase === 'settling') return 'transform 0.42s cubic-bezier(0.2, 0.92, 0.22, 1)';
   return 'transform 0.42s cubic-bezier(0.22, 1, 0.36, 1)';
 }

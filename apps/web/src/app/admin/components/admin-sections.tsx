@@ -129,6 +129,12 @@ function deliveryTargetLabel(value: string) {
   return value;
 }
 
+function wheelGroupLabel(value: string) {
+  if (value === 'peach') return 'Đào';
+  if (value === 'nothing') return 'Không trúng';
+  return 'Quà';
+}
+
 function policyScopeLabel(value: string) {
   if (value === 'currency') return 'Đào';
   if (value === 'reward') return 'Quà đổi';
@@ -716,6 +722,9 @@ export function WheelSection(props: any) {
                         props.setEditCampaignName(campaign.name);
                         props.setEditCampaignDescription(campaign.description ?? '');
                         props.setEditCampaignActive(Boolean(isActive));
+                        props.setEditGiftWeight(Number(campaign.metadata?.groupWeights?.gift ?? 40));
+                        props.setEditPeachWeight(Number(campaign.metadata?.groupWeights?.peach ?? 45));
+                        props.setEditNothingWeight(Number(campaign.metadata?.groupWeights?.nothing ?? 15));
                       }}
                     >
                       Sửa
@@ -752,7 +761,7 @@ export function WheelSection(props: any) {
                           {String(prize.metadata?.glyph ?? prize.metadata?.wheelGlyph ?? prize.metadata?.icon ?? prize.metadata?.emoji ?? '✦')} {prize.name}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {prize.type} • trọng số {prize.weight} • tồn kho {prize.stock ?? '∞'} • {isActive ? 'Đang bật' : 'Đang tắt'}
+                          {wheelGroupLabel(String(prize.groupKey ?? prize.metadata?.groupKey ?? 'gift'))} • outcome weight {prize.weight} • tồn kho {prize.stock ?? '∞'} • {isActive ? 'Đang bật' : 'Đang tắt'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {String(prize.metadata?.wheelLabel ?? prize.name)} / {String(prize.metadata?.railLabel ?? prize.name)} / {deliveryModeLabel(String(prize.metadata?.deliveryMode ?? 'immediate'))} / {deliveryTargetLabel(String(prize.metadata?.deliveryTarget ?? 'reward_inbox'))} / {renderModeLabel(String(prize.metadata?.wheelRenderMode ?? prize.metadata?.renderMode ?? prize.metadata?.labelMode ?? 'emoji-only'))}
@@ -765,6 +774,7 @@ export function WheelSection(props: any) {
                           props.setEditingPrize(prize);
                           props.setEditPrizeName(prize.name);
                           props.setEditPrizeType(prize.type);
+                          props.setEditPrizeGroupKey(prize.groupKey ?? prize.metadata?.groupKey ?? (prize.type === 'NOTHING' ? 'nothing' : prize.type === 'POINT' ? 'peach' : 'gift'));
                           props.setEditPrizeWeight(prize.weight);
                           props.setEditPrizeStock(prize.stock === null ? '' : String(prize.stock));
                           props.setEditPrizeGlyph(String(prize.metadata?.glyph ?? prize.metadata?.wheelGlyph ?? prize.metadata?.icon ?? prize.metadata?.emoji ?? '⭐'));
@@ -866,6 +876,12 @@ export function WheelSection(props: any) {
           <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField label="Tên chiến dịch" value={props.editCampaignName} onChange={(e) => props.setEditCampaignName(e.target.value)} />
             <TextField label="Mô tả chiến dịch" value={props.editCampaignDescription} onChange={(e) => props.setEditCampaignDescription(e.target.value)} />
+            <Typography variant="subtitle2" fontWeight={900}>Xác suất nhóm (tổng nên bằng 100)</Typography>
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
+              <TextField fullWidth label="Quà" type="number" value={props.editGiftWeight} onChange={(e) => props.setEditGiftWeight(Number(e.target.value))} />
+              <TextField fullWidth label="Đào" type="number" value={props.editPeachWeight} onChange={(e) => props.setEditPeachWeight(Number(e.target.value))} />
+              <TextField fullWidth label="Không trúng" type="number" value={props.editNothingWeight} onChange={(e) => props.setEditNothingWeight(Number(e.target.value))} />
+            </Stack>
             <FormControl fullWidth>
               <InputLabel>Trạng thái</InputLabel>
               <Select label="Trạng thái" value={props.editCampaignActive ? 'true' : 'false'} onChange={(e) => props.setEditCampaignActive(e.target.value === 'true')}>
@@ -911,6 +927,14 @@ export function WheelSection(props: any) {
             <TextField label="Mã chiến dịch" value={props.prizeCampaignId} onChange={(e) => props.setPrizeCampaignId(e.target.value)} />
             <TextField label="Tên phần thưởng" value={props.prizeName} onChange={(e) => props.setPrizeName(e.target.value)} />
             <TextField label="Loại phần thưởng" value={props.prizeType} onChange={(e) => props.setPrizeType(e.target.value)} />
+            <FormControl fullWidth>
+              <InputLabel>Nhóm cố định trên wheel</InputLabel>
+              <Select label="Nhóm cố định trên wheel" value={props.prizeGroupKey} onChange={(e) => props.setPrizeGroupKey(e.target.value)}>
+                <MenuItem value="gift">🎁 Quà</MenuItem>
+                <MenuItem value="peach">🍑 Đào</MenuItem>
+                <MenuItem value="nothing">✦ Không trúng</MenuItem>
+              </Select>
+            </FormControl>
             <TextField label="Trọng số" type="number" value={props.prizeWeight} onChange={(e) => props.setPrizeWeight(Number(e.target.value))} />
             <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5}>
               <TextField fullWidth label="Emoji / biểu tượng" placeholder="Ví dụ: 🍑" value={props.prizeGlyph} onChange={(e) => props.setPrizeGlyph(e.target.value)} />
@@ -967,6 +991,14 @@ export function WheelSection(props: any) {
           <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField label="Tên phần thưởng" value={props.editPrizeName} onChange={(e) => props.setEditPrizeName(e.target.value)} />
             <TextField label="Loại phần thưởng" value={props.editPrizeType} onChange={(e) => props.setEditPrizeType(e.target.value)} />
+            <FormControl fullWidth>
+              <InputLabel>Nhóm cố định trên wheel</InputLabel>
+              <Select label="Nhóm cố định trên wheel" value={props.editPrizeGroupKey} onChange={(e) => props.setEditPrizeGroupKey(e.target.value)}>
+                <MenuItem value="gift">🎁 Quà</MenuItem>
+                <MenuItem value="peach">🍑 Đào</MenuItem>
+                <MenuItem value="nothing">✦ Không trúng</MenuItem>
+              </Select>
+            </FormControl>
             <TextField label="Trọng số" type="number" value={props.editPrizeWeight} onChange={(e) => props.setEditPrizeWeight(Number(e.target.value))} />
             <TextField label="Tồn kho" value={props.editPrizeStock} onChange={(e) => props.setEditPrizeStock(e.target.value)} />
             <TextField label="Emoji / biểu tượng" placeholder="Ví dụ: 🍑" value={props.editPrizeGlyph} onChange={(e) => props.setEditPrizeGlyph(e.target.value)} />

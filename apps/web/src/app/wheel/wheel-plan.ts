@@ -75,6 +75,8 @@ function getRenderMode(prize: WheelPrize) {
 function getWheelLabel(prize: WheelPrize) {
   const type = String(prize.type ?? '').toUpperCase();
   const glyph = getWheelPrizeGlyph(prize);
+  const configuredLabel = String(prize.metadata?.wheelLabel ?? prize.metadata?.label ?? '').trim();
+  if (configuredLabel) return configuredLabel;
   if (type === 'POINT') {
     const amount = prize.metadata?.points ?? prize.metadata?.point_amount ?? prize.metadata?.value;
     return amount ? `${glyph} ${amount}` : glyph;

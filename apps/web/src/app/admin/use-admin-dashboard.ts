@@ -83,6 +83,7 @@ export function useAdminDashboard() {
   const [prizeCampaignId, setPrizeCampaignId] = useState('');
   const [prizeName, setPrizeName] = useState('');
   const [prizeType, setPrizeType] = useState('POINT');
+  const [prizeGroupKey, setPrizeGroupKey] = useState<'gift' | 'peach' | 'nothing'>('gift');
   const [prizeWeight, setPrizeWeight] = useState(1);
   const [prizeGlyph, setPrizeGlyph] = useState('⭐');
   const [prizeEmojiCount, setPrizeEmojiCount] = useState(1);
@@ -107,8 +108,12 @@ export function useAdminDashboard() {
   const [editCampaignName, setEditCampaignName] = useState('');
   const [editCampaignDescription, setEditCampaignDescription] = useState('');
   const [editCampaignActive, setEditCampaignActive] = useState(false);
+  const [editGiftWeight, setEditGiftWeight] = useState(40);
+  const [editPeachWeight, setEditPeachWeight] = useState(45);
+  const [editNothingWeight, setEditNothingWeight] = useState(15);
   const [editPrizeName, setEditPrizeName] = useState('');
   const [editPrizeType, setEditPrizeType] = useState('POINT');
+  const [editPrizeGroupKey, setEditPrizeGroupKey] = useState<'gift' | 'peach' | 'nothing'>('gift');
   const [editPrizeWeight, setEditPrizeWeight] = useState(1);
   const [editPrizeStock, setEditPrizeStock] = useState<string>('');
   const [editPrizeGlyph, setEditPrizeGlyph] = useState('⭐');
@@ -344,7 +349,7 @@ export function useAdminDashboard() {
       await service.createWheelCampaign({
         name: campaignName,
         isActive: false,
-        metadata: {},
+        metadata: { groupWeights: { gift: 40, peach: 45, nothing: 15 } },
       });
       const data = await service.getWheelCampaigns();
       setCampaigns(normalizeWheelCampaignsResponse(data).campaigns);
@@ -376,6 +381,7 @@ export function useAdminDashboard() {
       await service.createWheelPrize(prizeCampaignId, {
         name: prizeName,
         type: prizeType,
+        groupKey: prizeGroupKey,
         weight: prizeWeight,
         stock: null,
         isActive: true,
@@ -477,6 +483,7 @@ export function useAdminDashboard() {
       await service.updateWheelPrize(editingPrize.id, {
         name: editPrizeName,
         type: editPrizeType,
+        groupKey: editPrizeGroupKey,
         weight: editPrizeWeight,
         stock: editPrizeStock === '' ? null : Number(editPrizeStock),
         isActive: editPrizeActive,
@@ -542,6 +549,10 @@ export function useAdminDashboard() {
         name: editCampaignName,
         description: editCampaignDescription,
         isActive: editCampaignActive,
+        metadata: {
+          ...(editingCampaign.metadata ?? {}),
+          groupWeights: { gift: editGiftWeight, peach: editPeachWeight, nothing: editNothingWeight },
+        },
       });
       const data = await service.getWheelCampaigns();
       setCampaigns(normalizeWheelCampaignsResponse(data).campaigns);
@@ -649,6 +660,8 @@ export function useAdminDashboard() {
     setPrizeName,
     prizeType,
     setPrizeType,
+    prizeGroupKey,
+    setPrizeGroupKey,
     prizeWeight,
     setPrizeWeight,
     prizeGlyph,
@@ -695,10 +708,18 @@ export function useAdminDashboard() {
     setEditCampaignDescription,
     editCampaignActive,
     setEditCampaignActive,
+    editGiftWeight,
+    setEditGiftWeight,
+    editPeachWeight,
+    setEditPeachWeight,
+    editNothingWeight,
+    setEditNothingWeight,
     editPrizeName,
     setEditPrizeName,
     editPrizeType,
     setEditPrizeType,
+    editPrizeGroupKey,
+    setEditPrizeGroupKey,
     editPrizeWeight,
     setEditPrizeWeight,
     editPrizeStock,

@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Box, Button, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle, Stack, Typography } from '@mui/material';
+import { Box, Button, Chip, Container, DialogActions, DialogContent, DialogTitle, Drawer, Stack, Typography } from '@mui/material';
 import { apiClient } from '../../lib/api';
 import { PageShell } from '../shared-ui';
 import { getDefaultWheelPrizes, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
@@ -11,7 +11,7 @@ import { getWheelStartRotation, getWheelTargetRotation } from './wheel-motion';
 import { WheelRenderer } from './wheel-renderer';
 import { WheelHistoryRail, WheelHistoryTicker, WheelRewardRail } from './wheel-rail';
 
-export default function WheelPage() {
+function WheelPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [token, setToken] = useState<string | null>(null);
@@ -19,6 +19,7 @@ export default function WheelPage() {
   const [history, setHistory] = useState<WheelSpinHistoryItem[]>([]);
   const [spins, setSpins] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [spinError, setSpinError] = useState('');
   const [spinning, setSpinning] = useState(false);
   const [spinPhase, setSpinPhase] = useState<'idle' | 'spinning'>('idle');
   const [rotation, setRotation] = useState(0);
@@ -78,7 +79,34 @@ export default function WheelPage() {
 
   const demoFallbackPrizes = getDefaultWheelPrizes();
   const effectivePrizes = prizes.length ? prizes : demoFallbackPrizes;
-  const wheelSegments = useMemo(() => buildWheelPlan(effectivePrizes, false, false).segments, [effectivePrizes]);
+  const wheelGroupPrizes = useMemo(() => {
+    const groups = [
+      { key: 'gift', name: 'QUÀ', type: 'VOUCHER', glyph: '🎁', description: 'Phần thưởng bất ngờ' },
+      { key: 'peach', name: 'ĐÀO', type: 'POINT', glyph: '🍑', description: 'Nhận đào ngẫu nhiên' },
+      { key: 'nothing', name: 'KHÔNG TRÚNG', type: 'NOTHING', glyph: '✦', description: 'May mắn lần sau' },
+    ] as const;
+    return groups.map((group) => {
+      const outcome = effectivePrizes.find((prize) => prize.groupKey === group.key);
+      return {
+        id: group.key,
+        campaignId: outcome?.campaignId,
+        name: group.name,
+        type: group.type,
+        groupKey: group.key,
+        weight: 1,
+        stock: null,
+        isActive: true,
+        metadata: {
+          ...(outcome?.metadata ?? {}),
+          glyph: group.glyph,
+          wheelLabel: group.name,
+          railLabel: group.description,
+          renderMode: 'mixed',
+        },
+      } as WheelPrize;
+    });
+  }, [effectivePrizes]);
+  const wheelSegments = useMemo(() => buildWheelPlan(wheelGroupPrizes, false, false).segments, [wheelGroupPrizes]);
   const canSpin = !loading && !spinning && (debugSpinMode || spins > 0);
 
   function createDebugSpinResult(prizeId?: string | null) {
@@ -131,6 +159,7 @@ export default function WheelPage() {
 
     try {
       setSpinning(true);
+      setSpinError('');
       setResultOpen(false);
       setSpinPhase('spinning');
 
@@ -142,6 +171,7 @@ export default function WheelPage() {
       const data = debugResult ? createDebugSpinResult() : await client.spinWheel();
 
       const prizeId = data?.prize?.id;
+      const resultGroupKey = String(data?.groupKey ?? data?.prize?.groupKey ?? (data?.prize?.type === 'NOTHING' ? 'nothing' : data?.prize?.type === 'POINT' ? 'peach' : 'gift'));
       const prizeName = String(data?.prize?.name ?? data?.prizeName ?? data?.resultLabel ?? (prizeId ? 'Đã trúng' : 'Không trúng'));
       const prizeType = String(data?.prize?.type ?? data?.prizeType ?? (prizeId ? 'CUSTOM' : 'NOTHING')).toUpperCase();
       const glyph = String(data?.prize?.glyph ?? data?.glyph ?? (prizeType === 'POINT' ? '🍑' : prizeType === 'SPIN_TICKET' ? '🎞' : prizeType === 'VOUCHER' ? '🎁' : prizeType === 'VIP_CODE' ? '👑' : prizeType === 'NOTHING' ? '😢' : '✦'));
@@ -153,10 +183,10 @@ export default function WheelPage() {
         code,
         deliveryMode: data?.deliveryMode ?? null,
         deliveryTarget: data?.deliveryTarget ?? null,
-        status: prizeId ? 'won' : 'missed',
+        status: resultGroupKey === 'nothing' ? 'missed' : prizeId ? 'won' : 'missed',
         createdAt: new Date().toISOString(),
       });
-      const targetRotation = getWheelTargetRotation(wheelSegments, prizeId);
+      const targetRotation = getWheelTargetRotation(wheelSegments, resultGroupKey);
       const finalRotation = spinStart + 1440 + targetRotation;
 
       if (!debugResult) {
@@ -169,18 +199,19 @@ export default function WheelPage() {
       spinTimersRef.current.push(
         window.setTimeout(() => {
           setRotation(finalRotation);
-        }, 5900),
+        }, 3600),
       );
       spinTimersRef.current.push(
         window.setTimeout(() => {
           setSpinPhase('idle');
           setSpinning(false);
           setResultOpen(true);
-        }, 6460),
+        }, 4140),
       );
     } catch (err) {
       setSpinPhase('idle');
       setSpinning(false);
+      setSpinError(err instanceof Error ? err.message : 'Không thể hoàn tất lượt quay. Vui lòng thử lại.');
     } finally {
       if (spinTimersRef.current.length === 0) {
         setSpinning(false);
@@ -241,7 +272,7 @@ export default function WheelPage() {
 
           <WheelHistoryTicker items={history} />
 
-          <WheelRenderer prizes={effectivePrizes} spinning={spinning} phase={spinPhase} rotation={rotation} />
+          <WheelRenderer prizes={wheelGroupPrizes} spinning={spinning} phase={spinPhase} rotation={rotation} />
 
           <Button
             onClick={handleSpin}
@@ -266,6 +297,12 @@ export default function WheelPage() {
           >
             {spinning ? 'ĐANG QUAY...' : canSpin ? 'QUAY NGAY' : debugSpinMode ? 'DEBUG READY' : 'HẾT LƯỢT QUAY'}
           </Button>
+
+          {spinError ? (
+            <Typography sx={{ color: '#fecaca', fontSize: '0.82rem', textAlign: 'center', maxWidth: 360 }}>
+              {spinError}
+            </Typography>
+          ) : null}
 
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ justifyContent: 'center' }}>
             <Button
@@ -311,14 +348,15 @@ export default function WheelPage() {
         </Stack>
       </Container>
 
-      <Dialog
+      <Drawer
+        anchor="bottom"
         open={resultOpen}
         onClose={() => setResultOpen(false)}
-        fullWidth
-        maxWidth="xs"
         PaperProps={{
           sx: {
-            borderRadius: 1.5,
+            width: 'min(100%, 520px)',
+            mx: 'auto',
+            borderRadius: '24px 24px 0 0',
             border: '1px solid rgba(105, 147, 255, 0.14)',
             background: 'linear-gradient(180deg, rgba(7,14,30,0.98), rgba(12,21,44,0.98))',
             color: '#eef4ff',
@@ -444,7 +482,15 @@ export default function WheelPage() {
             Đóng
           </Button>
         </DialogActions>
-      </Dialog>
+      </Drawer>
     </PageShell>
+  );
+}
+
+export default function WheelPage() {
+  return (
+    <Suspense fallback={<Box sx={{ minHeight: '100vh', bgcolor: '#081222' }} />}>
+      <WheelPageContent />
+    </Suspense>
   );
 }

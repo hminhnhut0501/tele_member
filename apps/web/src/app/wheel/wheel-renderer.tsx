@@ -59,6 +59,27 @@ export function WheelRenderer({
         }}
       />
 
+      {isSpinning ? (
+        <Box
+          aria-hidden="true"
+          sx={{
+            position: 'absolute',
+            width: { xs: 330, sm: 470 },
+            height: { xs: 330, sm: 470 },
+            borderRadius: '50%',
+            pointerEvents: 'none',
+            zIndex: 4,
+            background: 'radial-gradient(circle, transparent 66%, rgba(255,214,126,0.18) 67%, transparent 69%), conic-gradient(from 20deg, transparent, rgba(255,214,126,0.42), transparent 10%, transparent 55%, rgba(126,190,255,0.38), transparent 65%)',
+            animation: 'wheelAura 1.6s ease-in-out infinite',
+            '@keyframes wheelAura': {
+              '0%, 100%': { transform: 'scale(0.96) rotate(0deg)', opacity: 0.45 },
+              '50%': { transform: 'scale(1.03) rotate(12deg)', opacity: 0.9 },
+            },
+            '@media (prefers-reduced-motion: reduce)': { animation: 'none', opacity: 0.55 },
+          }}
+        />
+      ) : null}
+
       <Box
         sx={{
           position: 'relative',

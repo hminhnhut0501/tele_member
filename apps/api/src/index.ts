@@ -306,7 +306,12 @@ app.post('/api/me/spins/convert', async (request, reply) => {
 app.get('/api/wheel/current', async () => {
   const campaign = await context.wheel.getCurrentCampaign();
   if (!campaign) return normalizeWheelCurrentResponse({ campaign: null, prizes: [] });
-  return normalizeWheelCurrentResponse({ campaign, prizes: await context.wheel.listCampaignPrizes(campaign.id) });
+  const preview = await context.wheel.getCampaignPreview(campaign.id);
+  return normalizeWheelCurrentResponse({
+    campaign,
+    prizes: await context.wheel.listCampaignPrizes(campaign.id),
+    groups: (preview as any)?.groups ?? [],
+  });
 });
 
 app.post('/api/wheel/spin', async (request, reply) => {
@@ -317,7 +322,12 @@ app.post('/api/wheel/spin', async (request, reply) => {
   if (!user) return reply.code(404).send({ message: 'User not found' });
   const campaign = await context.wheel.getCurrentCampaign();
   if (!campaign) return reply.code(400).send({ message: 'No active campaign' });
-  return context.wheel.spin(user.id, campaign.id);
+  const result = await context.wheel.spin(user.id, campaign.id);
+  if (result?.ok === false) {
+    const statusCode = result.reason === 'insufficient_spins' ? 409 : 400;
+    return reply.code(statusCode).send({ message: result.reason, reason: result.reason });
+  }
+  return result;
 });
 
 app.get('/api/wheel/history', async (request, reply) => {
@@ -546,6 +556,7 @@ app.post('/api/admin/wheel/campaigns/:id/prizes', async (request) => {
   const body = z.object({
     name: z.string().min(1),
     type: z.enum(['POINT', 'VOUCHER', 'VIP_CODE', 'SPIN_TICKET', 'NOTHING', 'CUSTOM']),
+    groupKey: z.enum(['gift', 'peach', 'nothing']).optional(),
     weight: z.number().int().positive(),
     stock: z.number().int().nullable().optional(),
     isActive: z.boolean().optional(),
@@ -559,6 +570,7 @@ app.patch('/api/admin/wheel/prizes/:id', async (request) => {
   const body = z.object({
     name: z.string().optional(),
     type: z.enum(['POINT', 'VOUCHER', 'VIP_CODE', 'SPIN_TICKET', 'NOTHING', 'CUSTOM']).optional(),
+    groupKey: z.enum(['gift', 'peach', 'nothing']).optional(),
     weight: z.number().int().positive().optional(),
     stock: z.number().int().nullable().optional(),
     isActive: z.boolean().optional(),

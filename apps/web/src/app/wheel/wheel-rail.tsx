@@ -2,7 +2,7 @@
 
 import { Box, Card, CardContent, Chip, Stack, Typography } from '@mui/material';
 import { useMemo } from 'react';
-import { getWheelPrizeGlyph, getWheelPrizeShortLabel, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
+import { getWheelPrizeGlyph, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
 
 function formatCompactTime(value: string | null | undefined) {
   if (!value) return '—';
@@ -34,18 +34,7 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
         boxShadow: '0 16px 42px rgba(0,0,0,0.18)',
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          px: 1.5,
-          py: 1,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 1, whiteSpace: 'nowrap', position: 'relative' }}>
         <Chip
           label="Trúng gần đây"
           size="small"
@@ -57,22 +46,9 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
             fontWeight: 800,
           }}
         />
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            minWidth: 'max-content',
-            animation: `wheelTicker ${Math.max(16, tickerItems.length * 2.8)}s linear infinite`,
-            willChange: 'transform',
-            transform: 'translate3d(0, 0, 0)',
-            '@keyframes wheelTicker': {
-              '0%': { transform: 'translate3d(0, 0, 0)' },
-              '100%': { transform: 'translate3d(-50%, 0, 0)' },
-            },
-          }}
-        >
-          {tickerItems.map((item, index) => {
+        <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden', position: 'relative', maskImage: 'linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'max-content', animation: `wheelTicker ${Math.max(16, tickerItems.length * 2.8)}s linear infinite`, willChange: 'transform', '@keyframes wheelTicker': { '0%': { transform: 'translate3d(0, 0, 0)' }, '100%': { transform: 'translate3d(-50%, 0, 0)' } } }}>
+            {tickerItems.map((item, index) => {
             const glyph = item.prizeToken || item.resultLabel || getWheelPrizeGlyph({ type: item.resultType, metadata: item.resultMetadata });
             const prizeText = item.prizeName || item.resultLabel || 'Không trúng';
             const timeText = formatCompactTime(item.createdAt);
@@ -105,7 +81,8 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
                 </Box>
               </Box>
             );
-          })}
+            })}
+          </Box>
         </Box>
       </Box>
     </Box>
@@ -113,6 +90,11 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
 }
 
 export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
+  const groups = [
+    { key: 'gift', label: 'Quà', glyph: '🎁', description: 'Phần thưởng bất ngờ' },
+    { key: 'peach', label: 'Đào', glyph: '🍑', description: 'Nhận đào ngẫu nhiên' },
+    { key: 'nothing', label: 'Không trúng', glyph: '✦', description: 'May mắn lần sau' },
+  ];
   return (
     <Card
       sx={{
@@ -130,21 +112,23 @@ export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
                 Quà trên wheel
               </Typography>
               <Typography sx={{ color: 'rgba(226,234,255,0.64)', fontSize: '0.84rem' }}>
-                Icon-first, quà ngắn, có thể đổi số lượng và glyph trong CP.
+                Ba nhóm phần thưởng với kết quả được chọn ngẫu nhiên.
               </Typography>
             </Box>
             <Chip
-              label={`${prizes.length} prize${prizes.length === 1 ? '' : 's'}`}
+              label="3 nhóm"
               sx={{ bgcolor: 'rgba(102,168,255,0.14)', color: '#ecf4ff', border: '1px solid rgba(102,168,255,0.18)', fontWeight: 800 }}
             />
           </Box>
 
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-            {prizes.map((prize) => (
+            {groups.map((group) => {
+              const outcomes = prizes.filter((prize) => (prize.groupKey ?? (String(prize.type).toUpperCase() === 'NOTHING' ? 'nothing' : String(prize.type).toUpperCase() === 'POINT' ? 'peach' : 'gift')) === group.key);
+              return (
               <Chip
-                key={prize.id}
-                icon={<Box component="span" sx={{ fontSize: '1rem', lineHeight: 1 }}>{getWheelPrizeGlyph(prize)}</Box>}
-                label={getWheelPrizeShortLabel(prize)}
+                key={group.key}
+                icon={<Box component="span" sx={{ fontSize: '1rem', lineHeight: 1 }}>{group.glyph}</Box>}
+                label={`${group.label} · ${outcomes.length || 0} kết quả`}
                 sx={{
                   bgcolor: 'rgba(255,255,255,0.04)',
                   color: '#eef4ff',
@@ -153,7 +137,8 @@ export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
                   '& .MuiChip-icon': { ml: 1 },
                 }}
               />
-            ))}
+              );
+            })}
           </Stack>
         </Stack>
       </CardContent>

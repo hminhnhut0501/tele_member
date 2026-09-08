@@ -1,5 +1,20 @@
 import { buildWheelPreviewContract } from '@tele-member/shared';
 
+function normalizeGroupWeights(metadata: Record<string, unknown> | undefined) {
+  const source = (metadata?.groupWeights ?? {}) as Record<string, unknown>;
+  const groupWeights = {
+    gift: Number(source.gift ?? 40),
+    peach: Number(source.peach ?? 45),
+    nothing: Number(source.nothing ?? 15),
+  };
+  if (Object.values(groupWeights).some((value) => !Number.isFinite(value) || value < 0)) {
+    throw new Error('Group weights must be non-negative numbers');
+  }
+  const total = groupWeights.gift + groupWeights.peach + groupWeights.nothing;
+  if (total !== 100) throw new Error('Group weights must total 100');
+  return { ...(metadata ?? {}), groupWeights };
+}
+
 export function createWheelService(supabase: any) {
   async function getCurrentCampaign() {
     const { data } = await supabase
@@ -24,6 +39,11 @@ export function createWheelService(supabase: any) {
       .eq('campaign_id', campaignId)
       .order('created_at', { ascending: false });
     return data;
+  }
+
+  async function listCampaignGroups(campaignId: string) {
+    const preview = await getCampaignPreview(campaignId);
+    return Array.isArray((preview as any)?.groups) ? (preview as any).groups : [];
   }
 
   async function spin(userId: string, campaignId: string) {
@@ -62,7 +82,7 @@ export function createWheelService(supabase: any) {
     });
     if (error) throw error;
     const preview = data ?? null;
-    return buildWheelPreviewContract({
+    const contract = buildWheelPreviewContract({
       campaignId,
       prizes: Array.isArray(preview?.prizes) ? preview.prizes : Array.isArray(preview?.distribution) ? preview.distribution : [],
       distribution: Array.isArray(preview?.distribution) ? preview.distribution : Array.isArray(preview?.prizes) ? preview.prizes : [],
@@ -72,6 +92,7 @@ export function createWheelService(supabase: any) {
       renderHints: preview?.renderHints,
       warnings: preview?.warnings,
     });
+    return { ...contract, groups: Array.isArray(preview?.groups) ? preview.groups : [] };
   }
 
   async function createCampaign(input: {
@@ -91,7 +112,7 @@ export function createWheelService(supabase: any) {
       is_active: input.isActive ?? false,
       starts_at: input.startsAt ?? null,
       ends_at: input.endsAt ?? null,
-      metadata: input.metadata ?? {},
+      metadata: normalizeGroupWeights(input.metadata),
     }).select('*').single();
     if (error) throw error;
     return data;
@@ -114,7 +135,7 @@ export function createWheelService(supabase: any) {
       ...(input.isActive !== undefined ? { is_active: input.isActive } : {}),
       ...(input.startsAt !== undefined ? { starts_at: input.startsAt } : {}),
       ...(input.endsAt !== undefined ? { ends_at: input.endsAt } : {}),
-      ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+      ...(input.metadata !== undefined ? { metadata: normalizeGroupWeights(input.metadata) } : {}),
       updated_at: new Date().toISOString(),
     }).eq('id', id).select('*').single();
     if (error) throw error;
@@ -124,6 +145,7 @@ export function createWheelService(supabase: any) {
   async function createPrize(campaignId: string, input: {
     name: string;
     type: string;
+    groupKey?: 'gift' | 'peach' | 'nothing';
     weight: number;
     stock?: number | null;
     isActive?: boolean;
@@ -133,6 +155,7 @@ export function createWheelService(supabase: any) {
       campaign_id: campaignId,
       name: input.name,
       type: input.type,
+      group_key: input.groupKey ?? (input.type === 'NOTHING' ? 'nothing' : input.type === 'POINT' ? 'peach' : 'gift'),
       weight: input.weight,
       stock: input.stock ?? null,
       is_active: input.isActive ?? true,
@@ -145,6 +168,7 @@ export function createWheelService(supabase: any) {
   async function updatePrize(id: string, input: Partial<{
     name: string;
     type: string;
+    groupKey: 'gift' | 'peach' | 'nothing';
     weight: number;
     stock: number | null;
     isActive: boolean;
@@ -153,6 +177,7 @@ export function createWheelService(supabase: any) {
     const { data, error } = await supabase.from('wheel_prizes').update({
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.type !== undefined ? { type: input.type } : {}),
+      ...(input.groupKey !== undefined ? { group_key: input.groupKey } : {}),
       ...(input.weight !== undefined ? { weight: input.weight } : {}),
       ...(input.stock !== undefined ? { stock: input.stock } : {}),
       ...(input.isActive !== undefined ? { is_active: input.isActive } : {}),
@@ -163,5 +188,5 @@ export function createWheelService(supabase: any) {
     return data;
   }
 
-  return { getCurrentCampaign, getCampaign, listCampaignPrizes, spin, listSpinHistory, listAdminSpins, getCampaignPreview, createCampaign, updateCampaign, createPrize, updatePrize };
+  return { getCurrentCampaign, getCampaign, listCampaignPrizes, listCampaignGroups, spin, listSpinHistory, listAdminSpins, getCampaignPreview, createCampaign, updateCampaign, createPrize, updatePrize };
 }

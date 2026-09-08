@@ -190,11 +190,22 @@ export const wheelCampaignSchema = z.object({
   updatedAt: z.string(),
 });
 
+export const wheelGroupKeySchema = z.enum(['gift', 'peach', 'nothing']);
+
+export const wheelGroupSchema = z.object({
+  groupKey: wheelGroupKeySchema,
+  weight: z.number().nonnegative(),
+  chance: z.number().nonnegative(),
+  outcomeWeight: z.number().nonnegative(),
+  available: z.boolean(),
+});
+
 export const wheelPrizeSchema = z.object({
   id: z.string().uuid(),
   campaignId: z.string().uuid(),
   name: z.string(),
   type: wheelPrizeTypeSchema,
+  groupKey: wheelGroupKeySchema,
   weight: z.number().int(),
   stock: z.number().int().nullable(),
   isActive: z.boolean(),
@@ -252,6 +263,8 @@ export type SpinWallet = z.infer<typeof spinWalletSchema>;
 export type SpinTransaction = z.infer<typeof spinTransactionSchema>;
 export type WheelCampaign = z.infer<typeof wheelCampaignSchema>;
 export type WheelPrize = z.infer<typeof wheelPrizeSchema>;
+export type WheelGroupKey = z.infer<typeof wheelGroupKeySchema>;
+export type WheelGroup = z.infer<typeof wheelGroupSchema>;
 export type WheelSpin = z.infer<typeof wheelSpinSchema>;
 export type OpsEvent = z.infer<typeof opsEventSchema>;
 
@@ -401,6 +414,7 @@ export type WheelSpinsResponse = {
 export type WheelCurrentResponse = {
   campaign: WheelCampaign | null;
   prizes: WheelPrize[];
+  groups?: WheelGroup[];
 };
 
 export type WheelSpinHistoryItem = {
@@ -770,11 +784,21 @@ function normalizeWheelCampaignShape(campaign: Partial<WheelCampaign> & Record<s
 
 function normalizeWheelPrizeShape(prize: Partial<WheelPrize> & Record<string, unknown>): WheelPrize {
   const metadata = (prize.metadata ?? {}) as Record<string, unknown>;
+  const rawGroupKey = String(prize.groupKey ?? prize.group_key ?? metadata.groupKey ?? metadata.group_key ?? '').toLowerCase();
+  const rawType = String(prize.type ?? metadata.type ?? '').toUpperCase();
+  const groupKey = rawGroupKey === 'peach' || rawGroupKey === 'nothing'
+    ? rawGroupKey
+    : rawType === 'NOTHING'
+      ? 'nothing'
+      : rawType === 'POINT'
+        ? 'peach'
+        : 'gift';
   return wheelPrizeSchema.parse({
     id: String(prize.id ?? metadata.id ?? cryptoRandomId('prize')),
     campaignId: String(prize.campaignId ?? prize.campaign_id ?? metadata.campaignId ?? metadata.campaign_id ?? ''),
     name: normalizeText(prize.name ?? metadata.name ?? 'Untitled prize'),
     type: String(prize.type ?? metadata.type ?? 'CUSTOM').toUpperCase(),
+    groupKey,
     weight: Number.isFinite(Number(prize.weight ?? metadata.weight ?? 0)) ? Number(prize.weight ?? metadata.weight ?? 0) : 0,
     stock: prize.stock === undefined ? (metadata.stock === undefined ? null : metadata.stock === null ? null : Number.isFinite(Number(metadata.stock)) ? Number(metadata.stock) : 0) : prize.stock,
     isActive: Boolean(prize.isActive ?? prize.is_active ?? metadata.isActive ?? metadata.is_active ?? true),
@@ -1073,6 +1097,15 @@ export function normalizeWheelCurrentResponse(input: Partial<WheelCurrentRespons
   return {
     campaign,
     prizes: prizes.map((prize: unknown) => normalizeWheelPrizeShape(prize as Partial<WheelPrize> & Record<string, unknown>)),
+    groups: Array.isArray((input as any).groups)
+      ? (input as any).groups.map((group: any) => ({
+          groupKey: group.groupKey === 'peach' || group.groupKey === 'nothing' ? group.groupKey : 'gift',
+          weight: Number(group.weight ?? 0),
+          chance: Number(group.chance ?? 0),
+          outcomeWeight: Number(group.outcomeWeight ?? group.outcome_weight ?? 0),
+          available: Boolean(group.available),
+        }))
+      : undefined,
   };
 }
 
