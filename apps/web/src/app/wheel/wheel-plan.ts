@@ -35,6 +35,8 @@ export interface WheelRenderPlan {
   tokenPlacements: WheelTokenPlacement[];
 }
 
+const FIXED_GROUP_SLOT_ANGLES = [60, 180, 300];
+
 function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {
   const angleRad = ((angleDeg - 90) * Math.PI) / 180;
   return {
@@ -217,7 +219,8 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
   });
 
   const tokenPlacements: WheelTokenPlacement[] = segments.map((segment, index) => {
-    const midAngle = (index + 0.5) * segmentAngle;
+    const isFixedGroup = segment.id === 'gift' || segment.id === 'peach' || segment.id === 'nothing';
+    const midAngle = isFixedGroup ? FIXED_GROUP_SLOT_ANGLES[index] : (index + 0.5) * segmentAngle;
     const isFive = preset === 'five';
     const tokenRadiusNudge = isFive
       ? isMobile
@@ -227,9 +230,9 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
         ? 8
         : 0;
     const tokenRadiusEffective = tokenRadius + tokenRadiusNudge + segment.slotBias * 0.38 + (isFive ? (index === 0 ? 4 : index === 1 ? -1 : index === 2 ? -6 : index === 3 ? 3 : 1) : 0);
-    const point = polarToCartesian(500, 500, tokenRadiusEffective, midAngle + (isMobile ? -1 : 0));
+    const point = polarToCartesian(500, 500, tokenRadiusEffective, midAngle);
     const baseTokenSize = isFive ? (isMobile ? 52 : 60) : isMobile ? 40 : 48;
-    const fixedGroup = segment.id === 'gift' || segment.id === 'peach' || segment.id === 'nothing';
+    const fixedGroup = isFixedGroup;
     const tokenSize = Math.max(
       fixedGroup ? (isMobile ? 58 : 68) : isFive ? 34 : isMobile ? 28 : 30,
       fixedGroup ? (isMobile ? 58 : 68) : baseTokenSize * (segment.labelPolicy.kind === 'phrase' ? 0.88 : segment.labelPolicy.kind === 'badge' ? 0.94 : 0.98),
@@ -242,8 +245,8 @@ export function buildWheelPlan(prizes: WheelPrize[], isMobile: boolean, isCompac
       y: point.y,
       angle: midAngle,
       size: tokenSize,
-      offsetX: isFive ? (index === 0 ? -10 : index === 1 ? 4 : index === 2 ? 10 : index === 3 ? 2 : -2) : 0,
-      offsetY: isFive ? (index === 0 ? -4 : index === 1 ? -2 : index === 2 ? 5 : index === 3 ? 0 : 2) : 0,
+      offsetX: fixedGroup ? 0 : isFive ? (index === 0 ? -10 : index === 1 ? 4 : index === 2 ? 10 : index === 3 ? 2 : -2) : 0,
+      offsetY: fixedGroup ? 0 : isFive ? (index === 0 ? -4 : index === 1 ? -2 : index === 2 ? 5 : index === 3 ? 0 : 2) : 0,
       counterRotate: 0,
       token: segment.glyph || '✦',
       assetUrl,
