@@ -18,21 +18,22 @@ export function PeachCoinIcon({ size = 44, variant = 1 }: { size?: number; varia
   return (
     <svg {...sharedProps} width={size} height={size}>
       <defs>
-        <radialGradient id={`${prefix}-outer`} cx="30%" cy="24%" r="78%">
-          <stop stopColor={alternate ? '#FFF9C8' : '#FFF4A8'} />
-          <stop offset="0.42" stopColor={alternate ? '#FFC95A' : '#F7B83F'} />
-          <stop offset="0.78" stopColor={alternate ? '#E89420' : '#D98218'} />
-          <stop offset="1" stopColor={alternate ? '#A85A10' : '#9C4D0B'} />
+        <radialGradient id={`${prefix}-outer`} cx="30%" cy="20%" r="82%">
+          <stop stopColor={alternate ? '#FFF7C2' : '#FFF1A0'} />
+          <stop offset="0.38" stopColor={alternate ? '#FFD66E' : '#FFC94F'} />
+          <stop offset="0.78" stopColor={alternate ? '#EC9A24' : '#E18A1D'} />
+          <stop offset="1" stopColor={alternate ? '#B75C0B' : '#AC5209'} />
         </radialGradient>
         <linearGradient id={`${prefix}-inner`} x1="8" y1="7" x2="39" y2="43" gradientUnits="userSpaceOnUse">
           <stop stopColor={alternate ? '#315FBA' : '#4D82E8'} />
           <stop offset="0.52" stopColor={alternate ? '#1D4AA5' : '#2C63D2'} />
           <stop offset="1" stopColor={alternate ? '#102D78' : '#173B99'} />
         </linearGradient>
-        <linearGradient id={`${prefix}-peach`} x1="15" y1="13" x2="34" y2="39" gradientUnits="userSpaceOnUse">
-          <stop stopColor={alternate ? '#FFE2B3' : '#FFD9A5'} />
-          <stop offset="0.45" stopColor={alternate ? '#FF9C7A' : '#FF8A68'} />
-          <stop offset="1" stopColor={alternate ? '#D95350' : '#D9474C'} />
+        <linearGradient id={`${prefix}-peach`} x1="13" y1="12" x2="35" y2="42" gradientUnits="userSpaceOnUse">
+          <stop stopColor={alternate ? '#FFE9BD' : '#FFE0AD'} />
+          <stop offset="0.28" stopColor={alternate ? '#FFB078' : '#FFA06D'} />
+          <stop offset="0.68" stopColor={alternate ? '#F46D5C' : '#F05F52'} />
+          <stop offset="1" stopColor={alternate ? '#C83D49' : '#C83746'} />
         </linearGradient>
         <linearGradient id={`${prefix}-leaf`} x1="27" y1="8" x2="38" y2="17" gradientUnits="userSpaceOnUse">
           <stop stopColor="#C9F69B" />
@@ -43,13 +44,13 @@ export function PeachCoinIcon({ size = 44, variant = 1 }: { size?: number; varia
         </filter>
       </defs>
       <circle cx="24" cy="24" r="22" fill={`url(#${prefix}-outer)`} stroke="#FFEAA0" strokeWidth="1.2" />
-      <circle cx="24" cy="24" r="18.2" fill={`url(#${prefix}-inner)`} stroke="rgba(255,246,181,0.82)" strokeWidth="1.1" />
-      <circle cx="24" cy="24" r="16.1" fill="none" stroke="rgba(174,211,255,0.32)" strokeWidth="0.9" />
+      <circle cx="24" cy="24" r="18.2" fill={`url(#${prefix}-inner)`} stroke="rgba(255,246,181,0.76)" strokeWidth="0.9" />
       <g filter={`url(#${prefix}-shadow)`}>
-        <path d="M24 17.1C20.3 13.9 15.1 16.2 14.8 22.3C14.5 29.5 18.7 35.1 23.8 36.4C29.1 35.2 33.4 29.4 33.1 22.3C32.8 16.2 27.7 13.9 24 17.1Z" fill={`url(#${prefix}-peach)`} stroke="#D34B45" strokeWidth="1.1" />
-        <path d="M24 17C23.8 22 23.8 29.4 23.8 35.9" stroke="#EA6656" strokeWidth="0.9" strokeLinecap="round" opacity="0.8" />
-        <path d="M24.7 16.5C26.5 11.9 31.2 10.5 35.8 12.7C34.7 17.1 30.9 19.1 24.7 17.8" fill={`url(#${prefix}-leaf)`} stroke="#2E7C4A" strokeWidth="1" />
-        <ellipse cx="18.8" cy="22.1" rx="2" ry="3.5" fill="#FFE8CC" opacity="0.62" transform="rotate(24 18.8 22.1)" />
+        <path d="M24 16.2C18.7 11.9 12.2 15.7 12.2 23.1C12.2 31.6 17.2 38.9 23.8 40.4C30.5 38.9 35.8 31.5 35.8 23.1C35.8 15.7 29.3 11.9 24 16.2Z" fill={`url(#${prefix}-peach)`} stroke="#C94346" strokeWidth="1.15" />
+        <path d="M24 16C23.8 22.2 23.8 31.5 23.8 39.9" stroke="#E95552" strokeWidth="1" strokeLinecap="round" opacity="0.82" />
+        <path d="M24.4 16.2C26.2 10.5 32.3 8.8 37.8 11.6C36.4 17.1 31.6 19.4 24.4 17.6" fill={`url(#${prefix}-leaf)`} stroke="#2E7C4A" strokeWidth="1.05" />
+        <ellipse cx="17.2" cy="22.5" rx="2.8" ry="5.4" fill="#FFF3DB" opacity="0.72" transform="rotate(23 17.2 22.5)" />
+        <ellipse cx="19.2" cy="18.4" rx="1.1" ry="1.8" fill="#FFFFFF" opacity="0.7" transform="rotate(23 19.2 18.4)" />
       </g>
       <path d="M9.5 14.2C13.1 9.4 17.2 7.2 22.4 6.4" stroke="rgba(255,255,255,0.58)" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
