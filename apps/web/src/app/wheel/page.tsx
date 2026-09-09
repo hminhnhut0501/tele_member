@@ -150,10 +150,6 @@ function WheelPageContent() {
       setResultOpen(false);
       setSpinPhase('spinning');
 
-      const spinStart = getWheelStartRotation(rotation);
-      setRotation(spinStart);
-      window.requestAnimationFrame(() => setRotation(spinStart + 1080));
-
       const debugResult = debugSpinMode && (spins <= 0 || !token);
       const data = debugResult ? createDebugSpinResult() : await client.spinWheel();
 
@@ -178,7 +174,13 @@ function WheelPageContent() {
         status: resultGroupKey === 'nothing' ? 'missed' : prizeId ? 'won' : 'missed',
       });
       const targetRotation = getWheelTargetRotation(wheelSegments, resultGroupKey);
+      // Resolve the destination before animating so the wheel only has one
+      // transform transition and cannot jump during the final slowdown.
+      const spinStart = getWheelStartRotation(rotation);
       const finalRotation = spinStart + 1440 + targetRotation;
+
+      setRotation(spinStart);
+      window.requestAnimationFrame(() => setRotation(finalRotation));
 
       if (!debugResult) {
         const [updatedSpins, updatedSummary] = await Promise.all([client.getMySpins(), client.getMySummary().catch(() => null)]);
@@ -189,7 +191,6 @@ function WheelPageContent() {
       }
 
       spinTimersRef.current.push(window.setTimeout(() => setSpinPhase('slowing'), 3300));
-      spinTimersRef.current.push(window.setTimeout(() => setRotation(finalRotation), 3600));
       spinTimersRef.current.push(window.setTimeout(() => setSpinPhase('settling'), 4120));
       spinTimersRef.current.push(window.setTimeout(() => {
         setSpinPhase('idle');
