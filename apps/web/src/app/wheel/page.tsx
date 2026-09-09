@@ -9,9 +9,10 @@ import { getDefaultWheelPrizes, type WheelPrize, type WheelSpinHistoryItem } fro
 import { buildWheelPlan } from './wheel-plan';
 import { getWheelStartRotation, getWheelTargetRotation } from './wheel-motion';
 import { WheelRenderer } from './wheel-renderer';
-import { WheelHistoryRail, WheelHistoryTicker, WheelRewardRail } from './wheel-rail';
+import { WheelHistoryRail, WheelHistoryTicker, WheelHowToPlay, WheelRewardRail } from './wheel-rail';
 import { buildFixedWheelPrizes, DEFAULT_GROUP_WEIGHTS, type FixedWheelGroupKey } from './wheel-groups';
 import { WheelResultSheet, type WheelResultGroupKey, type WheelResultSheetData } from './wheel-result-sheet';
+import { WheelProductHeader, WheelProductNav } from './wheel-chrome';
 
 function WheelPageContent() {
   const router = useRouter();
@@ -21,6 +22,9 @@ function WheelPageContent() {
   const [groupWeights, setGroupWeights] = useState(DEFAULT_GROUP_WEIGHTS);
   const [history, setHistory] = useState<WheelSpinHistoryItem[]>([]);
   const [spins, setSpins] = useState(0);
+  const [peaches, setPeaches] = useState(0);
+  const [spinExchangeCost, setSpinExchangeCost] = useState(3);
+  const [converting, setConverting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [spinError, setSpinError] = useState('');
   const [spinning, setSpinning] = useState(false);
@@ -55,8 +59,8 @@ function WheelPageContent() {
     let cancelled = false;
     setLoading(true);
 
-    Promise.all([client.getWheelCurrent(), client.getMySpins(), client.getWheelHistory()])
-      .then(([wheel, spinData, historyData]) => {
+    Promise.all([client.getWheelCurrent(), client.getMySpins(), client.getWheelHistory(), client.getMySummary().catch(() => null)])
+      .then(([wheel, spinData, historyData, summary]) => {
         if (cancelled) return;
         setPrizes(((wheel?.prizes ?? []) as WheelPrize[]) ?? []);
         const nextGroupWeights = { ...DEFAULT_GROUP_WEIGHTS };
@@ -67,6 +71,8 @@ function WheelPageContent() {
         }
         setGroupWeights(nextGroupWeights);
         setSpins(Number(spinData?.balance ?? 0));
+        setPeaches(Number(summary?.balance ?? 0));
+        setSpinExchangeCost(Number(summary?.spinExchangeCost ?? 3));
         setHistory(((historyData?.spins ?? []) as any[]) ?? []);
       })
       .finally(() => {
@@ -85,6 +91,7 @@ function WheelPageContent() {
   }, [effectivePrizes, groupWeights]);
   const wheelSegments = useMemo(() => buildWheelPlan(wheelGroupPrizes, false, false).segments, [wheelGroupPrizes]);
   const canSpin = !loading && !spinning && (debugSpinMode || spins > 0);
+  const activeOutcomeCount = effectivePrizes.filter((prize) => prize.isActive !== false).length;
 
   function createDebugSpinResult(prizeId?: string | null) {
     const selectedPrize =
@@ -174,8 +181,9 @@ function WheelPageContent() {
       const finalRotation = spinStart + 1440 + targetRotation;
 
       if (!debugResult) {
-        const updatedSpins = await client.getMySpins();
+        const [updatedSpins, updatedSummary] = await Promise.all([client.getMySpins(), client.getMySummary().catch(() => null)]);
         setSpins(Number(updatedSpins?.balance ?? 0));
+        if (updatedSummary) setPeaches(Number(updatedSummary.balance ?? 0));
         const refreshedHistory = await client.getWheelHistory();
         setHistory(((refreshedHistory?.spins ?? []) as any[]) ?? []);
       }
@@ -199,9 +207,31 @@ function WheelPageContent() {
     }
   }
 
+  async function handleConvertSpin() {
+    if (!token || converting || spinning || peaches < spinExchangeCost) return;
+    try {
+      setConverting(true);
+      setSpinError('');
+      const response = await client.convertPeachesToSpin(1);
+      const [updatedSpins, updatedSummary] = await Promise.all([client.getMySpins(), client.getMySummary().catch(() => null)]);
+      setSpins(Number(updatedSpins?.balance ?? response?.spinsGranted ?? spins + 1));
+      if (updatedSummary) {
+        setPeaches(Number(updatedSummary.balance ?? 0));
+        setSpinExchangeCost(Number(updatedSummary.spinExchangeCost ?? spinExchangeCost));
+      } else {
+        setPeaches((current) => Math.max(0, current - spinExchangeCost));
+      }
+    } catch (err) {
+      setSpinError(err instanceof Error ? err.message : 'Không thể đổi đào sang lượt quay.');
+    } finally {
+      setConverting(false);
+    }
+  }
+
   return (
     <PageShell>
-      <Container maxWidth="md" sx={{ py: { xs: 1, sm: 1.5 }, position: 'relative' }}>
+      <WheelProductHeader spins={spins} peaches={peaches} />
+      <Container maxWidth="md" sx={{ pt: { xs: 1, sm: 1.5 }, pb: { xs: 12, sm: 13 }, position: 'relative' }}>
         <Box
           sx={{
             position: 'absolute',
@@ -215,6 +245,64 @@ function WheelPageContent() {
         />
 
         <Stack spacing={1.5} sx={{ position: 'relative', alignItems: 'center' }}>
+          <Box sx={{ width: 'min(92vw, 560px)', pt: { xs: 1.25, sm: 2 }, pb: 0.35 }}>
+            <Stack spacing={0.65}>
+              <Typography
+                component="h1"
+                sx={{
+                  color: '#f7fbff',
+                  fontSize: { xs: '1.8rem', sm: '2.2rem' },
+                  lineHeight: 1.05,
+                  fontWeight: 950,
+                  letterSpacing: '-0.055em',
+                }}
+              >
+                Vòng Quay May Mắn
+              </Typography>
+              <Typography sx={{ color: 'rgba(226,234,255,0.64)', fontSize: { xs: '0.92rem', sm: '1rem' }, lineHeight: 1.35 }}>
+                Thử vận may của bạn, biết đâu nhận được quà xịn.
+              </Typography>
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              width: 'min(92vw, 560px)',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+              gap: { xs: 0.7, sm: 1 },
+            }}
+          >
+            {[
+              { label: 'LƯỢT QUAY', value: String(spins), tone: '#5EEAD4', icon: '↻' },
+              { label: 'QUÀ ĐANG MỞ', value: String(activeOutcomeCount), tone: '#FFD166', icon: '🎁' },
+              { label: 'TỶ LỆ QUÀ', value: `${groupWeights.gift}%`, tone: '#A7C7FF', icon: '✦' },
+            ].map((stat) => (
+              <Box
+                key={stat.label}
+                sx={{
+                  minWidth: 0,
+                  px: { xs: 1, sm: 1.35 },
+                  py: { xs: 1.1, sm: 1.25 },
+                  borderRadius: 2,
+                  bgcolor: 'rgba(13,25,53,0.76)',
+                  border: '1px solid rgba(117,161,239,0.18)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.045), 0 12px 26px rgba(0,0,0,0.12)',
+                }}
+              >
+                <Stack direction="row" spacing={0.7} alignItems="center" sx={{ minWidth: 0 }}>
+                  <Box component="span" sx={{ color: stat.tone, fontSize: { xs: '0.95rem', sm: '1.05rem' }, lineHeight: 1 }}>{stat.icon}</Box>
+                  <Typography sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'rgba(226,234,255,0.58)', fontSize: { xs: '0.58rem', sm: '0.64rem' }, fontWeight: 850, letterSpacing: '0.075em' }}>
+                    {stat.label}
+                  </Typography>
+                </Stack>
+                <Typography sx={{ mt: 0.45, color: stat.tone, fontSize: { xs: '1.35rem', sm: '1.55rem' }, lineHeight: 1, fontWeight: 950, letterSpacing: '-0.04em' }}>
+                  {stat.value}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+
           <Box
             sx={{
               display: 'flex',
@@ -225,12 +313,12 @@ function WheelPageContent() {
               px: 1,
               py: 0.8,
               borderRadius: 999,
-              bgcolor: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)',
+              bgcolor: 'rgba(7,16,35,0.72)',
+              border: '1px solid rgba(117,161,239,0.14)',
             }}
           >
-            <Box sx={{ color: '#f2f7ff', fontWeight: 800, fontSize: '0.88rem' }}>
-              Lượt quay: {spins}
+            <Box sx={{ color: 'rgba(226,234,255,0.64)', fontWeight: 800, fontSize: '0.78rem' }}>
+              Sẵn sàng thử vận may
             </Box>
             <Box sx={{ color: 'rgba(226,234,255,0.74)', fontSize: '0.84rem' }}>
               Blue lobby
@@ -252,31 +340,69 @@ function WheelPageContent() {
 
           <WheelHistoryTicker items={history} />
 
-          <WheelRenderer prizes={wheelGroupPrizes} spinning={spinning} phase={spinPhase} rotation={rotation} />
+          <WheelRenderer
+            prizes={wheelGroupPrizes}
+            spinning={spinning}
+            phase={spinPhase}
+            rotation={rotation}
+            noSpins={!loading && !debugSpinMode && spins <= 0}
+          />
 
-          <Button
-            onClick={handleSpin}
-            disabled={!canSpin}
-            variant="contained"
+          <Box
             sx={{
-              minWidth: { xs: 240, sm: 300 },
-              mt: 0.5,
-              px: { xs: 4.5, sm: 6 },
-              py: { xs: 1.35, sm: 1.55 },
-              borderRadius: 999,
-              fontWeight: 900,
-              fontSize: { xs: '1rem', sm: '1.04rem' },
-              letterSpacing: '0.04em',
-              color: '#f7fbff',
-              background: 'linear-gradient(180deg, rgba(58,111,255,1) 0%, rgba(18,45,154,1) 100%)',
-              boxShadow: '0 16px 30px rgba(33,69,191,0.26)',
-              '&:hover': {
-                background: 'linear-gradient(180deg, rgba(82,133,255,1) 0%, rgba(18,45,154,1) 100%)',
-              },
+              width: 'min(92vw, 560px)',
+              p: { xs: 1.25, sm: 1.5 },
+              borderRadius: 2.5,
+              bgcolor: 'rgba(7,16,35,0.84)',
+              border: '1px solid rgba(117,161,239,0.18)',
+              boxShadow: '0 18px 38px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.04)',
             }}
           >
-            {spinning ? 'ĐANG QUAY...' : canSpin ? 'QUAY NGAY' : debugSpinMode ? 'DEBUG READY' : 'HẾT LƯỢT QUAY'}
-          </Button>
+            <Stack spacing={1.1}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                <Box>
+                  <Typography sx={{ color: '#f5f9ff', fontWeight: 900, fontSize: '0.95rem' }}>Sẵn sàng quay?</Typography>
+                  <Typography sx={{ color: 'rgba(226,234,255,0.58)', fontSize: '0.78rem' }}>Mỗi lượt quay dùng một lượt trong ví.</Typography>
+                </Box>
+                <Chip label={`${spins} lượt`} sx={{ bgcolor: 'rgba(94,234,212,0.12)', color: '#5EEAD4', border: '1px solid rgba(94,234,212,0.24)', fontWeight: 900 }} />
+              </Stack>
+              <Button
+                onClick={handleSpin}
+                disabled={!canSpin}
+                variant="contained"
+                sx={{
+                  width: '100%',
+                  py: { xs: 1.35, sm: 1.5 },
+                  borderRadius: 999,
+                  fontWeight: 950,
+                  fontSize: { xs: '1rem', sm: '1.04rem' },
+                  letterSpacing: '0.05em',
+                  color: '#f7fbff',
+                  background: 'linear-gradient(180deg, rgba(58,111,255,1) 0%, rgba(18,45,154,1) 100%)',
+                  boxShadow: '0 16px 30px rgba(33,69,191,0.26)',
+                  '&:hover': { background: 'linear-gradient(180deg, rgba(82,133,255,1) 0%, rgba(18,45,154,1) 100%)' },
+                  '&.Mui-disabled': { color: 'rgba(228,237,255,0.48)', background: 'linear-gradient(180deg, rgba(52,81,155,0.82), rgba(24,38,92,0.9))' },
+                }}
+              >
+                {spinning ? 'ĐANG QUAY...' : canSpin ? 'QUAY NGAY' : debugSpinMode ? 'DEBUG READY' : 'HẾT LƯỢT QUAY'}
+              </Button>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }}>
+                <Typography sx={{ flex: 1, color: 'rgba(226,234,255,0.66)', fontSize: '0.82rem' }}>
+                  Ví đào: <Box component="span" sx={{ color: '#FFD166', fontWeight: 950 }}>{peaches} 🍑</Box>
+                  <Box component="span" sx={{ color: 'rgba(226,234,255,0.42)' }}> · </Box>
+                  {spinExchangeCost} 🍑 = 1 lượt
+                </Typography>
+                <Button
+                  onClick={handleConvertSpin}
+                  disabled={!token || converting || spinning || peaches < spinExchangeCost}
+                  variant="outlined"
+                  sx={{ borderRadius: 999, px: 2, py: 0.8, color: '#FFD166', borderColor: 'rgba(255,209,102,0.35)', fontWeight: 900, whiteSpace: 'nowrap' }}
+                >
+                  {converting ? 'ĐANG ĐỔI...' : '+ ĐỔI 1 LƯỢT'}
+                </Button>
+              </Stack>
+            </Stack>
+          </Box>
 
           {spinError ? (
             <Typography sx={{ color: '#fecaca', fontSize: '0.82rem', textAlign: 'center', maxWidth: 360 }}>
@@ -323,10 +449,13 @@ function WheelPageContent() {
 
           <Box sx={{ width: 'min(92vw, 560px)', display: 'grid', gap: 1.5, mt: 1.5 }}>
             <WheelRewardRail prizes={effectivePrizes} />
+            <WheelHowToPlay spins={spins} exchangeCost={spinExchangeCost} />
             <WheelHistoryRail items={history} />
           </Box>
         </Stack>
       </Container>
+
+      <WheelProductNav />
 
       <WheelResultSheet
         open={resultOpen}

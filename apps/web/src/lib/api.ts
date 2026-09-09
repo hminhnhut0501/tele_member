@@ -72,6 +72,7 @@ export function apiClient(token?: string | null) {
     redeemReward: (id: string) => request(`/api/rewards/${id}/redeem`, { method: 'POST' }, token),
     getMyRewards: () => request('/api/me/rewards', {}, token),
     getMyInbox: () => request('/api/me/inbox', {}, token),
+    getMySummary: () => request('/me/summary', {}, token),
     getMySpins: () => request('/api/me/spins', {}, token),
     getSpinTransactions: () => request('/api/me/spin-transactions', {}, token),
     convertPeachesToSpin: (amount = 1) =>

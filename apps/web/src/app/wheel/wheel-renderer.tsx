@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, useMediaQuery, useTheme } from '@mui/material';
+import { Box, Stack, useMediaQuery, useTheme } from '@mui/material';
 import { useMemo } from 'react';
 import type { CSSProperties } from 'react';
 import { getWheelSpinTransition, type WheelMotionPhase } from './wheel-motion';
@@ -21,11 +21,13 @@ export function WheelRenderer({
   rotation,
   phase,
   spinning = false,
+  noSpins = false,
 }: {
   prizes: WheelPrize[];
   rotation: number;
   phase: WheelMotionPhase;
   spinning?: boolean;
+  noSpins?: boolean;
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -62,11 +64,10 @@ export function WheelRenderer({
           top: { xs: plan.pointerInset, sm: 12 },
           left: '50%',
           transform: 'translateX(-50%)',
-          width: 0,
-          height: 0,
-          borderLeft: { xs: '16px solid transparent', sm: '20px solid transparent' },
-          borderRight: { xs: '16px solid transparent', sm: '20px solid transparent' },
-          borderTop: { xs: '38px solid rgba(102, 168, 255, 0.98)', sm: '52px solid rgba(102, 168, 255, 0.98)' },
+          width: { xs: 34, sm: 42 },
+          height: { xs: 40, sm: 50 },
+          clipPath: 'polygon(50% 100%, 0 0, 100% 0)',
+          background: 'linear-gradient(180deg, #B9D9FF 0%, #5B9AF7 42%, #2162D5 100%)',
           zIndex: 3,
           filter: isSpinning ? 'drop-shadow(0 12px 18px rgba(53,103,255,0.26))' : 'drop-shadow(0 10px 14px rgba(0,0,0,0.24))',
           animation: isSpinning ? 'wheelPointer 0.72s ease-in-out infinite' : isSettling ? 'wheelPointerSettle 0.42s ease-out' : 'none',
@@ -263,6 +264,7 @@ export function WheelRenderer({
                   ? 'url(#wheel-token-peach)'
                   : 'url(#wheel-token-nothing)';
               const iconVariant = Number((plan.segments.find((segment) => segment.id === token.prizeId)?.metadata as Record<string, unknown> | undefined)?.iconVariant) === 2 ? 2 : 1;
+              const tokenLabel = fixedIconKind === 'nothing' ? 'MAY MẮN' : fixedIconKind === 'gift' ? 'QUÀ' : 'ĐÀO';
               return (
                 <g key={`token-${token.prizeId}`} transform={`translate(${token.x} ${token.y}) rotate(${-rotation})`}>
                   <circle r={tokenSize / 2} fill={fill} stroke="rgba(255,255,255,0.86)" strokeWidth="4" filter="url(#wheel-token-shadow)" />
@@ -270,6 +272,18 @@ export function WheelRenderer({
                   <g transform={`translate(${-iconSize / 2} ${-iconSize / 2})`}>
                     <FixedWheelIcon kind={fixedIconKind} variant={iconVariant} size={iconSize} />
                   </g>
+                  <text
+                    x="0"
+                    y={tokenSize * 0.76}
+                    textAnchor="middle"
+                    fill="#F5F9FF"
+                    fontSize={fixedIconKind === 'nothing' ? 18 : 22}
+                    fontWeight="800"
+                    letterSpacing="1.5"
+                    style={{ paintOrder: 'stroke', stroke: 'rgba(8,25,70,0.5)', strokeWidth: 6 }}
+                  >
+                    {tokenLabel}
+                  </text>
                 </g>
               );
             })}
@@ -294,12 +308,16 @@ export function WheelRenderer({
               inset: { xs: isCompactHeight ? '42%' : '40%', sm: '39%' },
               borderRadius: '50%',
               background:
-                isSpinning
+                noSpins
+                  ? 'radial-gradient(circle at 32% 28%, #56647D 0%, #293750 48%, #121D35 100%)'
+                  : isSpinning
                   ? 'radial-gradient(circle at 32% 28%, #f5fbff 0%, #d6e9ff 32%, #7eb0ff 68%, #2b5cd9 100%)'
                   : 'radial-gradient(circle at 32% 28%, #f8fbff 0%, #e0ecff 36%, #90bcff 74%, #305ee0 100%)',
               border: '1px solid rgba(255,255,255,0.14)',
               boxShadow:
-                isSpinning
+                noSpins
+                  ? '0 0 0 1px rgba(255,255,255,0.10), 0 12px 26px rgba(0,0,0,0.32)'
+                  : isSpinning
                   ? '0 0 0 1px rgba(255,255,255,0.12), 0 0 34px rgba(95,145,255,0.20), 0 14px 26px rgba(0,0,0,0.22)'
                   : isSettling
                     ? '0 0 0 1px rgba(255,255,255,0.14), 0 0 42px rgba(95,145,255,0.28), 0 14px 26px rgba(0,0,0,0.22)'
@@ -319,7 +337,14 @@ export function WheelRenderer({
               '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
             }}
           >
-            <WheelHubIcon size={isCompactHeight ? 42 : 48} />
+            {noSpins ? (
+              <Stack spacing={0.1} alignItems="center">
+                <Box component="span" sx={{ color: '#D7E4FF', fontSize: { xs: '1.15rem', sm: '1.35rem' }, lineHeight: 1 }}>🔒</Box>
+                <Box component="span" sx={{ color: '#F4F7FF', fontSize: { xs: '0.64rem', sm: '0.72rem' }, fontWeight: 950, letterSpacing: '0.08em', lineHeight: 1.1, textAlign: 'center' }}>HẾT<br />LƯỢT</Box>
+              </Stack>
+            ) : (
+              <WheelHubIcon size={isCompactHeight ? 42 : 48} />
+            )}
           </Box>
         </Box>
       </Box>

@@ -91,9 +91,9 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
 
 export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
   const groups = [
-    { key: 'gift', label: 'Quà', glyph: '🎁', description: 'Phần thưởng bất ngờ' },
-    { key: 'peach', label: 'Đào', glyph: '🍑', description: 'Nhận đào ngẫu nhiên' },
-    { key: 'nothing', label: 'Không trúng', glyph: '✦', description: 'May mắn lần sau' },
+    { key: 'gift', label: 'Quà', glyph: '🎁', description: 'Voucher và phần thưởng bất ngờ', tone: '#FFD166', soft: 'rgba(255,209,102,0.10)' },
+    { key: 'peach', label: 'Đào', glyph: '🍑', description: 'Đào được cộng vào ví', tone: '#FF9A8B', soft: 'rgba(255,154,139,0.10)' },
+    { key: 'nothing', label: 'Không trúng', glyph: '✦', description: 'May mắn ở lượt tiếp theo', tone: '#9FC2FF', soft: 'rgba(159,194,255,0.10)' },
   ];
   return (
     <Card
@@ -105,14 +105,14 @@ export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
       }}
     >
       <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-        <Stack spacing={1.5}>
+        <Stack spacing={1.75}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
             <Box>
-              <Typography sx={{ color: '#eef4ff', fontWeight: 900, letterSpacing: '-0.04em', fontSize: '1.1rem' }}>
-                Quà trên wheel
+              <Typography sx={{ color: '#eef4ff', fontWeight: 950, letterSpacing: '-0.045em', fontSize: '1.25rem' }}>
+                Phần thưởng
               </Typography>
               <Typography sx={{ color: 'rgba(226,234,255,0.64)', fontSize: '0.84rem' }}>
-                Ba nhóm phần thưởng với kết quả được chọn ngẫu nhiên.
+                Nhóm được chọn trước, outcome cụ thể được chọn ngẫu nhiên sau đó.
               </Typography>
             </Box>
             <Chip
@@ -121,25 +121,69 @@ export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
             />
           </Box>
 
-          <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 1.1 }}>
             {groups.map((group) => {
               const outcomes = prizes.filter((prize) => (prize.groupKey ?? (String(prize.type).toUpperCase() === 'NOTHING' ? 'nothing' : String(prize.type).toUpperCase() === 'POINT' ? 'peach' : 'gift')) === group.key);
               return (
-              <Chip
-                key={group.key}
-                icon={<Box component="span" sx={{ fontSize: '1rem', lineHeight: 1 }}>{group.glyph}</Box>}
-                label={`${group.label} · ${outcomes.length || 0} kết quả`}
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.04)',
-                  color: '#eef4ff',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  fontWeight: 700,
-                  '& .MuiChip-icon': { ml: 1 },
-                }}
-              />
+                <Box key={group.key} sx={{ p: 1.25, borderRadius: 2, bgcolor: group.soft, border: `1px solid ${group.tone}38` }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+                    <Stack direction="row" spacing={0.9} alignItems="center" sx={{ minWidth: 0 }}>
+                      <Box sx={{ width: 34, height: 34, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.9)', fontSize: '1.1rem', flex: '0 0 auto' }}>{group.glyph}</Box>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography sx={{ color: '#f4f8ff', fontWeight: 900, fontSize: '0.92rem' }}>{group.label}</Typography>
+                        <Typography sx={{ color: 'rgba(226,234,255,0.62)', fontSize: '0.72rem' }}>{outcomes.length} outcome</Typography>
+                      </Box>
+                    </Stack>
+                    <Typography sx={{ color: group.tone, fontSize: '0.72rem', fontWeight: 900, textAlign: 'right' }}>{group.description}</Typography>
+                  </Stack>
+                  <Stack spacing={0.7} sx={{ mt: 1 }}>
+                    {outcomes.length ? outcomes.map((prize) => {
+                      const glyph = getWheelPrizeGlyph(prize);
+                      const points = Number(prize.metadata?.points ?? prize.metadata?.point_amount ?? prize.metadata?.value ?? 0);
+                      const detail = points > 0 ? `+${points} đào` : prize.metadata?.deliveryMode === 'claim_required' ? 'Cần nhận' : 'Đã cấu hình';
+                      return (
+                        <Box key={prize.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.8, px: 0.85, py: 0.7, borderRadius: 1.25, bgcolor: 'rgba(4,12,29,0.34)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                          <Box sx={{ width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.10)', fontSize: '0.92rem', flex: '0 0 auto' }}>{glyph}</Box>
+                          <Typography noWrap sx={{ minWidth: 0, flex: 1, color: '#eef4ff', fontWeight: 800, fontSize: '0.78rem' }}>{prize.name}</Typography>
+                          <Typography noWrap sx={{ color: group.tone, fontSize: '0.7rem', fontWeight: 850 }}>{detail}</Typography>
+                        </Box>
+                      );
+                    }) : (
+                      <Typography sx={{ color: 'rgba(226,234,255,0.54)', fontSize: '0.76rem', py: 0.5 }}>Đang chờ cấu hình outcome.</Typography>
+                    )}
+                  </Stack>
+                </Box>
               );
             })}
-          </Stack>
+          </Box>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function WheelHowToPlay({ spins, exchangeCost }: { spins: number; exchangeCost: number }) {
+  const steps = [
+    { number: '01', title: 'Có lượt quay', description: `${spins} lượt đang có trong ví` },
+    { number: '02', title: 'Quay và chờ kết quả', description: 'Wheel chọn nhóm rồi chọn quà con' },
+    { number: '03', title: 'Nhận phần thưởng', description: `Đổi thêm lượt với ${exchangeCost} đào` },
+  ];
+  return (
+    <Card sx={{ borderRadius: 1.25, border: '1px solid rgba(94,234,212,0.18)', background: 'linear-gradient(180deg, rgba(5,32,39,0.78), rgba(7,20,37,0.94))', boxShadow: '0 18px 48px rgba(0,0,0,0.18)' }}>
+      <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+        <Stack spacing={1.25}>
+          <Typography sx={{ color: '#5EEAD4', fontWeight: 950, fontSize: '1.05rem', letterSpacing: '-0.03em' }}>💡 Cách nhận lượt quay</Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 1 }}>
+            {steps.map((step) => (
+              <Stack key={step.number} direction="row" spacing={1} alignItems="flex-start">
+                <Typography sx={{ color: '#5EEAD4', fontWeight: 950, fontSize: '0.72rem', letterSpacing: '0.08em' }}>{step.number}</Typography>
+                <Box>
+                  <Typography sx={{ color: '#effffb', fontWeight: 850, fontSize: '0.8rem' }}>{step.title}</Typography>
+                  <Typography sx={{ color: 'rgba(226,234,255,0.58)', fontSize: '0.72rem', lineHeight: 1.35 }}>{step.description}</Typography>
+                </Box>
+              </Stack>
+            ))}
+          </Box>
         </Stack>
       </CardContent>
     </Card>
