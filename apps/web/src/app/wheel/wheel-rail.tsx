@@ -2,7 +2,8 @@
 
 import { Box, Card, CardContent, Chip, Stack, Typography } from '@mui/material';
 import { useMemo } from 'react';
-import { getWheelPrizeGlyph, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
+import type { WheelPrize, WheelSpinHistoryItem } from './wheel-model';
+import { PeachCoinIcon } from './wheel-icons';
 
 function formatCompactTime(value: string | null | undefined) {
   if (!value) return '—';
@@ -49,7 +50,6 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
         <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden', position: 'relative', maskImage: 'linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 'max-content', animation: `wheelTicker ${Math.max(16, tickerItems.length * 2.8)}s linear infinite`, willChange: 'transform', '@keyframes wheelTicker': { '0%': { transform: 'translate3d(0, 0, 0)' }, '100%': { transform: 'translate3d(-50%, 0, 0)' } } }}>
             {tickerItems.map((item, index) => {
-            const glyph = item.prizeToken || item.resultLabel || getWheelPrizeGlyph({ type: item.resultType, metadata: item.resultMetadata });
             const prizeText = item.prizeName || item.resultLabel || 'Không trúng';
             const timeText = formatCompactTime(item.createdAt);
             return (
@@ -70,9 +70,7 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
                   flex: '0 0 auto',
                 }}
               >
-                <Box component="span" sx={{ fontSize: '0.96rem', lineHeight: 1 }}>
-                  {glyph}
-                </Box>
+                <PeachCoinIcon size={20} variant={index % 2 === 0 ? 1 : 2} />
                 <Box component="span" sx={{ color: '#dbeafe' }}>
                   {prizeText}
                 </Box>
@@ -91,9 +89,9 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
 
 export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
   const groups = [
-    { key: 'gift', label: 'Quà', glyph: '🎁', description: 'Voucher và phần thưởng bất ngờ', tone: '#FFD166', soft: 'rgba(255,209,102,0.10)' },
-    { key: 'peach', label: 'Đào', glyph: '🍑', description: 'Đào được cộng vào ví', tone: '#FF9A8B', soft: 'rgba(255,154,139,0.10)' },
-    { key: 'nothing', label: 'Không trúng', glyph: '✦', description: 'May mắn ở lượt tiếp theo', tone: '#9FC2FF', soft: 'rgba(159,194,255,0.10)' },
+    { key: 'gift', label: 'Quà', description: 'Voucher và phần thưởng bất ngờ', tone: '#FFD166', soft: 'rgba(255,209,102,0.10)' },
+    { key: 'peach', label: 'Đào', description: 'Đào được cộng vào ví', tone: '#FF9A8B', soft: 'rgba(255,154,139,0.10)' },
+    { key: 'nothing', label: 'Không trúng', description: 'May mắn ở lượt tiếp theo', tone: '#9FC2FF', soft: 'rgba(159,194,255,0.10)' },
   ];
   return (
     <Card
@@ -128,7 +126,7 @@ export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
                 <Box key={group.key} sx={{ p: 1.25, borderRadius: 2, bgcolor: group.soft, border: `1px solid ${group.tone}38` }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
                     <Stack direction="row" spacing={0.9} alignItems="center" sx={{ minWidth: 0 }}>
-                      <Box sx={{ width: 34, height: 34, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.9)', fontSize: '1.1rem', flex: '0 0 auto' }}>{group.glyph}</Box>
+                      <Box sx={{ width: 34, height: 34, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.9)', flex: '0 0 auto' }}><PeachCoinIcon size={27} /></Box>
                       <Box sx={{ minWidth: 0 }}>
                         <Typography sx={{ color: '#f4f8ff', fontWeight: 900, fontSize: '0.92rem' }}>{group.label}</Typography>
                         <Typography sx={{ color: 'rgba(226,234,255,0.62)', fontSize: '0.72rem' }}>{outcomes.length} outcome</Typography>
@@ -138,12 +136,11 @@ export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
                   </Stack>
                   <Stack spacing={0.7} sx={{ mt: 1 }}>
                     {outcomes.length ? outcomes.map((prize) => {
-                      const glyph = getWheelPrizeGlyph(prize);
                       const points = Number(prize.metadata?.points ?? prize.metadata?.point_amount ?? prize.metadata?.value ?? 0);
                       const detail = points > 0 ? `+${points} đào` : prize.metadata?.deliveryMode === 'claim_required' ? 'Cần nhận' : 'Đã cấu hình';
                       return (
                         <Box key={prize.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.8, px: 0.85, py: 0.7, borderRadius: 1.25, bgcolor: 'rgba(4,12,29,0.34)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                          <Box sx={{ width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.10)', fontSize: '0.92rem', flex: '0 0 auto' }}>{glyph}</Box>
+                          <Box sx={{ width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.10)', flex: '0 0 auto' }}><PeachCoinIcon size={22} /></Box>
                           <Typography noWrap sx={{ minWidth: 0, flex: 1, color: '#eef4ff', fontWeight: 800, fontSize: '0.78rem' }}>{prize.name}</Typography>
                           <Typography noWrap sx={{ color: group.tone, fontSize: '0.7rem', fontWeight: 850 }}>{detail}</Typography>
                         </Box>
@@ -221,7 +218,6 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
             {items.length ? items.map((item) => {
               const createdAt = item.createdAt ?? '';
               const prizeName = item.prizeName || item.resultLabel || 'Không trúng';
-              const glyph = item.prizeToken || item.resultLabel || getWheelPrizeGlyph({ type: item.resultType, metadata: item.resultMetadata });
               const statusLabel =
                 item.status === 'won' ? 'Đã trúng' :
                 item.status === 'claimed' ? 'Đã nhận' :
@@ -256,7 +252,7 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                         fontWeight: 900,
                       }}
                     >
-                      {glyph}
+                      <PeachCoinIcon size={31} variant={item.status === 'won' ? 1 : 2} />
                     </Box>
                     <Box sx={{ minWidth: 0, flex: 1 }}>
                       <Typography sx={{ color: '#f4f8ff', fontWeight: 900, lineHeight: 1.1 }} noWrap>

@@ -2,6 +2,7 @@
 
 import { Box, Button, Chip, Drawer, IconButton, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
+import { PeachCoinIcon } from './wheel-icons';
 
 export type WheelResultGroupKey = 'gift' | 'peach' | 'nothing';
 
@@ -154,7 +155,7 @@ export function WheelResultSheet({
               lineHeight: 1,
             }}
           >
-            {result.glyph}
+            <PeachCoinIcon size={68} variant={isWin ? 1 : 2} />
           </Box>
           <Typography sx={{ color: '#f7fbff', fontWeight: 950, fontSize: { xs: '1.55rem', sm: '1.7rem' }, letterSpacing: '-0.04em' }}>
             {copy.title}
