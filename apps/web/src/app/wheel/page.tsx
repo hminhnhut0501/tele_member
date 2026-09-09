@@ -9,7 +9,7 @@ import { getDefaultWheelPrizes, type WheelPrize, type WheelSpinHistoryItem } fro
 import { buildWheelPlan } from './wheel-plan';
 import { getWheelStartRotation, getWheelTargetRotation } from './wheel-motion';
 import { WheelRenderer } from './wheel-renderer';
-import { WheelHistoryRail, WheelHistoryTicker, WheelHowToPlay, WheelRewardRail } from './wheel-rail';
+import { WheelHistoryRail, WheelHistoryTicker, WheelRewardRail } from './wheel-rail';
 import { buildFixedWheelPrizes, DEFAULT_GROUP_WEIGHTS, type FixedWheelGroupKey } from './wheel-groups';
 import { WheelResultSheet, type WheelResultGroupKey, type WheelResultSheetData } from './wheel-result-sheet';
 import { WheelProductHeader, WheelProductNav } from './wheel-chrome';
@@ -91,7 +91,6 @@ function WheelPageContent() {
   }, [effectivePrizes, groupWeights]);
   const wheelSegments = useMemo(() => buildWheelPlan(wheelGroupPrizes, false, false).segments, [wheelGroupPrizes]);
   const canSpin = !loading && !spinning && (debugSpinMode || spins > 0);
-  const activeOutcomeCount = effectivePrizes.filter((prize) => prize.isActive !== false).length;
 
   function createDebugSpinResult(prizeId?: string | null) {
     const selectedPrize =
@@ -266,78 +265,19 @@ function WheelPageContent() {
             </Stack>
           </Box>
 
-          <Box
-            sx={{
-              width: 'min(92vw, 560px)',
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-              gap: { xs: 0.7, sm: 1 },
-            }}
-          >
-            {[
-              { label: 'LƯỢT QUAY', value: String(spins), tone: '#5EEAD4', icon: '↻' },
-              { label: 'QUÀ ĐANG MỞ', value: String(activeOutcomeCount), tone: '#FFD166', icon: '🎁' },
-              { label: 'TỶ LỆ QUÀ', value: `${groupWeights.gift}%`, tone: '#A7C7FF', icon: '✦' },
-            ].map((stat) => (
-              <Box
-                key={stat.label}
-                sx={{
-                  minWidth: 0,
-                  px: { xs: 1, sm: 1.35 },
-                  py: { xs: 1.1, sm: 1.25 },
-                  borderRadius: 2,
-                  bgcolor: 'rgba(13,25,53,0.76)',
-                  border: '1px solid rgba(117,161,239,0.18)',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.045), 0 12px 26px rgba(0,0,0,0.12)',
-                }}
-              >
-                <Stack direction="row" spacing={0.7} alignItems="center" sx={{ minWidth: 0 }}>
-                  <Box component="span" sx={{ color: stat.tone, fontSize: { xs: '0.95rem', sm: '1.05rem' }, lineHeight: 1 }}>{stat.icon}</Box>
-                  <Typography sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'rgba(226,234,255,0.58)', fontSize: { xs: '0.58rem', sm: '0.64rem' }, fontWeight: 850, letterSpacing: '0.075em' }}>
-                    {stat.label}
-                  </Typography>
-                </Stack>
-                <Typography sx={{ mt: 0.45, color: stat.tone, fontSize: { xs: '1.35rem', sm: '1.55rem' }, lineHeight: 1, fontWeight: 950, letterSpacing: '-0.04em' }}>
-                  {stat.value}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
-
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              gap: 1,
-              alignItems: 'center',
-              width: 'min(92vw, 560px)',
-              px: 1,
-              py: 0.8,
-              borderRadius: 999,
-              bgcolor: 'rgba(7,16,35,0.72)',
-              border: '1px solid rgba(117,161,239,0.14)',
-            }}
-          >
-            <Box sx={{ color: 'rgba(226,234,255,0.64)', fontWeight: 800, fontSize: '0.78rem' }}>
-              Sẵn sàng thử vận may
-            </Box>
-            <Box sx={{ color: 'rgba(226,234,255,0.74)', fontSize: '0.84rem' }}>
-              Blue lobby
-            </Box>
-            {debugSpinMode ? (
-              <Chip
-                size="small"
-                label="DEBUG SPIN"
-                sx={{
-                  ml: 'auto',
-                  bgcolor: 'rgba(255,200,102,0.16)',
-                  color: '#ffe7bc',
-                  border: '1px solid rgba(255,200,102,0.22)',
-                  fontWeight: 800,
-                }}
-              />
-            ) : null}
-          </Box>
+          {debugSpinMode ? (
+            <Chip
+              size="small"
+              label="DEBUG SPIN"
+              sx={{
+                alignSelf: 'flex-end',
+                bgcolor: 'rgba(255,200,102,0.16)',
+                color: '#ffe7bc',
+                border: '1px solid rgba(255,200,102,0.22)',
+                fontWeight: 800,
+              }}
+            />
+          ) : null}
 
           <WheelHistoryTicker items={history} />
 
@@ -352,54 +292,76 @@ function WheelPageContent() {
           <Box
             sx={{
               width: 'min(92vw, 560px)',
-              p: { xs: 1.25, sm: 1.5 },
-              borderRadius: 2.5,
-              bgcolor: 'rgba(7,16,35,0.84)',
-              border: '1px solid rgba(117,161,239,0.18)',
-              boxShadow: '0 18px 38px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.04)',
+              mt: { xs: -0.5, sm: -1 },
             }}
           >
-            <Stack spacing={1.1}>
+            <Button
+              onClick={handleSpin}
+              disabled={!canSpin}
+              variant="contained"
+              sx={{
+                width: '100%',
+                minHeight: { xs: 64, sm: 70 },
+                px: { xs: 2.25, sm: 3 },
+                borderRadius: 999,
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 1.5,
+                fontWeight: 950,
+                fontSize: { xs: '1rem', sm: '1.08rem' },
+                letterSpacing: '0.04em',
+                color: '#f7fbff',
+                background: 'linear-gradient(180deg, rgba(58,111,255,1) 0%, rgba(18,45,154,1) 100%)',
+                boxShadow: '0 16px 30px rgba(33,69,191,0.28)',
+                '&:hover': { background: 'linear-gradient(180deg, rgba(82,133,255,1) 0%, rgba(18,45,154,1) 100%)' },
+                '&.Mui-disabled': { color: 'rgba(228,237,255,0.52)', background: 'linear-gradient(180deg, rgba(52,81,155,0.82), rgba(24,38,92,0.9))' },
+              }}
+            >
+              <Box component="span">{spinning ? 'ĐANG QUAY...' : canSpin ? 'QUAY NGAY' : debugSpinMode ? 'DEBUG READY' : 'HẾT LƯỢT QUAY'}</Box>
+              <Chip
+                label={`${spins} lượt`}
+                size="small"
+                sx={{
+                  height: 34,
+                  bgcolor: 'rgba(5,19,68,0.34)',
+                  color: '#dbeafe',
+                  border: '1px solid rgba(196,220,255,0.28)',
+                  fontWeight: 950,
+                  '& .MuiChip-label': { px: 1.25 },
+                }}
+              />
+            </Button>
+          </Box>
+
+          <Box
+            sx={{
+              width: 'min(92vw, 560px)',
+              p: { xs: 1.35, sm: 1.6 },
+              borderRadius: 2.5,
+              bgcolor: 'rgba(7,16,35,0.78)',
+              border: '1px solid rgba(255,209,102,0.22)',
+              boxShadow: '0 16px 34px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.04)',
+            }}
+          >
+            <Stack spacing={1.05}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
                 <Box>
-                  <Typography sx={{ color: '#f5f9ff', fontWeight: 900, fontSize: '0.95rem' }}>Sẵn sàng quay?</Typography>
-                  <Typography sx={{ color: 'rgba(226,234,255,0.58)', fontSize: '0.78rem' }}>Mỗi lượt quay dùng một lượt trong ví.</Typography>
+                  <Typography sx={{ color: '#fff4cf', fontWeight: 950, fontSize: '0.98rem', letterSpacing: '-0.02em' }}>Đổi đào lấy lượt</Typography>
+                  <Typography sx={{ color: 'rgba(226,234,255,0.56)', fontSize: '0.76rem' }}>Nạp thêm lượt khi ví quay về 0.</Typography>
                 </Box>
-                <Chip label={`${spins} lượt`} sx={{ bgcolor: 'rgba(94,234,212,0.12)', color: '#5EEAD4', border: '1px solid rgba(94,234,212,0.24)', fontWeight: 900 }} />
+                <Typography sx={{ color: '#FFD166', fontWeight: 950, fontSize: '1rem', whiteSpace: 'nowrap' }}>{peaches} 🍑</Typography>
               </Stack>
-              <Button
-                onClick={handleSpin}
-                disabled={!canSpin}
-                variant="contained"
-                sx={{
-                  width: '100%',
-                  py: { xs: 1.35, sm: 1.5 },
-                  borderRadius: 999,
-                  fontWeight: 950,
-                  fontSize: { xs: '1rem', sm: '1.04rem' },
-                  letterSpacing: '0.05em',
-                  color: '#f7fbff',
-                  background: 'linear-gradient(180deg, rgba(58,111,255,1) 0%, rgba(18,45,154,1) 100%)',
-                  boxShadow: '0 16px 30px rgba(33,69,191,0.26)',
-                  '&:hover': { background: 'linear-gradient(180deg, rgba(82,133,255,1) 0%, rgba(18,45,154,1) 100%)' },
-                  '&.Mui-disabled': { color: 'rgba(228,237,255,0.48)', background: 'linear-gradient(180deg, rgba(52,81,155,0.82), rgba(24,38,92,0.9))' },
-                }}
-              >
-                {spinning ? 'ĐANG QUAY...' : canSpin ? 'QUAY NGAY' : debugSpinMode ? 'DEBUG READY' : 'HẾT LƯỢT QUAY'}
-              </Button>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }}>
-                <Typography sx={{ flex: 1, color: 'rgba(226,234,255,0.66)', fontSize: '0.82rem' }}>
-                  Ví đào: <Box component="span" sx={{ color: '#FFD166', fontWeight: 950 }}>{peaches} 🍑</Box>
-                  <Box component="span" sx={{ color: 'rgba(226,234,255,0.42)' }}> · </Box>
-                  {spinExchangeCost} 🍑 = 1 lượt
-                </Typography>
+                <Box sx={{ flex: 1, px: 1.15, py: 0.85, borderRadius: 1.5, bgcolor: 'rgba(255,209,102,0.08)', border: '1px solid rgba(255,209,102,0.13)' }}>
+                  <Typography sx={{ color: '#ffe7a4', fontWeight: 900, fontSize: '0.84rem' }}>{spinExchangeCost} đào = 1 lượt quay</Typography>
+                </Box>
                 <Button
                   onClick={handleConvertSpin}
                   disabled={!token || converting || spinning || peaches < spinExchangeCost}
                   variant="outlined"
-                  sx={{ borderRadius: 999, px: 2, py: 0.8, color: '#FFD166', borderColor: 'rgba(255,209,102,0.35)', fontWeight: 900, whiteSpace: 'nowrap' }}
+                  sx={{ borderRadius: 999, px: 2.1, py: 0.85, color: '#FFD166', borderColor: 'rgba(255,209,102,0.42)', fontWeight: 950, whiteSpace: 'nowrap', '&:hover': { borderColor: '#FFD166', bgcolor: 'rgba(255,209,102,0.08)' } }}
                 >
-                  {converting ? 'ĐANG ĐỔI...' : '+ ĐỔI 1 LƯỢT'}
+                  {converting ? 'ĐANG ĐỔI...' : 'ĐỔI 1 LƯỢT'}
                 </Button>
               </Stack>
             </Stack>
@@ -450,7 +412,6 @@ function WheelPageContent() {
 
           <Box sx={{ width: 'min(92vw, 560px)', display: 'grid', gap: 1.5, mt: 1.5 }}>
             <WheelRewardRail prizes={effectivePrizes} />
-            <WheelHowToPlay spins={spins} exchangeCost={spinExchangeCost} />
             <WheelHistoryRail items={history} />
           </Box>
         </Stack>

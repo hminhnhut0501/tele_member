@@ -159,34 +159,6 @@ export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
   );
 }
 
-export function WheelHowToPlay({ spins, exchangeCost }: { spins: number; exchangeCost: number }) {
-  const steps = [
-    { number: '01', title: 'Có lượt quay', description: `${spins} lượt đang có trong ví` },
-    { number: '02', title: 'Quay và chờ kết quả', description: 'Wheel chọn nhóm rồi chọn quà con' },
-    { number: '03', title: 'Nhận phần thưởng', description: `Đổi thêm lượt với ${exchangeCost} đào` },
-  ];
-  return (
-    <Card sx={{ borderRadius: 1.25, border: '1px solid rgba(94,234,212,0.18)', background: 'linear-gradient(180deg, rgba(5,32,39,0.78), rgba(7,20,37,0.94))', boxShadow: '0 18px 48px rgba(0,0,0,0.18)' }}>
-      <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-        <Stack spacing={1.25}>
-          <Typography sx={{ color: '#5EEAD4', fontWeight: 950, fontSize: '1.05rem', letterSpacing: '-0.03em' }}>💡 Cách nhận lượt quay</Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 1 }}>
-            {steps.map((step) => (
-              <Stack key={step.number} direction="row" spacing={1} alignItems="flex-start">
-                <Typography sx={{ color: '#5EEAD4', fontWeight: 950, fontSize: '0.72rem', letterSpacing: '0.08em' }}>{step.number}</Typography>
-                <Box>
-                  <Typography sx={{ color: '#effffb', fontWeight: 850, fontSize: '0.8rem' }}>{step.title}</Typography>
-                  <Typography sx={{ color: 'rgba(226,234,255,0.58)', fontSize: '0.72rem', lineHeight: 1.35 }}>{step.description}</Typography>
-                </Box>
-              </Stack>
-            ))}
-          </Box>
-        </Stack>
-      </CardContent>
-    </Card>
-  );
-}
-
 export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
   return (
     <Card
