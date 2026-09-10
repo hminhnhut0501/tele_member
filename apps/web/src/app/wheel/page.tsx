@@ -153,7 +153,7 @@ function WheelPageContent() {
       const data = debugResult ? createDebugSpinResult() : await client.spinWheel();
 
       const prizeId = data?.prize?.id;
-      const resultGroupKey = String(data?.groupKey ?? data?.prize?.groupKey ?? (data?.prize?.type === 'NOTHING' ? 'nothing' : data?.prize?.type === 'POINT' ? 'peach' : 'gift'));
+      const resultGroupKey = String(data?.groupKey ?? data?.prize?.groupKey ?? (data?.prize?.type === 'NOTHING' ? 'nothing' : data?.prize?.type === 'POINT' ? 'peach' : 'gift')).trim().toLowerCase();
       const prizeName = String(data?.prize?.name ?? data?.prizeName ?? data?.resultLabel ?? (prizeId ? 'Đã trúng' : 'Không trúng'));
       const prizeType = String(data?.prize?.type ?? data?.prizeType ?? (prizeId ? 'CUSTOM' : 'NOTHING')).toUpperCase();
       const normalizedGroupKey: WheelResultGroupKey = resultGroupKey === 'peach' ? 'peach' : resultGroupKey === 'nothing' ? 'nothing' : 'gift';
@@ -170,9 +170,9 @@ function WheelPageContent() {
         description: typeof resultMetadata.description === 'string' ? resultMetadata.description : null,
         deliveryMode: data?.deliveryMode ?? null,
         deliveryTarget: data?.deliveryTarget ?? null,
-        status: resultGroupKey === 'nothing' ? 'missed' : prizeId ? 'won' : 'missed',
+        status: normalizedGroupKey === 'nothing' ? 'missed' : prizeId ? 'won' : 'missed',
       });
-      const targetRotation = getWheelTargetRotation(wheelSegments, resultGroupKey);
+      const targetRotation = getWheelTargetRotation(wheelSegments, normalizedGroupKey);
       // Resolve the destination before animating so the wheel only has one
       // transform transition and cannot jump during the final slowdown.
       const spinStart = getWheelStartRotation(rotation);

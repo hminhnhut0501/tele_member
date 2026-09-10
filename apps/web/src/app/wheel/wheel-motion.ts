@@ -18,7 +18,8 @@ export function getWheelTargetRotation(segments: WheelRenderSegment[], prizeId?:
   const index = segments.findIndex((segment) => (
     segment.id === prizeId ||
     segment.id.startsWith(`${prizeId}-`) ||
-    segment.metadata?.groupKey === prizeId
+    segment.metadata?.groupKey === prizeId ||
+    segment.metadata?.visualGroupKey === prizeId
   ));
   if (index < 0) return 0;
   const segment = segments[index];
