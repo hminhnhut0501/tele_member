@@ -219,11 +219,6 @@ export function WheelRenderer({
                 <stop offset="58%" stopColor="#FFB848" />
                 <stop offset="100%" stopColor="#D06916" />
               </radialGradient>
-              <radialGradient id="wheel-token-peach" cx="32%" cy="28%" r="78%">
-                <stop offset="0%" stopColor="#FFEBC4" />
-                <stop offset="58%" stopColor="#FF8F6B" />
-                <stop offset="100%" stopColor="#C54246" />
-              </radialGradient>
               <radialGradient id="wheel-token-nothing" cx="32%" cy="28%" r="78%">
                 <stop offset="0%" stopColor="#FFFFFF" />
                 <stop offset="58%" stopColor="#AECFFF" />
@@ -257,20 +252,20 @@ export function WheelRenderer({
               const fixedIconKind = getFixedGroupKind(token.prizeId);
               if (!fixedIconKind) return null;
               const tokenSize = token.size;
-              const iconSize = tokenSize * 0.76;
               const fill = fixedIconKind === 'gift'
                 ? 'url(#wheel-token-gift)'
                 : fixedIconKind === 'peach'
-                  ? 'url(#wheel-token-peach)'
+                  ? 'rgba(76,130,232,0.24)'
                   : 'url(#wheel-token-nothing)';
+              const iconScale = fixedIconKind === 'peach' ? 0.9 : 0.76;
               const iconVariant = Number((plan.segments.find((segment) => segment.id === token.prizeId)?.metadata as Record<string, unknown> | undefined)?.iconVariant) === 2 ? 2 : 1;
               const tokenLabel = fixedIconKind === 'nothing' ? 'MAY MẮN' : fixedIconKind === 'gift' ? 'QUÀ' : 'ĐÀO';
               return (
                 <g key={`token-${token.prizeId}`} transform={`translate(${token.x} ${token.y}) rotate(${-rotation})`}>
                   <circle r={tokenSize / 2} fill={fill} stroke="rgba(255,255,255,0.86)" strokeWidth="4" filter="url(#wheel-token-shadow)" />
                   <circle r={tokenSize / 2 - 5} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="2" />
-                  <g transform={`translate(${-iconSize / 2} ${-iconSize / 2})`}>
-                    <FixedWheelIcon kind={fixedIconKind} variant={iconVariant} size={iconSize} />
+                  <g transform={`translate(${-(tokenSize * iconScale) / 2} ${-(tokenSize * iconScale) / 2})`}>
+                    <FixedWheelIcon kind={fixedIconKind} variant={iconVariant} size={tokenSize * iconScale} />
                   </g>
                   <text
                     x="0"

@@ -106,5 +106,16 @@ function NothingWheelIcon({ size = 44, variant = 1 }: { size?: number; variant?:
 }
 
 export function WheelHubIcon({ size = 48 }: { size?: number }) {
-  return <PeachCoinIcon size={size} variant={1} />;
+  return (
+    <svg {...sharedProps} width={size} height={size}>
+      <image
+        href="/assets/blue-lobby-logo.png"
+        x="1"
+        y="1"
+        width="46"
+        height="46"
+        preserveAspectRatio="xMidYMid meet"
+      />
+    </svg>
+  );
 }
