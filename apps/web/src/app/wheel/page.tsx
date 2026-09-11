@@ -13,6 +13,7 @@ import { WheelHistoryRail, WheelHistoryTicker, WheelRewardRail } from './wheel-r
 import { buildFixedWheelPrizes, DEFAULT_GROUP_WEIGHTS, type FixedWheelGroupKey } from './wheel-groups';
 import { WheelResultSheet, type WheelResultGroupKey, type WheelResultSheetData } from './wheel-result-sheet';
 import { WheelProductHeader, WheelProductNav } from './wheel-chrome';
+import { PeachCoinIcon } from './wheel-icons';
 
 function WheelPageContent() {
   const router = useRouter();
@@ -351,7 +352,10 @@ function WheelPageContent() {
                   <Typography sx={{ color: '#fff4cf', fontWeight: 950, fontSize: '0.98rem', letterSpacing: '-0.02em' }}>Đổi đào lấy lượt</Typography>
                   <Typography sx={{ color: 'rgba(226,234,255,0.56)', fontSize: '0.76rem' }}>Nạp thêm lượt khi ví quay về 0.</Typography>
                 </Box>
-                <Typography sx={{ color: '#FFD166', fontWeight: 950, fontSize: '1rem', whiteSpace: 'nowrap' }}>{peaches} 🍑</Typography>
+                <Stack direction="row" spacing={0.55} alignItems="center" sx={{ color: '#FFD166', whiteSpace: 'nowrap' }}>
+                  <PeachCoinIcon size={24} />
+                  <Typography sx={{ color: 'inherit', fontWeight: 950, fontSize: '1rem' }}>{peaches}</Typography>
+                </Stack>
               </Stack>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }}>
                 <Box sx={{ flex: 1, px: 1.15, py: 0.85, borderRadius: 1.5, bgcolor: 'rgba(255,209,102,0.08)', border: '1px solid rgba(255,209,102,0.13)' }}>

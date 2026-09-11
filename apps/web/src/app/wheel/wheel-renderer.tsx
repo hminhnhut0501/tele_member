@@ -262,8 +262,12 @@ export function WheelRenderer({
               const tokenLabel = fixedIconKind === 'nothing' ? 'MAY MẮN' : fixedIconKind === 'gift' ? 'QUÀ' : 'ĐÀO';
               return (
                 <g key={`token-${token.prizeId}`} transform={`translate(${token.x} ${token.y}) rotate(${-rotation})`}>
-                  <circle r={tokenSize / 2} fill={fill} stroke="rgba(255,255,255,0.86)" strokeWidth="4" filter="url(#wheel-token-shadow)" />
-                  <circle r={tokenSize / 2 - 5} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="2" />
+                  {fixedIconKind !== 'peach' ? (
+                    <>
+                      <circle r={tokenSize / 2} fill={fill} stroke="rgba(255,255,255,0.86)" strokeWidth="4" filter="url(#wheel-token-shadow)" />
+                      <circle r={tokenSize / 2 - 5} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="2" />
+                    </>
+                  ) : null}
                   <g transform={`translate(${-(tokenSize * iconScale) / 2} ${-(tokenSize * iconScale) / 2})`}>
                     <FixedWheelIcon kind={fixedIconKind} variant={iconVariant} size={tokenSize * iconScale} />
                   </g>

@@ -2,6 +2,7 @@
 
 import { Box, Button, Chip, Stack, Typography } from '@mui/material';
 import { useRouter } from 'next/navigation';
+import { PeachCoinIcon } from './wheel-icons';
 
 const navItems = [
   { label: 'Trang chủ', shortLabel: 'Home', icon: '⌂', href: '/' },
@@ -58,7 +59,12 @@ export function WheelProductHeader({ spins, peaches }: { spins: number; peaches:
 
           <Stack direction="row" spacing={0.7} alignItems="center" flexShrink={0}>
             <Chip label={`${spins} lượt`} size="small" sx={{ height: 28, bgcolor: 'rgba(94,234,212,0.1)', color: '#71f1d7', border: '1px solid rgba(94,234,212,0.18)', fontWeight: 900 }} />
-            <Chip label={`${peaches} 🍑`} size="small" sx={{ height: 28, bgcolor: 'rgba(255,209,102,0.1)', color: '#ffdc86', border: '1px solid rgba(255,209,102,0.18)', fontWeight: 900 }} />
+            <Chip
+              icon={<PeachCoinIcon size={18} />}
+              label={peaches}
+              size="small"
+              sx={{ height: 28, bgcolor: 'rgba(255,209,102,0.1)', color: '#ffdc86', border: '1px solid rgba(255,209,102,0.18)', fontWeight: 900, '& .MuiChip-icon': { ml: 0.5 } }}
+            />
           </Stack>
         </Stack>
       </Box>
