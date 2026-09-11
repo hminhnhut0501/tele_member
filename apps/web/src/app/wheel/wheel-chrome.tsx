@@ -7,7 +7,7 @@ import { PeachCoinIcon } from './wheel-icons';
 const navItems = [
   { label: 'Trang chủ', shortLabel: 'Home', icon: '⌂', href: '/' },
   { label: 'Vòng quay', shortLabel: 'Wheel', icon: '✦', href: '/wheel' },
-  { label: 'Quà của tôi', shortLabel: 'Inbox', icon: '▣', href: '/my-rewards' },
+  { label: 'Quà đã nhận', shortLabel: 'Quà', icon: '▣', href: '/my-rewards' },
   { label: 'Đổi quà', shortLabel: 'Store', icon: '◇', href: '/rewards' },
 ];
 

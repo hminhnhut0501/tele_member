@@ -2,7 +2,7 @@
 
 import { Box, Button, Chip, Drawer, IconButton, Stack, Typography } from '@mui/material';
 import { useState } from 'react';
-import { PeachCoinIcon } from './wheel-icons';
+import { FixedWheelIcon } from './wheel-icons';
 
 export type WheelResultGroupKey = 'gift' | 'peach' | 'nothing';
 
@@ -57,6 +57,11 @@ function getDeliveryCopy(result: WheelResultSheetData) {
     return 'Đã gửi vào kho quà';
   }
   return 'Không phát sinh phần thưởng';
+}
+
+function getResultName(result: WheelResultSheetData) {
+  if (result.groupKey === 'nothing') return 'Không trúng';
+  return result.prizeName;
 }
 
 export function WheelResultSheet({
@@ -155,7 +160,7 @@ export function WheelResultSheet({
               lineHeight: 1,
             }}
           >
-            <PeachCoinIcon size={68} variant={isWin ? 1 : 2} />
+            <FixedWheelIcon kind={result.groupKey} size={68} variant={result.groupKey === 'nothing' ? 2 : 1} />
           </Box>
           <Typography sx={{ color: '#f7fbff', fontWeight: 950, fontSize: { xs: '1.55rem', sm: '1.7rem' }, letterSpacing: '-0.04em' }}>
             {copy.title}
@@ -178,7 +183,7 @@ export function WheelResultSheet({
               KẾT QUẢ
             </Typography>
             <Typography sx={{ mt: 0.35, color: '#f7fbff', fontWeight: 900, fontSize: '1.08rem' }}>
-              {result.prizeName}
+              {getResultName(result)}
             </Typography>
             <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mt: 0.7 }}>
               <Chip label={getDeliveryCopy(result)} size="small" sx={{ bgcolor: copy.softAccent, color: copy.accent, fontWeight: 800 }} />

@@ -129,7 +129,7 @@ export default function MyRewardsPage() {
               variant="fullWidth"
               sx={{ minHeight: 44, '& .MuiTab-root': { minHeight: 44, color: 'rgba(226,234,255,0.54)', fontWeight: 900, fontSize: '0.78rem' }, '& .Mui-selected': { color: '#8db9ff' }, '& .MuiTabs-indicator': { height: 3, borderRadius: 999, bgcolor: '#4d86ff' } }}
             >
-              <Tab value="inbox" label={`Inbox ${inbox.length}`} />
+              <Tab value="inbox" label={`Tất cả ${inbox.length}`} />
               <Tab value="rewards" label={`Đã đổi ${items.length}`} />
             </Tabs>
           </Box>

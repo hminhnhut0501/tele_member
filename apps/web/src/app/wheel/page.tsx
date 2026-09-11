@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Box, Button, Chip, Container, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Container, Snackbar, Stack, Typography } from '@mui/material';
 import { apiClient } from '../../lib/api';
 import { PageShell } from '../shared-ui';
 import { getDefaultWheelPrizes, type WheelPrize, type WheelSpinHistoryItem } from './wheel-model';
@@ -26,6 +26,7 @@ function WheelPageContent() {
   const [peaches, setPeaches] = useState(0);
   const [spinExchangeCost, setSpinExchangeCost] = useState(3);
   const [converting, setConverting] = useState(false);
+  const [convertSuccessOpen, setConvertSuccessOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [spinError, setSpinError] = useState('');
   const [spinning, setSpinning] = useState(false);
@@ -222,6 +223,7 @@ function WheelPageContent() {
       } else {
         setPeaches((current) => Math.max(0, current - spinExchangeCost));
       }
+      setConvertSuccessOpen(true);
     } catch (err) {
       setSpinError(err instanceof Error ? err.message : 'Không thể đổi đào sang lượt quay.');
     } finally {
@@ -303,12 +305,12 @@ function WheelPageContent() {
               disabled={!canSpin}
               variant="contained"
               sx={{
-                width: 'min(86vw, 470px)',
-                minHeight: { xs: 54, sm: 58 },
-                px: { xs: 1.8, sm: 2.4 },
+                width: 'min(88vw, 430px)',
+                minHeight: { xs: 52, sm: 56 },
+                px: { xs: 1.5, sm: 2 },
                 borderRadius: 999,
                 display: 'flex',
-                justifyContent: 'space-between',
+                justifyContent: 'center',
                 gap: 1.5,
                 fontWeight: 950,
                 fontSize: { xs: '0.92rem', sm: '1rem' },
@@ -320,7 +322,8 @@ function WheelPageContent() {
                 '&.Mui-disabled': { color: 'rgba(228,237,255,0.52)', background: 'linear-gradient(180deg, rgba(52,81,155,0.82), rgba(24,38,92,0.9))' },
               }}
             >
-              <Box component="span">{spinning ? 'ĐANG QUAY...' : canSpin ? 'QUAY NGAY' : debugSpinMode ? 'DEBUG READY' : 'HẾT LƯỢT QUAY'}</Box>
+              <Stack direction="row" spacing={1.2} alignItems="center" justifyContent="center">
+                <Box component="span">{spinning ? 'ĐANG QUAY...' : canSpin ? 'QUAY NGAY' : debugSpinMode ? 'DEBUG READY' : 'HẾT LƯỢT QUAY'}</Box>
               <Chip
                 label={`${spins} lượt`}
                 size="small"
@@ -333,6 +336,7 @@ function WheelPageContent() {
                   '& .MuiChip-label': { px: 1.05 },
                 }}
               />
+              </Stack>
             </Button>
           </Box>
 
@@ -350,7 +354,7 @@ function WheelPageContent() {
               <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
                 <Box>
                   <Typography sx={{ color: '#fff4cf', fontWeight: 950, fontSize: '0.98rem', letterSpacing: '-0.02em' }}>Đổi đào lấy lượt</Typography>
-                  <Typography sx={{ color: 'rgba(226,234,255,0.56)', fontSize: '0.76rem' }}>Nạp thêm lượt khi ví quay về 0.</Typography>
+                  <Typography sx={{ color: 'rgba(226,234,255,0.56)', fontSize: '0.76rem' }}>Check-in hằng ngày để nhận đào.</Typography>
                 </Box>
                 <Stack direction="row" spacing={0.55} alignItems="center" sx={{ color: '#FFD166', whiteSpace: 'nowrap' }}>
                   <PeachCoinIcon size={24} />
@@ -379,6 +383,17 @@ function WheelPageContent() {
             </Typography>
           ) : null}
 
+          <Snackbar
+            open={convertSuccessOpen}
+            autoHideDuration={3200}
+            onClose={() => setConvertSuccessOpen(false)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+          >
+            <Alert onClose={() => setConvertSuccessOpen(false)} severity="success" variant="filled" sx={{ borderRadius: 2, fontWeight: 800 }}>
+              Đổi lượt thành công. Bạn đã nhận thêm 1 lượt quay.
+            </Alert>
+          </Snackbar>
+
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ justifyContent: 'center' }}>
             <Button
               onClick={() => router.push('/my-rewards')}
@@ -398,21 +413,7 @@ function WheelPageContent() {
                 },
               }}
             >
-              Quà của tôi
-            </Button>
-            <Button
-              onClick={() => router.push('/my-rewards')}
-              variant="text"
-              sx={{
-                minWidth: { xs: 150, sm: 180 },
-                px: 2.2,
-                py: 1.05,
-                borderRadius: 999,
-                fontWeight: 800,
-                color: 'rgba(226,234,255,0.82)',
-              }}
-            >
-              Xem inbox quà
+              XEM QUÀ ĐÃ NHẬN
             </Button>
           </Stack>
 

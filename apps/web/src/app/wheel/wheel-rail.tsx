@@ -3,7 +3,18 @@
 import { Box, Card, CardContent, Chip, Stack, Typography } from '@mui/material';
 import { useMemo } from 'react';
 import type { WheelPrize, WheelSpinHistoryItem } from './wheel-model';
-import { PeachCoinIcon } from './wheel-icons';
+import { FixedWheelIcon } from './wheel-icons';
+
+type WheelIconKind = 'gift' | 'peach' | 'nothing';
+
+function getHistoryIconKind(item: WheelSpinHistoryItem): WheelIconKind {
+  const type = String(item.resultType ?? '').toUpperCase();
+  const groupKey = String(item.resultMetadata?.groupKey ?? '').toLowerCase();
+  if (groupKey === 'peach' || groupKey === 'nothing' || groupKey === 'gift') return groupKey;
+  if (type === 'POINT') return 'peach';
+  if (type === 'NOTHING' || item.status === 'missed') return 'nothing';
+  return 'gift';
+}
 
 function formatCompactTime(value: string | null | undefined) {
   if (!value) return '—';
@@ -70,7 +81,7 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
                   flex: '0 0 auto',
                 }}
               >
-                <PeachCoinIcon size={20} variant={index % 2 === 0 ? 1 : 2} />
+                <FixedWheelIcon kind={getHistoryIconKind(item)} size={20} variant={index % 2 === 0 ? 1 : 2} />
                 <Box component="span" sx={{ color: '#dbeafe' }}>
                   {prizeText}
                 </Box>
@@ -119,7 +130,7 @@ export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
                 <Box key={group.key} sx={{ p: 1.25, borderRadius: 2, bgcolor: group.soft, border: `1px solid ${group.tone}38` }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
                     <Stack direction="row" spacing={0.9} alignItems="center" sx={{ minWidth: 0 }}>
-                      <Box sx={{ width: 34, height: 34, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.9)', flex: '0 0 auto' }}><PeachCoinIcon size={27} /></Box>
+                      <Box sx={{ width: 34, height: 34, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.9)', flex: '0 0 auto' }}><FixedWheelIcon kind={group.key as WheelIconKind} size={27} /></Box>
                       <Box sx={{ minWidth: 0 }}>
                         <Typography sx={{ color: '#f4f8ff', fontWeight: 900, fontSize: '0.92rem' }}>{group.label}</Typography>
                       </Box>
@@ -167,7 +178,7 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
       <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
         <Stack spacing={1.5}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-            <Typography sx={{ color: '#eef4ff', fontWeight: 900, letterSpacing: '-0.04em', fontSize: '1.1rem' }}>Lịch sử trúng của bạn</Typography>
+            <Typography sx={{ color: '#eef4ff', fontWeight: 900, letterSpacing: '-0.04em', fontSize: '1.1rem' }}>Lịch sử quay</Typography>
             <Chip
               label={`${items.length} mục`}
               sx={{ bgcolor: 'rgba(102,168,255,0.14)', color: '#ecf4ff', border: '1px solid rgba(102,168,255,0.18)', fontWeight: 800 }}
@@ -187,11 +198,6 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
               const compactTime = createdAt
                 ? new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(createdAt))
                 : '—';
-              const statusLabel =
-                item.status === 'won' ? 'Đã trúng' :
-                item.status === 'claimed' ? 'Đã nhận' :
-                item.status === 'pending' ? 'Chờ xử lý' :
-                'Chưa trúng';
               return (
                 <Box
                   key={item.id}
@@ -199,18 +205,18 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
-                    px: 1.5,
-                    py: 1,
+                    px: 1.25,
+                    py: 0.8,
                     borderRadius: 1.5,
                     bgcolor: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.06)',
                   }}
                 >
-                  <Stack direction="row" spacing={1.1} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
+                  <Stack direction="row" spacing={0.9} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
                     <Box
                       sx={{
-                        width: 42,
-                        height: 42,
+                        width: 38,
+                        height: 38,
                         borderRadius: '50%',
                         display: 'grid',
                         placeItems: 'center',
@@ -221,7 +227,7 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                         fontWeight: 900,
                       }}
                     >
-                      <PeachCoinIcon size={31} variant={item.status === 'won' ? 1 : 2} />
+                      <FixedWheelIcon kind={getHistoryIconKind(item)} size={31} variant={item.status === 'won' ? 1 : 2} />
                     </Box>
                     <Box sx={{ minWidth: 0, flex: 1 }}>
                       <Typography sx={{ color: '#f4f8ff', fontWeight: 900, lineHeight: 1.1, fontSize: '0.9rem' }} noWrap>
@@ -229,18 +235,6 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                       </Typography>
                       <Typography sx={{ color: 'rgba(226,234,255,0.52)', fontSize: '0.7rem' }} noWrap>{compactTime}</Typography>
                     </Box>
-                    <Chip
-                      label={statusLabel}
-                      size="small"
-                      sx={{
-                        bgcolor: item.status === 'won' ? 'rgba(52,211,153,0.16)' : 'rgba(255,255,255,0.06)',
-                        color: '#ecf4ff',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        fontWeight: 800,
-                        height: 28,
-                        '& .MuiChip-label': { px: 1 },
-                      }}
-                    />
                   </Stack>
                 </Box>
               );
