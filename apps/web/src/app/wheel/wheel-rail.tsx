@@ -89,9 +89,9 @@ export function WheelHistoryTicker({ items }: { items: WheelSpinHistoryItem[] })
 
 export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
   const groups = [
-    { key: 'gift', label: 'Quà', description: 'Voucher và phần thưởng bất ngờ', tone: '#FFD166', soft: 'rgba(255,209,102,0.10)' },
-    { key: 'peach', label: 'Đào', description: 'Đào được cộng vào ví', tone: '#FF9A8B', soft: 'rgba(255,154,139,0.10)' },
-    { key: 'nothing', label: 'Không trúng', description: 'May mắn ở lượt tiếp theo', tone: '#9FC2FF', soft: 'rgba(159,194,255,0.10)' },
+    { key: 'gift', label: 'Quà', tone: '#FFD166', soft: 'rgba(255,209,102,0.10)' },
+    { key: 'peach', label: 'Đào', tone: '#FF9A8B', soft: 'rgba(255,154,139,0.10)' },
+    { key: 'nothing', label: 'Không trúng', tone: '#9FC2FF', soft: 'rgba(159,194,255,0.10)' },
   ];
   return (
     <Card
@@ -105,14 +105,7 @@ export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
       <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
         <Stack spacing={1.75}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-            <Box>
-              <Typography sx={{ color: '#eef4ff', fontWeight: 950, letterSpacing: '-0.045em', fontSize: '1.25rem' }}>
-                Phần thưởng
-              </Typography>
-              <Typography sx={{ color: 'rgba(226,234,255,0.64)', fontSize: '0.84rem' }}>
-                Nhóm được chọn trước, outcome cụ thể được chọn ngẫu nhiên sau đó.
-              </Typography>
-            </Box>
+            <Typography sx={{ color: '#eef4ff', fontWeight: 950, letterSpacing: '-0.045em', fontSize: '1.25rem' }}>Phần thưởng</Typography>
             <Chip
               label="3 nhóm"
               sx={{ bgcolor: 'rgba(102,168,255,0.14)', color: '#ecf4ff', border: '1px solid rgba(102,168,255,0.18)', fontWeight: 800 }}
@@ -129,20 +122,22 @@ export function WheelRewardRail({ prizes }: { prizes: WheelPrize[] }) {
                       <Box sx={{ width: 34, height: 34, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.9)', flex: '0 0 auto' }}><PeachCoinIcon size={27} /></Box>
                       <Box sx={{ minWidth: 0 }}>
                         <Typography sx={{ color: '#f4f8ff', fontWeight: 900, fontSize: '0.92rem' }}>{group.label}</Typography>
-                        <Typography sx={{ color: 'rgba(226,234,255,0.62)', fontSize: '0.72rem' }}>{outcomes.length} outcome</Typography>
                       </Box>
                     </Stack>
-                    <Typography sx={{ color: group.tone, fontSize: '0.72rem', fontWeight: 900, textAlign: 'right' }}>{group.description}</Typography>
                   </Stack>
                   <Stack spacing={0.7} sx={{ mt: 1 }}>
                     {outcomes.length ? outcomes.map((prize) => {
                       const points = Number(prize.metadata?.points ?? prize.metadata?.point_amount ?? prize.metadata?.value ?? 0);
-                      const detail = points > 0 ? `+${points} đào` : prize.metadata?.deliveryMode === 'claim_required' ? 'Cần nhận' : 'Đã cấu hình';
+                      const type = String(prize.type ?? '').toUpperCase();
+                      const rawName = String(prize.metadata?.railLabel ?? prize.name ?? '').replace(/^[^\p{L}\p{N}]+/u, '').trim();
+                      const label = points > 0
+                        ? `+${points} đào`
+                        : type === 'SPIN_TICKET' || type === 'SPIN'
+                          ? '+1 lượt quay'
+                          : rawName || 'Phần thưởng';
                       return (
-                        <Box key={prize.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.8, px: 0.85, py: 0.7, borderRadius: 1.25, bgcolor: 'rgba(4,12,29,0.34)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                          <Box sx={{ width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.10)', flex: '0 0 auto' }}><PeachCoinIcon size={22} /></Box>
-                          <Typography noWrap sx={{ minWidth: 0, flex: 1, color: '#eef4ff', fontWeight: 800, fontSize: '0.78rem' }}>{prize.name}</Typography>
-                          <Typography noWrap sx={{ color: group.tone, fontSize: '0.7rem', fontWeight: 850 }}>{detail}</Typography>
+                        <Box key={prize.id} sx={{ display: 'flex', alignItems: 'center', px: 1, py: 0.8, borderRadius: 1.25, bgcolor: 'rgba(4,12,29,0.34)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                          <Typography noWrap sx={{ minWidth: 0, color: '#eef4ff', fontWeight: 850, fontSize: '0.8rem' }}>{label}</Typography>
                         </Box>
                       );
                     }) : (
@@ -172,14 +167,7 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
       <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
         <Stack spacing={1.5}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-            <Box>
-              <Typography sx={{ color: '#eef4ff', fontWeight: 900, letterSpacing: '-0.04em', fontSize: '1.1rem' }}>
-                Lịch sử trúng của bạn
-              </Typography>
-              <Typography sx={{ color: 'rgba(226,234,255,0.64)', fontSize: '0.84rem' }}>
-                Mỗi dòng ưu tiên tên quà trước, người nhận và thời gian ở sau.
-              </Typography>
-            </Box>
+            <Typography sx={{ color: '#eef4ff', fontWeight: 900, letterSpacing: '-0.04em', fontSize: '1.1rem' }}>Lịch sử trúng của bạn</Typography>
             <Chip
               label={`${items.length} mục`}
               sx={{ bgcolor: 'rgba(102,168,255,0.14)', color: '#ecf4ff', border: '1px solid rgba(102,168,255,0.18)', fontWeight: 800 }}
@@ -189,7 +177,16 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
           <Stack spacing={1}>
             {items.length ? items.map((item) => {
               const createdAt = item.createdAt ?? '';
-              const prizeName = item.prizeName || item.resultLabel || 'Không trúng';
+              const rawName = String(item.prizeName || item.resultLabel || 'Không trúng').replace(/^[^\p{L}\p{N}]+/u, '').trim();
+              const resultType = String(item.resultType ?? '').toUpperCase();
+              const prizeName = resultType === 'POINT'
+                ? `+${rawName.replace(/^\+/, '')} đào`
+                : resultType === 'SPIN_TICKET' || resultType === 'SPIN'
+                  ? '+1 lượt quay'
+                  : rawName;
+              const compactTime = createdAt
+                ? new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(createdAt))
+                : '—';
               const statusLabel =
                 item.status === 'won' ? 'Đã trúng' :
                 item.status === 'claimed' ? 'Đã nhận' :
@@ -200,16 +197,16 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                   key={item.id}
                   sx={{
                     display: 'flex',
-                    flexDirection: 'column',
+                    alignItems: 'center',
                     gap: 1,
                     px: 1.5,
-                    py: 1.2,
-                    borderRadius: 1,
+                    py: 1,
+                    borderRadius: 1.5,
                     bgcolor: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.06)',
                   }}
                 >
-                  <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 0, width: '100%' }}>
+                  <Stack direction="row" spacing={1.1} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
                     <Box
                       sx={{
                         width: 42,
@@ -227,13 +224,10 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                       <PeachCoinIcon size={31} variant={item.status === 'won' ? 1 : 2} />
                     </Box>
                     <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Typography sx={{ color: '#f4f8ff', fontWeight: 900, lineHeight: 1.1 }} noWrap>
+                      <Typography sx={{ color: '#f4f8ff', fontWeight: 900, lineHeight: 1.1, fontSize: '0.9rem' }} noWrap>
                         {prizeName}
                       </Typography>
-                      <Typography sx={{ color: 'rgba(226,234,255,0.72)', fontSize: '0.83rem' }} noWrap>
-                        {item.displayName ? `${item.displayName} • ` : ''}
-                        {item.status === 'won' ? 'Đã trúng' : item.status === 'claimed' ? 'Đã nhận' : item.status === 'pending' ? 'Chờ xử lý' : 'Không trúng'}
-                      </Typography>
+                      <Typography sx={{ color: 'rgba(226,234,255,0.52)', fontSize: '0.7rem' }} noWrap>{compactTime}</Typography>
                     </Box>
                     <Chip
                       label={statusLabel}
@@ -243,12 +237,11 @@ export function WheelHistoryRail({ items }: { items: WheelSpinHistoryItem[] }) {
                         color: '#ecf4ff',
                         border: '1px solid rgba(255,255,255,0.08)',
                         fontWeight: 800,
+                        height: 28,
+                        '& .MuiChip-label': { px: 1 },
                       }}
                     />
                   </Stack>
-                  <Typography sx={{ color: 'rgba(226,234,255,0.56)', fontSize: '0.78rem', flex: '0 0 auto', alignSelf: 'flex-end' }}>
-                    {createdAt ? new Date(createdAt).toLocaleString('vi-VN') : '—'}
-                  </Typography>
                 </Box>
               );
             }) : (

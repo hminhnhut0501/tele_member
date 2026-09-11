@@ -293,6 +293,8 @@ function WheelPageContent() {
             sx={{
               width: 'min(92vw, 560px)',
               mt: { xs: -0.5, sm: -1 },
+              display: 'flex',
+              justifyContent: 'center',
             }}
           >
             <Button
@@ -300,15 +302,15 @@ function WheelPageContent() {
               disabled={!canSpin}
               variant="contained"
               sx={{
-                width: '100%',
-                minHeight: { xs: 64, sm: 70 },
-                px: { xs: 2.25, sm: 3 },
+                width: 'min(86vw, 470px)',
+                minHeight: { xs: 54, sm: 58 },
+                px: { xs: 1.8, sm: 2.4 },
                 borderRadius: 999,
                 display: 'flex',
                 justifyContent: 'space-between',
                 gap: 1.5,
                 fontWeight: 950,
-                fontSize: { xs: '1rem', sm: '1.08rem' },
+                fontSize: { xs: '0.92rem', sm: '1rem' },
                 letterSpacing: '0.04em',
                 color: '#f7fbff',
                 background: 'linear-gradient(180deg, rgba(58,111,255,1) 0%, rgba(18,45,154,1) 100%)',
@@ -322,12 +324,12 @@ function WheelPageContent() {
                 label={`${spins} lượt`}
                 size="small"
                 sx={{
-                  height: 34,
+                  height: 30,
                   bgcolor: 'rgba(5,19,68,0.34)',
                   color: '#dbeafe',
                   border: '1px solid rgba(196,220,255,0.28)',
                   fontWeight: 950,
-                  '& .MuiChip-label': { px: 1.25 },
+                  '& .MuiChip-label': { px: 1.05 },
                 }}
               />
             </Button>
